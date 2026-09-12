@@ -2,14 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./leap.css";
 import "./appearance.css";
+import "./admin.css";
 import AppearanceProvider from './theme-provider';
 
 export const metadata: Metadata = {
   title: "LEAP English · Learning operations",
-  description: "Manage LEAP English learners, courses, payments and learning outcomes.",
-  other: {
-    "codex-preview": "development",
-  },
+  description: "Read-only LEAP English administrator overview and learner directory.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
