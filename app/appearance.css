@@ -1,0 +1,129 @@
+/* Preserve the pen.dev dark palette. Light surfaces inherit a local text palette,
+   so the reference's black workspaces and violet details remain legible. */
+.theme-toggle { flex-shrink: 0; }
+.appearance-setting { padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.light {
+  --background: #f5f4fb;
+  --foreground: #222231;
+  --card: #fff;
+  --card-foreground: #222231;
+  --popover: #fff;
+  --popover-foreground: #222231;
+  --primary: #6246ec;
+  --primary-foreground: #fff;
+  --secondary: #efedf8;
+  --secondary-foreground: #353246;
+  --muted: #efedf8;
+  --muted-foreground: #777487;
+  --accent: #eee9ff;
+  --accent-foreground: #593bdc;
+  --destructive: #be3754;
+  --border: #e5e2ef;
+  --input: #dedbe9;
+  --ring: #795cef;
+  --surface: #fff;
+  --inset: #eeecf6;
+  --ink: #222231;
+  --quiet: #777487;
+  --line: #e5e2ef;
+  --wash: #7469e80d;
+  --violet: #6655bb;
+  --highlight: #6246ec;
+  --positive: #138772;
+}
+.light body { background: var(--background); color: var(--ink); }
+.light [data-theme-tone="dark"] {
+  --surface: #2a2b3e;
+  --inset: #202130;
+  --ink: #fff;
+  --quiet: #b8b6ce;
+  --line: #424356;
+  --wash: #ffffff0b;
+  --positive: #65d7b5;
+  --card: #2a2b3e;
+  --border: #424356;
+  color: var(--ink);
+  background: var(--inset);
+}
+.light :is([data-theme-tone="accent"], .purple-panel, .directory-row.chosen, .catalog-row.chosen, .case-row.chosen, .event-row.chosen, .mobile-finance-row[data-selected="true"]) {
+  --surface: #ffffff19;
+  --inset: #282536;
+  --ink: #fff;
+  --quiet: #eeeafa;
+  --line: #ffffff2b;
+  --wash: #ffffff16;
+  --card: #282536;
+  --border: #ffffff2b;
+  color: #fff;
+}
+.light [class~="bg-[#141729]"] { background-color: var(--background); }
+.light [class~="bg-[#24263B]"] { background-color: var(--surface); }
+.light [class~="bg-[#16182A]"] { background-color: var(--inset); }
+.light [class~="bg-[#7469E8]"] { background-color: var(--violet); }
+.light [class~="bg-[#00866B]"] { background-color: var(--highlight); }
+.light [class*="background-image:linear-gradient"] { background-image: linear-gradient(125deg, #7362c6, #5b50ad); }
+.light [class~="text-[#FFFFFF]"] { color: var(--ink); }
+.light [class~="text-[#AEB5CE]"] { color: var(--quiet); }
+.light [class~="text-[#7469E8]"] { color: var(--highlight); }
+.light [class~="text-[#00866B]"] { color: var(--positive); }
+.light [class~="bg-[#464B6B]"] { background-color: var(--line); }
+.light [class*="outline:1px_solid_#464B6B"] { outline-color: var(--line); }
+.light [class*="border-color:#464B6B"] { border-color: var(--line); }
+.light [class*="bg-[#FFFFFF"] { background-color: var(--wash); }
+.light svg [fill="#FFFFFF"] { fill: var(--ink); }
+.light svg [stroke="#FFFFFF"] { stroke: var(--ink); }
+.light svg [fill="#AEB5CE"] { fill: var(--quiet); }
+.light svg [stroke="#AEB5CE"] { stroke: var(--quiet); }
+.light .design-screen > [data-pencil-name$="Navigation"] { box-shadow: 0 3px 18px #28234005; }
+.light .design-nav[aria-current="page"] { background: var(--highlight)!important; }
+.light :is([data-pencil-name$="Metric Card"], [data-pencil-name$="Content Stat"], [data-pencil-name$="Learning Stat"], [data-pencil-name$="Message Stat"], [data-pencil-name="Learning Pulse Card"], [data-pencil-name="System Health Card"], [data-pencil-name="Learning Funnel Card"], [data-pencil-name="Weekly Activity Card"], [data-pencil-name="Revenue By Course Panel"], [data-pencil-name="Payment Mix And Health"]) {
+  background-color: #fff;
+  box-shadow: 0 2px 12px #2c254805, inset 0 0 0 1px #ece9f3;
+}
+.light .action { background: var(--surface); color: var(--ink); border-color: var(--line); }
+.light .action.primary, .light .mobile-back { background: var(--highlight); color: #fff; border-color: transparent; }
+.light .action:hover, .light .interactive:hover { filter: brightness(.97); }
+.light .nav-icon:hover { background: var(--inset); }
+.light .theme-toggle { color: #684dd7; background: #7469e810; }
+.light :is(.pick, .search-box, .filter-tabs [data-slot="tabs-list"]) { background: var(--surface); border-color: var(--line); color: var(--ink); }
+.light .filter-tabs [data-slot="tabs-trigger"] { color: var(--quiet); }
+.light .filter-tabs [data-state="active"] { background: var(--highlight)!important; color: #fff!important; }
+.light .search-box input { color: var(--ink); }
+.light .search-box input::placeholder { color: var(--quiet); }
+.light :is(.finance-list, .directory-row, .case-row, .admin-dialog, .mobile-drawer) { background: var(--surface); color: var(--ink); }
+.light :is(.finance-table th, small, .person small, .pager, .muted, .field>span, .confirm-evidence, .drawer-account, .empty-state, .reconcile-layout p) { color: var(--quiet); }
+.light :is(.finance-table tr, .event-row, .units, .audit-row, .mobile-finance-row) { border-color: var(--line); }
+.light .finance-table tr[data-selected="true"], .light .event-row.chosen, .light .mobile-finance-row[data-selected="true"] { background: #5945c4!important; color: #fff; }
+.light .finance-table tr[data-selected="true"] small { color: #eeeafa; }
+.light :is(.directory-row.chosen, .catalog-row.chosen, .case-row.chosen) { background: #5945c4; }
+.light .purple-panel { background: linear-gradient(125deg, #7362c6, #5b50ad); }
+.light .purple-panel :is(p, small), .light .directory-row.chosen small, .light .catalog-row.chosen small { color: var(--quiet); }
+.light .avatar, .light .event-icon { background: var(--highlight); color: #fff; }
+.light .badge { background: var(--wash); border-color: var(--line); color: var(--ink); }
+.light .badge.success { background: #12816b; color: #fff; border-color: transparent; }
+.light .pager button.selected { background: var(--highlight); color: #fff; }
+.light .pager button:hover { background: var(--wash); }
+.light .empty-state h3 { color: var(--ink); }
+.light :is(.field input, .field textarea, .search-results button, .media-placeholder, .units button.chosen) { background: var(--inset); color: var(--ink); border-color: var(--line); }
+.light .inset-panel { background: var(--wash); border-color: var(--line); }
+.light :is(.admin-dialog dt, .media-placeholder) { color: var(--quiet); }
+.light .audit-row { border-color: var(--line); }
+.light .active-lesson { background: #7469e824; }
+.light .stale-banner { background: var(--surface); border-color: var(--line); }
+.light .stale-banner button { color: var(--highlight); }
+.light :is(.form-error, .error-banner) { color: #aa2d48; background: #fff0f3; border-color: #f0bdc9; }
+.light .mobile-drawer>button.active { background: var(--highlight); color: #fff; }
+.light .mobile-drawer>button.active .badge { color: #fff; }
+.light .readable-link { color: var(--ink)!important; }
+.light :is(.payment-detail .action, .message-detail>.action, .message-preview .action) { background: #fff; color: #31264b; border-color: transparent; }
+.light .payment-detail dt { color: #e9e3fa; }
+.light :is([data-pencil-name="Payments Filter Toolbar"], [data-pencil-name="Learner Directory Toolbar"]) { background: #f3f0fa; --surface: #fff; --ink: #222231; --quiet: #777487; --line: #e5e2ef; }
+.light [data-pencil-name*=" Bar"][class~="bg-[#24263B]"], .light [data-pencil-name$="Completion Bar"][class~="bg-[#24263B]"] { background: linear-gradient(0deg, #9380ee, #d5ccff); }
+.light [data-theme-tone="dark"] [class~="text-[#7469E8]"] { color: #c4b8ff; }
+.light [data-theme-tone="accent"] :is([class~="text-[#00866B]"], [class~="text-[#7469E8]"]) { color: #eeeafa; }
+.light [data-theme-tone="accent"] svg [stroke="#00866B"] { stroke: #eeeafa; }
+.light .overview-person:not(.chosen)>button { background: #2a2b3e; }
+.light .overview-person.chosen>button { background: #5945c4; }
+@media(max-width:767px) {
+  [data-pencil-name="Navigation Utilities"]>.theme-toggle { display: flex!important; width: 36px; height: 36px; }
+}
