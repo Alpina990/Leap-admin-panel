@@ -2,6 +2,7 @@
 import {createElement,useEffect,useState,type ReactNode,type FormEvent} from 'react';
 import {useTheme} from 'next-themes';
 import {ContentDialog,type ContentMode,type ContentUnit,type ContentDetail,type ContentLesson} from './content-dialog';
+import {BusinessDialog} from './business-dialog';
 import {ReportingDialog,type ReportingResource} from './reporting-dialog';
 import {NoteDialog,type Note} from './note-dialog';
 import {OrderList,PaymentFacts,type Orders,type Payment} from './payments';
@@ -55,6 +56,7 @@ export default function Home({session}:{session:AdminSession}){
  const activeLesson=lessons.data?.items.find(l=>l.id===lessonId)?.id??lessons.data?.items[0]?.id??null;
  const contentDetail=useRead<ContentDetail>(section==='Content'&&activeLesson?'/api/admin/content-lesson?'+new URLSearchParams({lessonId:activeLesson}):null,revision);
  const [reporting,setReporting]=useState<'Date range'|'Sort & paginate'|'Export report'|null>(null);
+ const [business,setBusiness]=useState<'Manage access'|'Reconcile case'|'Learning intervention'|null>(null);
  const [reportFilters,setReportFilters]=useState<Record<string,Record<string,string>>>({});
  const [dateRange,setDateRange]=useState<Record<string,string>>({});
  const [notificationOffset,setNotificationOffset]=useState(0),[notificationId,setNotificationId]=useState<string|null>(null);
@@ -189,6 +191,9 @@ export default function Home({session}:{session:AdminSession}){
   const contentLinks:Record<string,ContentMode>={'Import Content Button':'Import content','Video lesson Editor Block':'Video block','New Lesson Button':'Create lesson','Key phrases Editor Block':'Key phrases','Quick check Editor Block':'Quick check','Lesson navigation Editor Block':'Lesson navigation','Preview Lesson Button':'Lesson preview','Publish Lesson Button':'Ready to publish','Save Lesson Button':'Reorder lesson blocks'};
   if(contentLinks[name]){click=()=>setContentMode(contentLinks[name]);attrs.disabled=name==='Import Content Button'?false:name==='New Lesson Button'?!activeUnit:!contentDetail.data||contentDetail.loading||!!contentDetail.error;}
   if(name==='Add Internal Note Button'){click=()=>{if(person)setNoteTarget(person);};attrs.disabled=!person;}
+  if(name==='Manage Access Button'){click=()=>setBusiness('Manage access');attrs.disabled=!person;}
+  if(name==='Open Reconciliation Review Button'||name==='Reconciliation Commerce Tab')click=()=>setBusiness('Reconcile case');
+  if(name==='Open Intervention Queue Button')click=()=>setBusiness('Learning intervention');
   if(['Transactions Commerce Tab','Learners & access Commerce Tab'].includes(name)){attrs['aria-pressed']=commerceTab===(name==='Transactions Commerce Tab'?'transactions':'learners');attrs.className+=' operations-commerce-tab';}
   if(name==='Transactions Commerce Tab')click=()=>{setCommerceTab('transactions');setMobileDetail(false);};
   if(name==='Learners & access Commerce Tab')click=()=>{setCommerceTab('learners');setMobileDetail(false);};
@@ -212,6 +217,7 @@ export default function Home({session}:{session:AdminSession}){
   {render(screens[routes[section]])}
   <footer className="readonly-status"><p id="readonly-explanation">Administrator workspace · — means unavailable, not zero. Unsupported controls remain in place. Payment orders/details and private internal notes are connected. Draft authoring and Mini App inbox records are connected. Access correction, activity aggregates, progress corrections and Telegram delivery receipts remain unavailable.</p><p>Database totals: <span data-total="learners">Learners {overview.data?.learnersTotal.toLocaleString('en-US')??'—'}</span> · Courses {overview.data?.coursesTotal.toLocaleString('en-US')??'—'} · Sections {overview.data?.sectionsTotal.toLocaleString('en-US')??'—'} · Lessons {overview.data?.lessonsTotal.toLocaleString('en-US')??'—'} (including draft/unpublished records; not completions).</p>{overview.error&&<p role="alert">{overview.error}</p>}{refresh}<button className="action" disabled={signingOut} onClick={logout}>{signingOut?'Signing out…':'Sign out'}</button>{logoutError&&<p role="alert">{logoutError}</p>}</footer>
   {contentMode&&<ContentDialog mode={contentMode} units={catalog.data?.items??[]} unitId={activeUnit??''} detail={contentDetail.data} csrf={session.csrfToken} canWrite={catalog.data?.canWrite??false} onSaved={value=>{setUnitId(value.lesson.unitId);setLessonId(value.lesson.id);setRevision(r=>r+1);}} onClose={()=>{setContentMode(null);setRevision(r=>r+1);}}/>}
+  {business&&<BusinessDialog mode={business} learnerId={person?.telegramUserId} learnerName={person?personName(person):undefined} csrf={session.csrfToken} onClose={()=>setBusiness(null)} onSaved={()=>setRevision(r=>r+1)}/>}
   {reporting&&<ReportingDialog mode={reporting} resource={reportResource} query={reportQuery.toString()} onClose={()=>setReporting(null)} onApply={values=>{if(reporting==='Date range')setDateRange(Object.fromEntries(Object.entries(values).filter(([,value])=>value)));else setReportFilters(previous=>({...previous,[reportResource]:values}));setOffset(0);setOrderOffset(0);setNotificationOffset(0);setSelected(null);setOrderId(null);}}/>}
   {notificationId&&<Dialog open onOpenChange={v=>{if(!v)setNotificationId(null);}}><DialogContent className="admin-dialog pencil-dialog"><DialogHeader><DialogTitle>Notification detail</DialogTitle><DialogDescription>Persisted Mini App inbox record. Viewing here does not mark it read.</DialogDescription></DialogHeader>{notification.error?<p role="alert">{notification.error}<button onClick={()=>setRevision(r=>r+1)}>Retry notification</button></p>:notification.loading?<p role="status">Loading notification…</p>:notification.data&&<><div className="pencil-field">Event<div>{notification.data.title}<br/>{notification.data.body}<br/>{notification.data.kind} · {notification.data.id}</div></div><div className="pencil-field">Recipient<div>Learner {notification.data.learnerId}</div></div><div className="pencil-field">Delivery<div>Created: {notification.data.createdAt}<br/>Read in Mini App: {notification.data.readAt??'Not read'}<br/>Telegram delivery receipts unavailable.</div></div><div className="pencil-field">Action path<div>{notification.data.actionPath??'None'}</div></div></>}<div className="pencil-dialog-actions"><button onClick={()=>setNotificationId(null)}>Close</button></div></DialogContent></Dialog>}
   {noteTarget&&<NoteDialog key={noteTarget.telegramUserId} learnerId={noteTarget.telegramUserId} learnerName={personName(noteTarget)} csrf={session.csrfToken} onViewRecord={()=>{setSelected(noteTarget.telegramUserId);setNoteTarget(null);setNoteOffset(0);setRevision(r=>r+1);setModal('profile');}} onClose={()=>{setNoteTarget(null);setRevision(r=>r+1);}}/>}
