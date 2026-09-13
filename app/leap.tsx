@@ -202,7 +202,7 @@ export default function Home({session}:{session:AdminSession}){
   const contentLinks:Record<string,ContentMode>={'Import Content Button':'Import content','Video lesson Editor Block':'Video block','New Lesson Button':'Create lesson','Key phrases Editor Block':'Key phrases','Quick check Editor Block':'Quick check','Lesson navigation Editor Block':'Lesson navigation','Preview Lesson Button':'Lesson preview','Publish Lesson Button':'Ready to publish','Save Lesson Button':'Reorder lesson blocks'};
   if(contentLinks[name]){click=()=>setContentMode(contentLinks[name]);attrs.disabled=name==='Import Content Button'?false:name==='New Lesson Button'?!activeUnit:!contentDetail.data||contentDetail.loading||!!contentDetail.error;}
   if(name==='Add Internal Note Button'){click=()=>{if(person)setNoteTarget(person);};attrs.disabled=!person;}
-  if(name==='Manage Access Button'){click=()=>setBusinessLearner(person?.telegramUserId);setBusiness('Manage access');attrs.disabled=!person;}
+  if(name==='Manage Access Button'){click=()=>{setBusinessLearner(person?.telegramUserId);setBusiness('Manage access');};attrs.disabled=!person;}
   if(name==='Open Reconciliation Review Button'||name==='Reconciliation Commerce Tab')click=()=>setBusiness('Reconcile case');
   if(name==='Learning Cohort Filter')click=()=>{setCohortDraft(cohort);setCohortOpen(true);};
   if(name==='Learning Date Filter')click=()=>setReporting('Date range');
