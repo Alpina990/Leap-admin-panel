@@ -36,10 +36,10 @@
   --surface: #2a2b3e;
   --inset: #202130;
   --ink: #fff;
-  --quiet: #b8b6ce;
+  --quiet: #ddd8f1;
   --line: #424356;
   --wash: #ffffff0b;
-  --positive: #65d7b5;
+  --positive: #cbf5e9;
   --card: #2a2b3e;
   --border: #424356;
   color: var(--ink);
@@ -49,7 +49,7 @@
   --surface: #ffffff19;
   --inset: #282536;
   --ink: #fff;
-  --quiet: #eeeafa;
+  --quiet: #ddd8f1;
   --line: #ffffff2b;
   --wash: #ffffff16;
   --card: #282536;
@@ -61,7 +61,8 @@
 .light [class~="bg-[#16182A]"] { background-color: var(--inset); }
 .light [class~="bg-[#7469E8]"] { background-color: var(--violet); }
 .light [class~="bg-[#00866B]"] { background-color: var(--highlight); }
-.light [class*="background-image:linear-gradient"] { background-image: linear-gradient(125deg, #7362c6, #5b50ad); }
+/* Current Pen canvas: both stops are light-detail #6655BB on all six main screens. */
+.light [class*="background-image:linear-gradient"] { background-image: linear-gradient(125deg, #6655bb, #6655bb); }
 .light [class~="text-[#FFFFFF]"] { color: var(--ink); }
 .light [class~="text-[#AEB5CE]"] { color: var(--quiet); }
 .light [class~="text-[#7469E8]"] { color: var(--highlight); }
@@ -117,10 +118,11 @@
 .light .readable-link { color: var(--ink)!important; }
 .light :is(.payment-detail .action, .message-detail>.action, .message-preview .action) { background: #fff; color: #31264b; border-color: transparent; }
 .light .payment-detail dt { color: #e9e3fa; }
-.light :is([data-pencil-name="Payments Filter Toolbar"], [data-pencil-name="Learner Directory Toolbar"]) { background: #f3f0fa; --surface: #fff; --ink: #222231; --quiet: #777487; --line: #e5e2ef; }
+.light :is([data-pencil-name="Payments Filter Toolbar"], [data-pencil-name="Learner Directory Toolbar"]) { background: #fff; --surface: #fff; --ink: #222231; --quiet: #777487; --line: #e5e2ef; }
 .light [data-pencil-name*=" Bar"][class~="bg-[#24263B]"], .light [data-pencil-name$="Completion Bar"][class~="bg-[#24263B]"] { background: linear-gradient(0deg, #9380ee, #d5ccff); }
-.light [data-theme-tone="dark"] [class~="text-[#7469E8]"] { color: #c4b8ff; }
-.light [data-theme-tone="accent"] :is([class~="text-[#00866B]"], [class~="text-[#7469E8]"]) { color: #eeeafa; }
+.light [data-theme-tone="dark"] [class~="text-[#7469E8]"] { color: #eeeafa; }
+.light [data-theme-tone="accent"] [class~="text-[#00866B]"] { color: #cbf5e9; }
+.light [data-theme-tone="accent"] [class~="text-[#7469E8]"] { color: #eeeafa; }
 .light [data-theme-tone="accent"] svg [stroke="#00866B"] { stroke: #eeeafa; }
 .light .overview-person:not(.chosen)>button { background: #2a2b3e; }
 .light .overview-person.chosen>button { background: #5945c4; }

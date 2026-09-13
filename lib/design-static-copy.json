@@ -1,0 +1,559 @@
+{
+  "Date Range Label": ["Last 30 days"],
+  "Registered Commerce Fact Label": ["REGISTERED"],
+  "Orders Commerce Fact Label": ["ORDERS"],
+  "Total Commerce Fact Label": ["TOTAL"],
+  "Open Learner Profile Label": ["Profil"],
+  "Copy Payment IDs Label": ["Copy IDs"],
+  "Payment Access Timeline Title": ["Payment → access timeline"],
+  "Learning Date Label": ["Last 7 days"],
+  "LEAP Initial": [
+    "L"
+  ],
+  "Brand Name": [
+    "LEAP English"
+  ],
+  "Brand Descriptor": [
+    "Learning operations"
+  ],
+  "Overview Nav Label": [
+    "Overview"
+  ],
+  "Learners Nav Label": [
+    "Learners"
+  ],
+  "Content Nav Label": [
+    "Content"
+  ],
+  "Commerce Nav Label": [
+    "Commerce"
+  ],
+  "Learning Nav Label": [
+    "Learning"
+  ],
+  "Messages Nav Label": [
+    "Messages"
+  ],
+  "Overview Title": [
+    "Operations overview"
+  ],
+  "Overview Subtitle": [
+    "Courses, learners and delivery health in one place."
+  ],
+  "Export Label": [
+    "Export report"
+  ],
+  "Active Learners Label": [
+    "Active Learners"
+  ],
+  "Lessons Completed Label": [
+    "Lessons Completed"
+  ],
+  "Paid Access Label": [
+    "Paid Access"
+  ],
+  "Needs Attention Label": [
+    "Needs Attention"
+  ],
+  "Learning Pulse Eyebrow": [
+    "LEARNING PULSE"
+  ],
+  "Mon Label": [
+    "Mon"
+  ],
+  "Tue Label": [
+    "Tue"
+  ],
+  "Wed Label": [
+    "Wed"
+  ],
+  "Thu Label": [
+    "Thu"
+  ],
+  "Fri Label": [
+    "Fri"
+  ],
+  "Sat Label": [
+    "Sat"
+  ],
+  "Sun Label": [
+    "Sun"
+  ],
+  "System Health Title": [
+    "Delivery health"
+  ],
+  "API Service Label": [
+    "API"
+  ],
+  "Payments Service Label": [
+    "Payments"
+  ],
+  "Media Service Label": [
+    "Media"
+  ],
+  "Writing AI Service Label": [
+    "Writing AI"
+  ],
+  "All Filter Label": [
+    "All"
+  ],
+  "Active Filter Label": [
+    "Active"
+  ],
+  "Needs help Filter Label": [
+    "Needs help"
+  ],
+  "Learner Detail Eyebrow": [
+    "SELECTED LEARNER"
+  ],
+  "Manage Access Label": [
+    "Manage access"
+  ],
+  "Completed Metric Label": [
+    "Completed"
+  ],
+  "Current streak Metric Label": [
+    "Current streak"
+  ],
+  "Rank Metric Label": [
+    "Rank"
+  ],
+  "Access Metric Label": [
+    "Access"
+  ],
+  "Recent Activity Title": [
+    "Recent learning activity"
+  ],
+  "Open Learner Link": [
+    "Open full profile →"
+  ],
+  "Financial Overview Eyebrow Text": [
+    "COMMERCE / FINANCIAL OVERVIEW"
+  ],
+  "Financial Overview Title": [
+    "Know where every so'm is moving."
+  ],
+  "Financial Export Label": [
+    "Export report"
+  ],
+  "Net Revenue Label": [
+    "NET COLLECTED REVENUE"
+  ],
+  "Paid Orders Label": [
+    "Paid orders"
+  ],
+  "Average Order Label": [
+    "Avg. order"
+  ],
+  "Gross Volume Label": [
+    "Gross volume"
+  ],
+  "Settlement Callout Text": [
+    "Gateway reconciliation"
+  ],
+  "Revenue Trend Title": [
+    "Weekly net revenue"
+  ],
+  "Revenue Trend Current Label": [
+    "Current"
+  ],
+  "Revenue Trend Prior Label": [
+    "Prior weeks"
+  ],
+  "Revenue By Course Title": [
+    "Revenue by product"
+  ],
+  "Revenue By Course Subtitle": [
+    "Which learning products are driving cash flow"
+  ],
+  "Payment Mix Title": [
+    "Payment mix & health"
+  ],
+  "Payment Mix Subtitle": [
+    "Payment method distribution and exceptions"
+  ],
+  "Individual Finance Scroll Text": [
+    "Continue to learner-level finance"
+  ],
+  "Individual Finance Eyebrow": [
+    "INDIVIDUAL OPERATIONS"
+  ],
+  "Individual Finance Title": [
+    "Learners, payments & access"
+  ],
+  "Transactions Commerce Tab Label": [
+    "Transactions"
+  ],
+  "Learners & access Commerce Tab Label": [
+    "Learners & access"
+  ],
+  "Reconciliation Commerce Tab Label": [
+    "Reconciliation"
+  ],
+  "Payment Status Filter Label": [
+    "Status: All"
+  ],
+  "Payment Method Filter Label": [
+    "Method: All"
+  ],
+  "Learner Header Label": [
+    "Learner"
+  ],
+  "Registered Header Label": [
+    "Registered"
+  ],
+  "Method Header Label": [
+    "Method"
+  ],
+  "Total paid Header Label": [
+    "Total paid"
+  ],
+  "Payment Header Label": [
+    "Payment"
+  ],
+  "Last paid Header Label": [
+    "Last paid"
+  ],
+  "Access Header Label": [
+    "Access"
+  ],
+  "Latest Payment Title": [
+    "Latest payment"
+  ],
+  "Paid at Detail Label": [
+    "Paid at"
+  ],
+  "Order ID Detail Label": [
+    "Order ID"
+  ],
+  "Gateway Reference Detail Label": [
+    "Gateway reference"
+  ],
+  "Product Detail Label": [
+    "Product"
+  ],
+  "Learners Eyebrow": [
+    "LEARNER OPERATIONS"
+  ],
+  "Learners Title": [
+    "Learner directory"
+  ],
+  "Export Learners Label": [
+    "Export"
+  ],
+  "Add Internal Note Label": [
+    "Add note"
+  ],
+  "Registered Learners Metric Label": [
+    "Registered"
+  ],
+  "Active Learners Metric Label": [
+    "Active in 7 days"
+  ],
+  "Paid Learners Metric Label": [
+    "Lifetime access"
+  ],
+  "Learners Need Help Metric Label": [
+    "Needs attention"
+  ],
+  "All Learners Filter Label": [
+    "All"
+  ],
+  "New Learner Filter Label": [
+    "New"
+  ],
+  "Paid Learner Filter Label": [
+    "Paid"
+  ],
+  "No access Learner Filter Label": [
+    "No access"
+  ],
+  "Needs help Learner Filter Label": [
+    "Needs help"
+  ],
+  "Access Learner Fact Label": [
+    "ACCESS"
+  ],
+  "Lessons Learner Fact Label": [
+    "LESSONS"
+  ],
+  "Streak Learner Fact Label": [
+    "STREAK"
+  ],
+  "Selected Learner Progress Title": [
+    "Course progress"
+  ],
+  "Selected Learner Progress Action": [
+    "Open learning history"
+  ],
+  "Selected Learner Recent Activity Title": [
+    "Recent activity"
+  ],
+  "Open Full Learner Record Label": [
+    "Open full record"
+  ],
+  "Learner Attention Title": [
+    "Attention queue"
+  ],
+  "Learner Attention Subtitle": [
+    "Actionable access and learning signals."
+  ],
+  "Learner Attention Rule Title": [
+    "Audit-safe actions"
+  ],
+  "Content Eyebrow": [
+    "CONTENT OPERATIONS"
+  ],
+  "Content Title": [
+    "Course & lesson studio"
+  ],
+  "Import Content Label": [
+    "Import"
+  ],
+  "New Lesson Label": [
+    "New lesson"
+  ],
+  "Published lessons Content Stat Label": [
+    "Published lessons"
+  ],
+  "Review queue Content Stat Label": [
+    "Review queue"
+  ],
+  "Media delivery Content Stat Label": [
+    "Media delivery"
+  ],
+  "Scheduled Content Stat Label": [
+    "Scheduled"
+  ],
+  "Content Catalog Title": [
+    "Catalog"
+  ],
+  "Lesson Blocks Title": [
+    "Lesson blocks"
+  ],
+  "Video lesson Editor Block Name": [
+    "Video lesson"
+  ],
+  "Key phrases Editor Block Name": [
+    "Key phrases"
+  ],
+  "Quick check Editor Block Name": [
+    "Quick check"
+  ],
+  "Lesson navigation Editor Block Name": [
+    "Lesson navigation"
+  ],
+  "Preview Lesson Label": [
+    "Preview"
+  ],
+  "Save Lesson Label": [
+    "Save changes"
+  ],
+  "Publish Readiness Title": [
+    "Publish readiness"
+  ],
+  "Required metadata Publish Check Label": [
+    "Required metadata"
+  ],
+  "Media delivery Publish Check Label": [
+    "Media delivery"
+  ],
+  "Access rules Publish Check Label": [
+    "Access rules"
+  ],
+  "Navigation links Publish Check Label": [
+    "Navigation links"
+  ],
+  "Quiz pass score Publish Check Label": [
+    "Quiz pass score"
+  ],
+  "Publish Lesson Label": [
+    "Publish unavailable"
+  ],
+  "Learning Eyebrow": [
+    "LEARNING INTELLIGENCE"
+  ],
+  "Learning Title": [
+    "Learning outcomes"
+  ],
+  "Learning Subtitle": [
+    "See where learners progress, pause or need a targeted intervention."
+  ],
+  "Learning Cohort Label": [
+    "All cohorts"
+  ],
+  "Active learners Learning Stat Label": [
+    "Active learners"
+  ],
+  "Lessons completed Learning Stat Label": [
+    "Lessons completed"
+  ],
+  "Completion rate Learning Stat Label": [
+    "Completion rate"
+  ],
+  "Needs intervention Learning Stat Label": [
+    "Needs intervention"
+  ],
+  "Learning Funnel Title": [
+    "7-day learning funnel"
+  ],
+  "Learning Funnel Subtitle": [
+    "Same learner cohort across each stage"
+  ],
+  "Started a lesson Funnel Label": [
+    "Started a lesson"
+  ],
+  "Reached 50% Funnel Label": [
+    "Reached 50%"
+  ],
+  "Completed Funnel Label": [
+    "Completed"
+  ],
+  "Rated lesson Funnel Label": [
+    "Rated lesson"
+  ],
+  "Weekly Activity Title": [
+    "Completed lessons by day"
+  ],
+  "Mon Activity Label": [
+    "Mon"
+  ],
+  "Tue Activity Label": [
+    "Tue"
+  ],
+  "Wed Activity Label": [
+    "Wed"
+  ],
+  "Thu Activity Label": [
+    "Thu"
+  ],
+  "Fri Activity Label": [
+    "Fri"
+  ],
+  "Sat Activity Label": [
+    "Sat"
+  ],
+  "Sun Activity Label": [
+    "Sun"
+  ],
+  "Learning Insights Title": [
+    "Bottlenecks & reviews"
+  ],
+  "Assessment Quality Title": [
+    "Assessment quality"
+  ],
+  "Avg score Quality Label": [
+    "Avg score"
+  ],
+  "Retries Quality Label": [
+    "Retries"
+  ],
+  "Rated Quality Label": [
+    "Rated"
+  ],
+  "Assessment Quality Note": [
+    "Review attempts and writing feedback."
+  ],
+  "Open Intervention Queue Label": [
+    "Open intervention queue"
+  ],
+  "Messages Eyebrow": [
+    "MESSAGE OPERATIONS"
+  ],
+  "Messages Title": [
+    "Notification events"
+  ],
+  "Refresh Messages Label": [
+    "Refresh"
+  ],
+  "Export Message Events Label": [
+    "Export events"
+  ],
+  "Sent today Message Stat Label": [
+    "Sent today"
+  ],
+  "Delivered Message Stat Label": [
+    "Delivered"
+  ],
+  "Read Message Stat Label": [
+    "Read"
+  ],
+  "Needs attention Message Stat Label": [
+    "Needs attention"
+  ],
+  "All events Message Filter Label": [
+    "All events"
+  ],
+  "Payments Message Filter Label": [
+    "Payments"
+  ],
+  "Learning Message Filter Label": [
+    "Learning"
+  ],
+  "Writing Message Filter Label": [
+    "Writing"
+  ],
+  "System Message Filter Label": [
+    "System"
+  ],
+  "Message Preview Brand": [
+    "LEAP English · Telegram"
+  ],
+  "Message Preview Action Label": [
+    "Kursni ochish"
+  ],
+  "Message Delivery Timeline Title": [
+    "Delivery timeline"
+  ],
+  "Message Technical Metadata Title": [
+    "Technical metadata"
+  ],
+  "Open Related Learner Label": [
+    "Open learner record"
+  ],
+  "Commerce States Title": [
+    "Transactions & reconciliation"
+  ],
+  "Transactions State Tab Label": [
+    "Transactions"
+  ],
+  "Learners & access State Tab Label": [
+    "Learners & access"
+  ],
+  "Reconciliation State Tab Label": [
+    "Reconciliation"
+  ],
+  "Transactions Method Filter Label": [
+    "Method: All"
+  ],
+  "Order Transaction Header": [
+    "Order"
+  ],
+  "Learner / gateway Transaction Header": [
+    "Learner / gateway"
+  ],
+  "Created Transaction Header": [
+    "Created"
+  ],
+  "Paid / cancelled Transaction Header": [
+    "Paid / cancelled"
+  ],
+  "Amount UZS Transaction Header": [
+    "Amount UZS"
+  ],
+  "Method Transaction Header": [
+    "Method"
+  ],
+  "Status Transaction Header": [
+    "Status"
+  ],
+  "Reconciliation Title": [
+    "Reconciliation queue"
+  ],
+  "Reconciliation Subtitle": [
+    "Exceptions only · normal payments stay quiet"
+  ],
+  "Open Reconciliation Review Label": [
+    "Review evidence"
+  ]
+}

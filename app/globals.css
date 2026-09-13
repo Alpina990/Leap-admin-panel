@@ -2,7 +2,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "../vendor/shadcn-tailwind-4.13.0.css";
-@source not "../archive";
+/* Only immutable design geometry participates; archived demo code stays excluded. */
+@source "../archive/legacy/app/design.json";
+@source not "../archive/legacy/lib";
 
 @utility scrollbar-thin {
   scrollbar-width: thin;

@@ -1,0 +1,175 @@
+{
+  "Date range": {
+    "description": "Apply one reporting period to the current view.",
+    "fields": [
+      "Period",
+      "Start / End"
+    ],
+    "action": "Apply range"
+  },
+  "Export report": {
+    "description": "Export the filtered records currently in view.",
+    "fields": [
+      "Format",
+      "Scope"
+    ],
+    "action": "Download CSV"
+  },
+  "Add internal note": {
+    "description": "Private note on the selected learner’s record.",
+    "fields": [
+      "Note",
+      "Visibility"
+    ],
+    "action": "Save note"
+  },
+  "Manage access": {
+    "description": "Review access for the selected learner.",
+    "fields": [
+      "Access",
+      "Reason"
+    ],
+    "action": "Review change"
+  },
+  "Payment details": {
+    "description": "Trace payment and resulting course entitlement.",
+    "fields": [
+      "Payment",
+      "Timeline"
+    ],
+    "action": "Copy IDs"
+  },
+  "Reconciliation case": {
+    "description": "Trace orders and matching entitlements.",
+    "fields": [
+      "Case",
+      "Evidence"
+    ],
+    "action": "Review resolution"
+  },
+  "Learning intervention": {
+    "description": "Ranked by learner impact and urgency.",
+    "fields": [
+      "Queue",
+      "Learner"
+    ],
+    "action": "Open learner"
+  },
+  "Create lesson": {
+    "description": "Add a draft to the selected course and unit.",
+    "fields": [
+      "Title",
+      "Course / unit",
+      "Lesson type"
+    ],
+    "action": "Create draft"
+  },
+  "Video block": {
+    "description": "Edit the media source and supporting details.",
+    "fields": [
+      "Media",
+      "Duration",
+      "Objective"
+    ],
+    "action": "Save block"
+  },
+  "Key phrases": {
+    "description": "Reusable speaking and practice prompts.",
+    "fields": [
+      "Prompt 1",
+      "Prompt 2",
+      "Prompt 3"
+    ],
+    "action": "Save phrases"
+  },
+  "Quick check": {
+    "description": "Quiz rules and answer validation.",
+    "fields": [
+      "Questions",
+      "Pass score",
+      "Required"
+    ],
+    "action": "Save quiz"
+  },
+  "Lesson navigation": {
+    "description": "Control the learner’s path through the unit.",
+    "fields": [
+      "Previous lesson",
+      "Next lesson",
+      "Playlist"
+    ],
+    "action": "Save navigation"
+  },
+  "Lesson preview": {
+    "description": "Preview the selected lesson before publishing.",
+    "fields": [
+      "Video",
+      "Playlist",
+      "Progress"
+    ],
+    "action": "Return to editor"
+  },
+  "Import content": {
+    "description": "Review imported lessons before saving.",
+    "fields": [
+      "File",
+      "Validation",
+      "Issue"
+    ],
+    "action": "Review import"
+  },
+  "Notification detail": {
+    "description": "One immutable event and delivery trace.",
+    "fields": [
+      "Event",
+      "Recipient",
+      "Delivery"
+    ],
+    "action": "Open learner"
+  },
+  "Cohort filter": {
+    "description": "Compare outcomes for the selected group.",
+    "fields": [
+      "Cohort",
+      "Options",
+      "Period"
+    ],
+    "action": "Apply cohort"
+  },
+  "Chart drilldown": {
+    "description": "Details behind a selected chart observation.",
+    "fields": [
+      "Observation",
+      "Comparison",
+      "Action"
+    ],
+    "action": "View learners"
+  },
+  "Sort & paginate": {
+    "description": "Keep the active search and filters while browsing.",
+    "fields": [
+      "Sort",
+      "Page",
+      "Summary"
+    ],
+    "action": "Apply sorting"
+  },
+  "Reorder lesson blocks": {
+    "description": "Arrange the learner experience in sequence.",
+    "fields": [
+      "Current order",
+      "Move block",
+      "New order"
+    ],
+    "action": "Save order"
+  },
+  "Payment filters": {
+    "description": "Find matching orders and entitlement states.",
+    "fields": [
+      "Search",
+      "Status",
+      "Method"
+    ],
+    "action": "Apply filters"
+  }
+}

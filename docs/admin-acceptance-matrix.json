@@ -1,0 +1,482 @@
+{
+  "scope": "Complete inventory, NOT complete delivery or pixel parity",
+  "reference": "Exported live Pen snapshot work/pencil/nodes.json; fresh MCP attempt failed because desktop bridge disconnected; .pen not read/edited/saved",
+  "boards": [
+    {
+      "id": "bi8Au",
+      "name": "Light / Admin Overview",
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 1000
+      },
+      "status": "partial",
+      "acceptance": "Original structure/navigation/counts; no fabricated activity/charts."
+    },
+    {
+      "id": "O3oJS8",
+      "name": "Light components / Admin Navigation",
+      "bounds": {
+        "x": 0,
+        "y": -152,
+        "width": 1400,
+        "height": 72
+      },
+      "status": "verified",
+      "acceptance": "Canonical reusable navigation geometry and themes."
+    },
+    {
+      "id": "uYGzD",
+      "name": "Light / Admin Commerce Payments",
+      "bounds": {
+        "x": 1520,
+        "y": 0,
+        "width": 1440,
+        "height": 1780
+      },
+      "status": "partial",
+      "acceptance": "Real Transactions/payment details and filters; finance aggregates and all-learner access summaries unfinished."
+    },
+    {
+      "id": "C5tZxu",
+      "name": "Light / Admin Learners",
+      "bounds": {
+        "x": 3040,
+        "y": 0,
+        "width": 1440,
+        "height": 1000
+      },
+      "status": "partial",
+      "acceptance": "Directory/profile plus private notes; learning and access summaries unfinished."
+    },
+    {
+      "id": "DUfwI",
+      "name": "Light / Admin Content Studio",
+      "bounds": {
+        "x": 4560,
+        "y": 0,
+        "width": 1440,
+        "height": 1000
+      },
+      "status": "not_implemented",
+      "acceptance": "Preserved shell; actual content editor/catalog integration not delivered."
+    },
+    {
+      "id": "KNuM1",
+      "name": "Light / Admin Learning Analytics",
+      "bounds": {
+        "x": 6080,
+        "y": 0,
+        "width": 1440,
+        "height": 1000
+      },
+      "status": "not_implemented",
+      "acceptance": "Preserved shell; analytics and intervention implementation remains."
+    },
+    {
+      "id": "nqETx",
+      "name": "Light / Admin Message Events",
+      "bounds": {
+        "x": 7600,
+        "y": 0,
+        "width": 1440,
+        "height": 1000
+      },
+      "status": "not_implemented",
+      "acceptance": "Preserved shell; notification/event integration remains."
+    },
+    {
+      "id": "dJbzn",
+      "name": "Light states / Admin Shared Data States",
+      "bounds": {
+        "x": 0,
+        "y": 1080,
+        "width": 1440,
+        "height": 390
+      },
+      "status": "verified",
+      "acceptance": "Real loading, empty, stale/error/retry states in supported data views."
+    },
+    {
+      "id": "p2ZCOJ",
+      "name": "Reference / Admin Payment Responsive Contract",
+      "bounds": {
+        "x": 1520,
+        "y": 2880,
+        "width": 1440,
+        "height": 820
+      },
+      "status": "partial",
+      "acceptance": "Payment detail mobile entry/return preserves filters/page; no complete financial responsive parity claim."
+    },
+    {
+      "id": "NuLlW",
+      "name": "Light states / Admin Commerce Transactions and Reconciliation",
+      "bounds": {
+        "x": 3040,
+        "y": 1080,
+        "width": 1440,
+        "height": 720
+      },
+      "status": "partial",
+      "acceptance": "Real one-order-per-row ledger; exception reconciliation queue remains."
+    },
+    {
+      "id": "IhJxo",
+      "name": "Light states / Admin Mobile Navigation",
+      "bounds": {
+        "x": 1520,
+        "y": 2100,
+        "width": 430,
+        "height": 700
+      },
+      "status": "verified",
+      "acceptance": "Full-width mobile navigation and route selection."
+    },
+    {
+      "id": "r2iEu",
+      "name": "Shared / Search, settings & data states",
+      "bounds": {
+        "x": 0,
+        "y": 3800,
+        "width": 1440,
+        "height": 1840
+      },
+      "status": "partial",
+      "acceptance": "See individual shared-state rows."
+    },
+    {
+      "id": "CTwDe",
+      "name": "Operations / Learners, access & payments",
+      "bounds": {
+        "x": 1520,
+        "y": 3800,
+        "width": 1440,
+        "height": 1840
+      },
+      "status": "partial",
+      "acceptance": "See individual operations-state rows."
+    },
+    {
+      "id": "akMjF",
+      "name": "Content / Authoring, preview & publication",
+      "bounds": {
+        "x": 3040,
+        "y": 3800,
+        "width": 1440,
+        "height": 1840
+      },
+      "status": "not_implemented",
+      "acceptance": "All nine content workflows remain implementation work."
+    },
+    {
+      "id": "zSgOv",
+      "name": "Interactions / Navigation, filters & edge cases",
+      "bounds": {
+        "x": 4560,
+        "y": 3800,
+        "width": 1440,
+        "height": 1840
+      },
+      "status": "partial",
+      "acceptance": "See individual edge-state rows."
+    }
+  ],
+  "cards": [
+    {
+      "board": "r2iEu",
+      "id": "cCm6d",
+      "name": "Search LEAP",
+      "status": "partial",
+      "acceptance": "Exact learner username lookup is real; cross-entity/name search is not implemented.",
+      "evidence": "tests/pencil-frontend.mjs"
+    },
+    {
+      "board": "r2iEu",
+      "id": "KC4fd",
+      "name": "Date range",
+      "status": "not_implemented",
+      "acceptance": "Preview only; no server date-range summary/query contract.",
+      "evidence": "docs/pencil-frontend-implementation.md"
+    },
+    {
+      "board": "r2iEu",
+      "id": "iFMMl",
+      "name": "Workspace settings",
+      "status": "verified",
+      "acceptance": "Theme and automatic-refresh cancel/save/persistence.",
+      "evidence": "tests/pencil-frontend.mjs"
+    },
+    {
+      "board": "r2iEu",
+      "id": "ERhpY",
+      "name": "Admin profile",
+      "status": "verified",
+      "acceptance": "Authenticated account and actual logout.",
+      "evidence": "work/pencil-audit.mjs"
+    },
+    {
+      "board": "r2iEu",
+      "id": "X7RGZw",
+      "name": "Learner record",
+      "status": "partial",
+      "acceptance": "Identity and paginated private note history work; access/progress/streak missing.",
+      "evidence": "tests/operations-browser.mjs"
+    },
+    {
+      "board": "r2iEu",
+      "id": "GOQza",
+      "name": "Export report",
+      "status": "not_implemented",
+      "acceptance": "CSV export not implemented; no export is fabricated.",
+      "evidence": "docs/pencil-frontend-implementation.md"
+    },
+    {
+      "board": "r2iEu",
+      "id": "pXSYY",
+      "name": "No results",
+      "status": "verified",
+      "acceptance": "Real learner/payment empty results and clear/filter recovery.",
+      "evidence": "tests/operations-browser.mjs; tests/pencil-frontend.mjs"
+    },
+    {
+      "board": "r2iEu",
+      "id": "fDcnE",
+      "name": "Refresh failed",
+      "status": "verified",
+      "acceptance": "Real network loss, retained same-query observations, Retry.",
+      "evidence": "work/pencil-audit.mjs"
+    },
+    {
+      "board": "r2iEu",
+      "id": "Unnt5",
+      "name": "Data is updating",
+      "status": "verified",
+      "acceptance": "Real response delayed then continued; no injected API body.",
+      "evidence": "tests/pencil-frontend.mjs"
+    },
+    {
+      "board": "CTwDe",
+      "id": "EAM4b",
+      "name": "Add internal note",
+      "status": "verified",
+      "acceptance": "Private append-only audited save, idempotent retry, permission/CSRF/validation; readback.",
+      "evidence": "tests/operations-browser.mjs; backend tests/test_admin_operations.py; test_admin_postgres.py"
+    },
+    {
+      "board": "CTwDe",
+      "id": "T5Fucu",
+      "name": "Manage access",
+      "status": "business_decision",
+      "acceptance": "Whole-catalog lifetime product versus existing per-section entitlements: scope must be settled; no paid grants overwritten.",
+      "evidence": "backend DESIGN.md:47-68; services/entitlements.py:120-146"
+    },
+    {
+      "board": "CTwDe",
+      "id": "IezlC",
+      "name": "Confirm access change",
+      "status": "business_decision",
+      "acceptance": "No access mutation while catalog scope and paid-entitlement precedence remain unresolved.",
+      "evidence": "backend DESIGN.md:47-68"
+    },
+    {
+      "board": "CTwDe",
+      "id": "c9Xpu",
+      "name": "Changes saved",
+      "status": "partial",
+      "acceptance": "Actual note save success and audit, not access/content success.",
+      "evidence": "tests/operations-browser.mjs"
+    },
+    {
+      "board": "CTwDe",
+      "id": "T0lSS5",
+      "name": "Record changed",
+      "status": "partial",
+      "acceptance": "API 409 for conflicting idempotency keys; full correction version-conflict UI absent.",
+      "evidence": "backend tests/test_admin_operations.py"
+    },
+    {
+      "board": "CTwDe",
+      "id": "m52teT",
+      "name": "Payment details",
+      "status": "verified",
+      "acceptance": "Real order identifiers, exact tiyin amount, persisted timestamps and source=wlcm/payment_id entitlement association; desktop/mobile.",
+      "evidence": "tests/operations-browser.mjs"
+    },
+    {
+      "board": "CTwDe",
+      "id": "PAWip",
+      "name": "Reconciliation case",
+      "status": "not_implemented",
+      "acceptance": "Exception queue and case persistence are not implemented. Read payment/entitlement detail is available.",
+      "evidence": "backend models.py:426-497"
+    },
+    {
+      "board": "CTwDe",
+      "id": "j99esh",
+      "name": "Resolve discrepancy",
+      "status": "business_decision",
+      "acceptance": "Design has mark resolved; ledger forbids manual settle/refund. Need define case-only resolution versus entitlement repair.",
+      "evidence": "backend docs/DESIGN_IMPLEMENTATION_STATUS.md:24; services/payments.py:128-199"
+    },
+    {
+      "board": "CTwDe",
+      "id": "MxdBA",
+      "name": "Learning intervention",
+      "status": "business_decision",
+      "acceptance": "No intervention model. Define note-only versus progress/access correction or outbound contact.",
+      "evidence": "backend models.py; docs/decisions/002-admin-panel-architecture.md:83-84"
+    },
+    {
+      "board": "akMjF",
+      "id": "Ru7xA",
+      "name": "Create lesson",
+      "status": "not_implemented",
+      "acceptance": "Lesson/Unit models exist. Audited admin creation and editor integration remain actual implementation work, not absent models.",
+      "evidence": "backend models.py:110-199"
+    },
+    {
+      "board": "akMjF",
+      "id": "fIcXc",
+      "name": "Video block",
+      "status": "not_implemented",
+      "acceptance": "ContentBlock/MediaAsset exist; admin editor and validation not implemented.",
+      "evidence": "backend models.py:178-234"
+    },
+    {
+      "board": "akMjF",
+      "id": "dEL0Q",
+      "name": "Key phrases",
+      "status": "not_implemented",
+      "acceptance": "Content payload editing not implemented; do not invent successful save.",
+      "evidence": "backend manifest.py; models.py"
+    },
+    {
+      "board": "akMjF",
+      "id": "V5ORPR",
+      "name": "Quick check",
+      "status": "not_implemented",
+      "acceptance": "Assessment models/services exist; authoring DTO/editor not implemented.",
+      "evidence": "backend api/routes/assessments.py"
+    },
+    {
+      "board": "akMjF",
+      "id": "qRjYx",
+      "name": "Lesson navigation",
+      "status": "not_implemented",
+      "acceptance": "Existing position/prerequisite semantics need admin editor binding.",
+      "evidence": "backend services/lesson_access.py"
+    },
+    {
+      "board": "akMjF",
+      "id": "eQe4b",
+      "name": "Lesson preview",
+      "status": "not_implemented",
+      "acceptance": "Admin preview not implemented; learner routes remain entitlement-protected.",
+      "evidence": "backend api/routes/content.py"
+    },
+    {
+      "board": "akMjF",
+      "id": "Of8An",
+      "name": "Ready to publish",
+      "status": "not_implemented",
+      "acceptance": "Audited publication validation and transaction not implemented.",
+      "evidence": "backend models.py:146-199"
+    },
+    {
+      "board": "akMjF",
+      "id": "ajCY8",
+      "name": "Publication blocked",
+      "status": "not_implemented",
+      "acceptance": "No real publication validator outcome in admin; unavailable is not a validation result.",
+      "evidence": "backend manifest.py"
+    },
+    {
+      "board": "akMjF",
+      "id": "VFPXb",
+      "name": "Import content",
+      "status": "not_implemented",
+      "acceptance": "Manifest importer exists but no bounded audited admin import/diff transaction; importer must not overwrite edits automatically.",
+      "evidence": "backend services/content_import.py; ADR-002:56-59"
+    },
+    {
+      "board": "zSgOv",
+      "id": "xRdGA",
+      "name": "Sign in",
+      "status": "verified",
+      "acceptance": "Real secure account authentication, form validation and errors.",
+      "evidence": "tests/production-smoke.mjs; work/pencil-audit.mjs"
+    },
+    {
+      "board": "zSgOv",
+      "id": "AHGaK",
+      "name": "Notification detail",
+      "status": "not_implemented",
+      "acceptance": "LearnerNotification exists; admin event read DTO/view missing. Telegram delivery evidence is a different model.",
+      "evidence": "backend models.py:396-423"
+    },
+    {
+      "board": "zSgOv",
+      "id": "lMAYu",
+      "name": "Cohort filter",
+      "status": "not_implemented",
+      "acceptance": "No agreed cohort classification/admin aggregate query implemented.",
+      "evidence": "backend models.py:500-529"
+    },
+    {
+      "board": "zSgOv",
+      "id": "WT1RJ",
+      "name": "Chart drilldown",
+      "status": "not_implemented",
+      "acceptance": "No admin analytics aggregate/drilldown query implemented.",
+      "evidence": "docs/pencil-frontend-implementation.md"
+    },
+    {
+      "board": "zSgOv",
+      "id": "sOXyE",
+      "name": "Sort & paginate",
+      "status": "partial",
+      "acceptance": "Server-bounded fixed-order learner/order/note pagination works; design arbitrary sorting not implemented.",
+      "evidence": "tests/operations-browser.mjs; backend admin.py"
+    },
+    {
+      "board": "zSgOv",
+      "id": "SEuvI",
+      "name": "Unsaved changes",
+      "status": "partial",
+      "acceptance": "Note draft discard confirmation implemented; not yet browser-exercised; content-editor state absent.",
+      "evidence": "app/note-dialog.tsx"
+    },
+    {
+      "board": "zSgOv",
+      "id": "JNgMj",
+      "name": "Reorder lesson blocks",
+      "status": "not_implemented",
+      "acceptance": "Position constraints exist; transactional reorder/editor not implemented.",
+      "evidence": "backend models.py:178-192"
+    },
+    {
+      "board": "zSgOv",
+      "id": "ZXMLy",
+      "name": "Payment filters",
+      "status": "verified",
+      "acceptance": "Server status/method filters, reset pagination, active labels and rapid reopen; no provider calls.",
+      "evidence": "tests/operations-browser.mjs"
+    },
+    {
+      "board": "zSgOv",
+      "id": "tdZIt",
+      "name": "Required field",
+      "status": "partial",
+      "acceptance": "Note and login constraints work; content-required-field state absent.",
+      "evidence": "backend tests/test_admin_operations.py; app/note-dialog.tsx"
+    }
+  ],
+  "cardStatusCounts": {
+    "partial": 7,
+    "not_implemented": 16,
+    "verified": 9,
+    "business_decision": 4
+  }
+}
