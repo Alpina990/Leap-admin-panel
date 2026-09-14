@@ -1,0 +1,498 @@
+{
+  "scope": "Fresh read-only live audit; inventory completeness is not complete design fidelity",
+  "frontendBase": "7bb9aa6",
+  "backendBase": "1eccb1a",
+  "reference": "Existing native Pen exports; canvas not reopened or saved in this pass",
+  "boards": [
+    {
+      "id": "bi8Au",
+      "name": "Light / Admin Overview",
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 1000
+      },
+      "status": "observed_partial",
+      "evidence": "work/live-qa/overview-desktop-full.png"
+    },
+    {
+      "id": "O3oJS8",
+      "name": "Light components / Admin Navigation",
+      "bounds": {
+        "x": 0,
+        "y": -152,
+        "width": 1400,
+        "height": 72
+      },
+      "status": "inventory_mapped_not_full_parity",
+      "evidence": "work/live-qa/dialogs.json"
+    },
+    {
+      "id": "uYGzD",
+      "name": "Light / Admin Commerce Payments",
+      "bounds": {
+        "x": 1520,
+        "y": 0,
+        "width": 1440,
+        "height": 1780
+      },
+      "status": "observed_partial",
+      "evidence": "work/live-qa/commerce-desktop-full.png"
+    },
+    {
+      "id": "C5tZxu",
+      "name": "Light / Admin Learners",
+      "bounds": {
+        "x": 3040,
+        "y": 0,
+        "width": 1440,
+        "height": 1000
+      },
+      "status": "observed_partial",
+      "evidence": "work/live-qa/learners-desktop-full.png"
+    },
+    {
+      "id": "DUfwI",
+      "name": "Light / Admin Content Studio",
+      "bounds": {
+        "x": 4560,
+        "y": 0,
+        "width": 1440,
+        "height": 1000
+      },
+      "status": "observed_partial",
+      "evidence": "work/live-qa/content-desktop-full.png"
+    },
+    {
+      "id": "KNuM1",
+      "name": "Light / Admin Learning Analytics",
+      "bounds": {
+        "x": 6080,
+        "y": 0,
+        "width": 1440,
+        "height": 1000
+      },
+      "status": "observed_partial",
+      "evidence": "work/live-qa/learning-desktop-full.png"
+    },
+    {
+      "id": "nqETx",
+      "name": "Light / Admin Message Events",
+      "bounds": {
+        "x": 7600,
+        "y": 0,
+        "width": 1440,
+        "height": 1000
+      },
+      "status": "observed_partial",
+      "evidence": "work/live-qa/messages-desktop-full.png"
+    },
+    {
+      "id": "dJbzn",
+      "name": "Light states / Admin Shared Data States",
+      "bounds": {
+        "x": 0,
+        "y": 1080,
+        "width": 1440,
+        "height": 390
+      },
+      "status": "inventory_mapped_not_full_parity",
+      "evidence": "work/live-qa/dialogs.json"
+    },
+    {
+      "id": "p2ZCOJ",
+      "name": "Reference / Admin Payment Responsive Contract",
+      "bounds": {
+        "x": 1520,
+        "y": 2880,
+        "width": 1440,
+        "height": 820
+      },
+      "status": "inventory_mapped_not_full_parity",
+      "evidence": "work/live-qa/dialogs.json"
+    },
+    {
+      "id": "NuLlW",
+      "name": "Light states / Admin Commerce Transactions and Reconciliation",
+      "bounds": {
+        "x": 3040,
+        "y": 1080,
+        "width": 1440,
+        "height": 720
+      },
+      "status": "inventory_mapped_not_full_parity",
+      "evidence": "work/live-qa/dialogs.json"
+    },
+    {
+      "id": "IhJxo",
+      "name": "Light states / Admin Mobile Navigation",
+      "bounds": {
+        "x": 1520,
+        "y": 2100,
+        "width": 430,
+        "height": 700
+      },
+      "status": "verified_read_navigation_geometry",
+      "evidence": "work/live-qa/mobile-navigation.png"
+    },
+    {
+      "id": "r2iEu",
+      "name": "Shared / Search, settings & data states",
+      "bounds": {
+        "x": 0,
+        "y": 3800,
+        "width": 1440,
+        "height": 1840
+      },
+      "status": "inventory_mapped_not_full_parity",
+      "evidence": "work/live-qa/dialogs.json"
+    },
+    {
+      "id": "CTwDe",
+      "name": "Operations / Learners, access & payments",
+      "bounds": {
+        "x": 1520,
+        "y": 3800,
+        "width": 1440,
+        "height": 1840
+      },
+      "status": "inventory_mapped_not_full_parity",
+      "evidence": "work/live-qa/dialogs.json"
+    },
+    {
+      "id": "akMjF",
+      "name": "Content / Authoring, preview & publication",
+      "bounds": {
+        "x": 3040,
+        "y": 3800,
+        "width": 1440,
+        "height": 1840
+      },
+      "status": "inventory_mapped_not_full_parity",
+      "evidence": "work/live-qa/dialogs.json"
+    },
+    {
+      "id": "zSgOv",
+      "name": "Interactions / Navigation, filters & edge cases",
+      "bounds": {
+        "x": 4560,
+        "y": 3800,
+        "width": 1440,
+        "height": 1840
+      },
+      "status": "inventory_mapped_not_full_parity",
+      "evidence": "work/live-qa/dialogs.json"
+    }
+  ],
+  "cards": [
+    {
+      "board": "r2iEu",
+      "id": "cCm6d",
+      "name": "Search LEAP",
+      "status": "partial",
+      "observation": "Dialog exists; exact username only, not cross-entity/name search.",
+      "evidence": "work/live-qa/dialog-search.png"
+    },
+    {
+      "board": "r2iEu",
+      "id": "KC4fd",
+      "name": "Date range",
+      "status": "opened_only",
+      "observation": "Real date fields and Apply range present; no range application tested live.",
+      "evidence": "work/live-qa/dialog-date-range.png"
+    },
+    {
+      "board": "r2iEu",
+      "id": "iFMMl",
+      "name": "Workspace settings",
+      "status": "opened_only",
+      "observation": "445.33 x 530 dialog; settings not saved during read-only audit.",
+      "evidence": "work/live-qa/dialog-settings.png"
+    },
+    {
+      "board": "r2iEu",
+      "id": "ERhpY",
+      "name": "Admin profile",
+      "status": "opened_only",
+      "observation": "Real authenticated profile; Sign out not invoked.",
+      "evidence": "work/live-qa/dialog-profile.png"
+    },
+    {
+      "board": "r2iEu",
+      "id": "X7RGZw",
+      "name": "Learner record",
+      "status": "opened_only",
+      "observation": "Identity, access/activity and notes disclosures exist; not full reference layout parity.",
+      "evidence": "work/live-qa/dialog-learner-record.png"
+    },
+    {
+      "board": "r2iEu",
+      "id": "GOQza",
+      "name": "Export report",
+      "status": "opened_only",
+      "observation": "Download CSV available, not invoked or counted as verified export.",
+      "evidence": "work/live-qa/dialog-export.png"
+    },
+    {
+      "board": "r2iEu",
+      "id": "pXSYY",
+      "name": "No results",
+      "status": "verified_read",
+      "observation": "Exact nonmatching query showed true empty state; Clear filters restored rows.",
+      "evidence": "work/live-qa/no-results.png"
+    },
+    {
+      "board": "r2iEu",
+      "id": "fDcnE",
+      "name": "Refresh failed",
+      "status": "not_exercised",
+      "observation": "No artificial production network outage injected.",
+      "evidence": null
+    },
+    {
+      "board": "r2iEu",
+      "id": "Unnt5",
+      "name": "Data is updating",
+      "status": "not_exercised",
+      "observation": "Transient state not captured with a deliberately delayed production request.",
+      "evidence": null
+    },
+    {
+      "board": "CTwDe",
+      "id": "EAM4b",
+      "name": "Add internal note",
+      "status": "opened_only",
+      "observation": "Real note dialog and validation; no production note saved.",
+      "evidence": "work/live-qa/dialog-note.png"
+    },
+    {
+      "board": "CTwDe",
+      "id": "T5Fucu",
+      "name": "Manage access",
+      "status": "opened_only",
+      "observation": "Business-state GET succeeded; existing policy is implemented, not an unresolved old assumption. No grant submitted.",
+      "evidence": "work/live-qa/dialog-access.png"
+    },
+    {
+      "board": "CTwDe",
+      "id": "IezlC",
+      "name": "Confirm access change",
+      "status": "not_exercised",
+      "observation": "Write-adjacent confirmation intentionally not driven.",
+      "evidence": null
+    },
+    {
+      "board": "CTwDe",
+      "id": "c9Xpu",
+      "name": "Changes saved",
+      "status": "not_exercised",
+      "observation": "No business writes; no fabricated successful mutation.",
+      "evidence": null
+    },
+    {
+      "board": "CTwDe",
+      "id": "T0lSS5",
+      "name": "Record changed",
+      "status": "not_exercised",
+      "observation": "No forced production concurrency conflict.",
+      "evidence": null
+    },
+    {
+      "board": "CTwDe",
+      "id": "m52teT",
+      "name": "Payment details",
+      "status": "data_unavailable",
+      "observation": "Transactions read succeeded; no production orders available for detail selection.",
+      "evidence": "work/live-qa/dialog-transactions.png"
+    },
+    {
+      "board": "CTwDe",
+      "id": "PAWip",
+      "name": "Reconciliation case",
+      "status": "opened_only",
+      "observation": "Reconcile case opens via Reconciliation Commerce Tab. GET cases and permissions succeeded.",
+      "evidence": "work/live-qa/reconciliation.png"
+    },
+    {
+      "board": "CTwDe",
+      "id": "j99esh",
+      "name": "Resolve discrepancy",
+      "status": "not_exercised",
+      "observation": "No case closure or entitlement change submitted.",
+      "evidence": null
+    },
+    {
+      "board": "CTwDe",
+      "id": "MxdBA",
+      "name": "Learning intervention",
+      "status": "partial",
+      "observation": "Actual unfinished activity queue opens; internal follow-up write form not submitted.",
+      "evidence": "work/live-qa/dialog-intervention-queue.png"
+    },
+    {
+      "board": "akMjF",
+      "id": "Ru7xA",
+      "name": "Create lesson",
+      "status": "opened_only",
+      "observation": "Create draft fields exist; no production lesson created.",
+      "evidence": "work/live-qa/dialog-create-lesson.png"
+    },
+    {
+      "board": "akMjF",
+      "id": "fIcXc",
+      "name": "Video block",
+      "status": "disabled_for_selection",
+      "observation": "Video editor disabled for the selected production lesson; no forced enable.",
+      "evidence": "work/live-qa/dialog-video.png"
+    },
+    {
+      "board": "akMjF",
+      "id": "dEL0Q",
+      "name": "Key phrases",
+      "status": "opened_only",
+      "observation": "Editor opens; published lesson prevents in-place write.",
+      "evidence": "work/live-qa/dialog-phrases.png"
+    },
+    {
+      "board": "akMjF",
+      "id": "V5ORPR",
+      "name": "Quick check",
+      "status": "opened_only",
+      "observation": "Editor opens; 548px content scrolls inside 530px card, unlike short reference composition.",
+      "evidence": "work/live-qa/dialog-quiz.png"
+    },
+    {
+      "board": "akMjF",
+      "id": "qRjYx",
+      "name": "Lesson navigation",
+      "status": "opened_only",
+      "observation": "Dialog opens; no reorder or position write.",
+      "evidence": "work/live-qa/dialog-lesson-navigation.png"
+    },
+    {
+      "board": "akMjF",
+      "id": "eQe4b",
+      "name": "Lesson preview",
+      "status": "partial",
+      "observation": "Persisted data preview opens; raw JSON presentation differs from learner-like Pen preview.",
+      "evidence": "work/live-qa/dialog-preview.png"
+    },
+    {
+      "board": "akMjF",
+      "id": "Of8An",
+      "name": "Ready to publish",
+      "status": "disabled_for_selection",
+      "observation": "Published selection cannot publish again; readiness not exercised on a production draft.",
+      "evidence": "work/live-qa/dialog-publication.png"
+    },
+    {
+      "board": "akMjF",
+      "id": "ajCY8",
+      "name": "Publication blocked",
+      "status": "not_exercised",
+      "observation": "No eligible production draft selected to assert validator outcome.",
+      "evidence": null
+    },
+    {
+      "board": "akMjF",
+      "id": "VFPXb",
+      "name": "Import content",
+      "status": "opened_only",
+      "observation": "Manifest picker exists; no file upload, review POST, or import run.",
+      "evidence": "work/live-qa/dialog-import.png"
+    },
+    {
+      "board": "zSgOv",
+      "id": "xRdGA",
+      "name": "Sign in",
+      "status": "verified_read",
+      "observation": "Vault-filled real authentication succeeded. No password/session material captured.",
+      "evidence": null
+    },
+    {
+      "board": "zSgOv",
+      "id": "AHGaK",
+      "name": "Notification detail",
+      "status": "data_unavailable",
+      "observation": "Live inbox is empty; not possible to select a real notification.",
+      "evidence": null
+    },
+    {
+      "board": "zSgOv",
+      "id": "lMAYu",
+      "name": "Cohort filter",
+      "status": "opened_only",
+      "observation": "Cohort dialog opens; available choices read, no changed query applied.",
+      "evidence": "work/live-qa/dialog-cohort.png"
+    },
+    {
+      "board": "zSgOv",
+      "id": "WT1RJ",
+      "name": "Chart drilldown",
+      "status": "not_exercised",
+      "observation": "Daily chart present; no separate chart-click drilldown exercised.",
+      "evidence": null
+    },
+    {
+      "board": "zSgOv",
+      "id": "sOXyE",
+      "name": "Sort & paginate",
+      "status": "partial",
+      "observation": "Sort dialog opens; local production fixture verifies bounded pagers and corrected label geometry.",
+      "evidence": "work/live-qa/dialog-sort.png"
+    },
+    {
+      "board": "zSgOv",
+      "id": "SEuvI",
+      "name": "Unsaved changes",
+      "status": "not_exercised",
+      "observation": "No draft edits made in production.",
+      "evidence": null
+    },
+    {
+      "board": "zSgOv",
+      "id": "JNgMj",
+      "name": "Reorder lesson blocks",
+      "status": "opened_only",
+      "observation": "Reorder dialog opens; no Move up or Save order invoked.",
+      "evidence": "work/live-qa/dialog-reorder.png"
+    },
+    {
+      "board": "zSgOv",
+      "id": "ZXMLy",
+      "name": "Payment filters",
+      "status": "opened_only",
+      "observation": "Real status/method selectors open; no provider actions.",
+      "evidence": "work/live-qa/dialog-payment-filter.png"
+    },
+    {
+      "board": "zSgOv",
+      "id": "tdZIt",
+      "name": "Required field",
+      "status": "partial",
+      "observation": "Empty note and lesson-create primary buttons disabled; no invalid production submits.",
+      "evidence": "work/live-qa/dialog-note.png"
+    }
+  ],
+  "counts": {
+    "boards": 15,
+    "cards": 36,
+    "routeViewportPairs": 12,
+    "dialogAttempts": 24,
+    "dialogsRendered": 20,
+    "cardStatuses": {
+      "partial": 5,
+      "opened_only": 16,
+      "verified_read": 2,
+      "not_exercised": 9,
+      "data_unavailable": 2,
+      "disabled_for_selection": 2
+    }
+  },
+  "deploymentEvidence": {
+    "liveScriptFilenames": 9,
+    "matchedBaselineBuildFilenames": 9,
+    "commitIdentity": "No public commit endpoint: exact deployed SHA not asserted"
+  }
+}

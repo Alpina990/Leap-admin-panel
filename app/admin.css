@@ -5,11 +5,15 @@
 /* Missing observations keep their original allocation, never a fake bar/zero. */
 .readonly-chart{position:relative}.readonly-chart>*{visibility:hidden!important}.readonly-chart::after{content:'Analytics unavailable';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:inherit;opacity:.7}
 .readonly-signal{visibility:hidden!important}
-.readonly-rows{width:100%;min-height:0;flex:1;overflow:auto}.readonly-person{width:100%;flex-shrink:0}.readonly-person[aria-pressed=true]{outline:1px solid #7469e8;outline-offset:-1px}.readonly-rows [data-pencil-name]{overflow-wrap:anywhere}
+.readonly-rows{width:100%;min-height:0;flex:1;overflow:auto}.readonly-person{box-sizing:border-box;width:100%;flex-shrink:0}.readonly-person[aria-pressed=true]{outline:1px solid #7469e8;outline-offset:-1px}.readonly-rows [data-pencil-name]{overflow-wrap:anywhere}
 /* The API page has 25 rows rather than five demo rows. Allow the original
    flex allocation to shrink; scrolling belongs to the list, not its ancestors. */
 @media(min-width:1025px){[data-pencil-name='Learners Main Content'],[data-pencil-name='Learner Directory Workspace'],[data-pencil-name='Learner Directory Body']{min-height:0}}
-[data-pencil-name='Learner Directory List']>.pager{flex-shrink:0}
+/* A mobile column must grow vertically, not wrap readiness off-screen. */
+@media(max-width:767px){.mobile-detail [data-pencil-name='Content Studio Workspace']{flex:none!important;flex-wrap:nowrap!important}}
+/* Text pagination is not the archived 30px numbered-page control. */
+:is([data-pencil-name='Learner Directory List'],[data-pencil-name='Payments List Panel'],[data-pencil-name='Message Event List'],[data-pencil-name='Content Catalog Panel'])>.pager{width:100%;flex-shrink:0;flex-wrap:wrap}
+:is([data-pencil-name='Learner Directory List'],[data-pencil-name='Payments List Panel'],[data-pencil-name='Message Event List'],[data-pencil-name='Content Catalog Panel'])>.pager>button{width:auto;height:auto;min-height:40px;flex-shrink:0;white-space:nowrap}
 @media(max-width:1024px){[data-pencil-name='Learner Directory List']{height:500px!important;min-height:0!important}}
 @media(max-width:767px){[data-pencil-name='Learner Directory Workspace'],[data-pencil-name='Learner Directory Body']{flex:none!important;height:auto!important}}
 .readonly-search{display:flex;align-items:center;gap:6px;width:100%;min-width:0}.readonly-search .search-box{flex:1;min-width:130px;width:auto}.readonly-search .action{font-size:10px;padding:6px;min-height:36px}
