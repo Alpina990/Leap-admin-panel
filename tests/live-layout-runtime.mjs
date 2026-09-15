@@ -1,3 +1,4 @@
+import {verifyAccess} from './access-browser.mjs';
 import {chromium,expect} from '@playwright/test';
 import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync} from 'node:fs';
@@ -10,6 +11,7 @@ try{
  // Credentials exist only in this disposable local fixture, never production.
  const r=await context.request.post('/api/admin/login',{headers:{Origin:baseURL,'X-Admin-CSRF':'login'},data:{username:'smoke_operator',password:'disposable-test-only-password-92!'}});assert.equal(r.status(),200);
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto('/');
+ await verifyAccess(page,context,out);
  for(const viewport of [{width:1440,height:1000},{width:430,height:900}]){
   await page.setViewportSize(viewport);
   for(const route of ['overview','learners','content','commerce','learning','messages']){

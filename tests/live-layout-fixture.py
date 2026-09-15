@@ -32,10 +32,10 @@ with tempfile.TemporaryDirectory(prefix='database-', dir=sys.argv[2]) as directo
     from alembic.migration import MigrationContext
     from alembic.operations import Operations
     import importlib.util
-    Base.metadata.create_all(engine, tables=[table for table in Base.metadata.sorted_tables if not table.name.startswith('admin_') and table.name not in {'learner_catalog_entitlements', 'reconciliation_cases'}])
+    Base.metadata.create_all(engine, tables=[table for table in Base.metadata.sorted_tables if not table.name.startswith('admin_') and table.name not in {'learner_catalog_entitlements', 'learner_access_denials', 'reconciliation_cases'}])
     with engine.begin() as connection:
         with Operations.context(MigrationContext.configure(connection)):
-            for filename in ('0a12b34c56de_create_admin_identity.py', '1b23c45d67ef_admin_notes.py', '2c34d56e78fa_admin_content.py', '3d45e67f89ab_admin_business.py'):
+            for filename in ('0a12b34c56de_create_admin_identity.py', '1b23c45d67ef_admin_notes.py', '2c34d56e78fa_admin_content.py', '3d45e67f89ab_admin_business.py', '4e56f78a90bc_admin_access_denials.py'):
                 spec = importlib.util.spec_from_file_location('fixture_admin_revision', backend / 'alembic/versions' / filename)
                 revision = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(revision)
@@ -56,6 +56,9 @@ with tempfile.TemporaryDirectory(prefix='database-', dir=sys.argv[2]) as directo
             paid_at=datetime.now(timezone.utc), wlcm_payment_id=f'fixture-wlcm-{n}') for n in range(27)])
     with factory.begin() as db:
         db.add_all([LearnerNotification(id=f'fixture-notification-{n:02}',learner_id=1,kind='lesson',title=f'Disposable notification {n}',body='Disposable inbox content',event_key=f'fixture-event-{n}',created_at=datetime(2026,1,n+1,tzinfo=timezone.utc)) for n in range(27)])
+    from leap_api.models import LearnerEntitlement
+    with factory.begin() as db:
+        db.add(LearnerEntitlement(learner_id=1, section_id='fixture-section', source='payment', external_reference='fixture-order-00'))
     from leap_api.models import Unit
     from leap_api.admin_content import AdminContentPermission
     from leap_api.admin_business import AdminBusinessPermission
