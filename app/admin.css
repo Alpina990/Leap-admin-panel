@@ -4,6 +4,7 @@
 .admin-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;color:var(--muted-foreground)}.admin-muted{color:var(--muted-foreground);font-size:13px;line-height:1.7}
 /* Missing observations keep their original allocation, never a fake bar/zero. */
 .readonly-chart{position:relative}.readonly-chart>*{visibility:hidden!important}.readonly-chart::after{content:'Analytics unavailable';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:inherit;opacity:.7}
+.readonly-chart[data-empty-chart]::after{content:attr(data-empty-chart)}
 .readonly-signal{visibility:hidden!important}
 .readonly-rows{width:100%;min-height:0;flex:1;overflow:auto}.readonly-person{box-sizing:border-box;width:100%;flex-shrink:0}.readonly-person[aria-pressed=true]{outline:1px solid #7469e8;outline-offset:-1px}.readonly-rows [data-pencil-name]{overflow-wrap:anywhere}
 /* The API page has 25 rows rather than five demo rows. Allow the original

@@ -1,18 +1,51 @@
 'use client';
 import {useEffect,useState} from 'react';
 import {Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription} from '@/components/ui/dialog';
-export type Summary={period:{start:string;end:string};learnersTotal:number;newLearners:number;activeLearners:number;completedLessons:number;paidOrders:number;revenueTiyin:string;previousRevenueTiyin:string;daily:{date:string;completedLessons:number;revenueTiyin:string}[];paymentMethods:{method:string;count:number;revenueTiyin:string}[];products:{sectionId:string;title:string;count:number;revenueTiyin:string}[];notificationCreated:number;notificationRead:number};
+export type Summary={period:{start:string;end:string};learnersTotal:number;newLearners:number;activeLearners:number;completedLessons:number;paidOrders:number;revenueTiyin:string;previousRevenueTiyin:string;daily:{date:string;completedLessons:number;revenueTiyin:string;activeLearners?:number;attention?:number}[];paymentMethods:{method:string;count:number;revenueTiyin:string}[];products:{sectionId:string;title:string;count:number;revenueTiyin:string}[];notificationCreated:number;notificationRead:number;health?:{api:'ready';paymentsPending:number;paymentsFailed:number;mediaFailed:number;mediaProcessing:number;writingTracked:false};lifetimeAccess?:number;attention?:{paidWithoutAccess:number;pendingOver24h:number;inactiveAfterPurchase:number;access:number;learning:number}};
 export type Learning={period:{start:string;end:string};cohort:string;funnel:{stage:string;count:number}[];activeLearners:number;completedLessons:number;completionRate:number|null;daily:{date:string;completedLessons:number}[];assessment:{attempts:number;passed:number;passRate:number|null};writing:{submissions:number;passed:number;passRate:number|null};ratings:{count:number;average:number|null};bottlenecks:{lessonId:string;title:string;started:number;unfinished:number;completionRate:number|null}[]};
-export type LearnerAnalytics={learnerId:string;catalogAccess:boolean;sectionAccess:{sectionId:string;title:string;source:string}[];startedLessons:number;completedLessons:number;completionRate:number|null;items:{lessonId:string;title:string;completed:boolean;updatedAt:string}[];total:number;limit:number;offset:number;hasMore:boolean};
+export type LearnerAnalytics={learnerId:string;catalogAccess:boolean;sectionAccess:{sectionId:string;title:string;source:string}[];startedLessons:number;completedLessons:number;completionRate:number|null;streak?:number;rank?:number;rankPool?:number;sections?:{sectionId:string;title:string;startedLessons:number;completedLessons:number;completionRate:number|null}[];items:{lessonId:string;title:string;completed:boolean;updatedAt:string;watchedSeconds?:number;durationSeconds?:number;completedAt?:string|null;sectionId?:string}[];total:number;limit:number;offset:number;hasMore:boolean};
 export function money(tiyin?:string){if(tiyin===undefined)return '—';const value=BigInt(tiyin);return (value/BigInt(100)).toLocaleString('en-US')+'.'+(value%BigInt(100)).toString().padStart(2,'0');}
+export function compactMoney(tiyin?:string){if(tiyin===undefined)return '—';const value=Number(BigInt(tiyin)/BigInt(100));const sign=value<0?'-':'';const absolute=Math.abs(value);if(absolute>=1e9)return sign+(absolute/1e9).toFixed(1).replace(/\.0$/,'')+'B';if(absolute>=1e6)return sign+(absolute/1e6).toFixed(1).replace(/\.0$/,'')+'M';if(absolute>=1e3)return sign+(absolute/1e3).toFixed(1).replace(/\.0$/,'')+'K';return sign+absolute.toLocaleString('en-US');}
 export function percent(value?:number|null){return value==null?'—':value.toLocaleString('en-US',{maximumFractionDigits:1})+'%';}
 export function analyticsValues(s?:Summary,l?:Learning,p?:LearnerAnalytics):Record<string,string>{
  const values:Record<string,string>={};const n=(v?:number)=>v===undefined?'—':v.toLocaleString('en-US');
  if(s){Object.assign(values,{'Date Range Label':s.period.start+' – '+s.period.end,'Active Learners Value':n(s.activeLearners),'Active Learners Delta':'In selected period','Lessons Completed Value':n(s.completedLessons),'Lessons Completed Delta':'Saved completions','Paid Access Value':money(s.revenueTiyin),'Paid Access Delta':'UZS · gross paid','Net Revenue Label':'GROSS COLLECTED REVENUE','Net Revenue Value':'UZS '+money(s.revenueTiyin),'Paid Orders Value':n(s.paidOrders),'Paid Orders Detail':'Paid in selected period','Average Order Value':'UZS '+money(s.paidOrders?(BigInt(s.revenueTiyin)/BigInt(s.paidOrders)).toString():'0'),'Average Order Detail':'Paid orders only','Gross Volume Value':'UZS '+money(s.revenueTiyin),'Gross Volume Detail':'Fees and refunds not deducted','Revenue Comparison':'vs previous equal period','Revenue Trend Title':'Daily collected revenue','Revenue Trend Subtitle':'Paid UZS orders by payment date','Revenue By Course Total Label':'Total · UZS '+money(s.revenueTiyin),'Active Learners Metric Value':n(s.activeLearners),'Active Learners Metric Label':'Active in period','Active Learners Metric Delta':percent(s.learnersTotal?s.activeLearners/s.learnersTotal*100:null),'Registered Learners Metric Delta':n(s.newLearners)+' new in period','Sent today Message Stat Label':'Inbox records created','Sent today Message Stat Value':n(s.notificationCreated),'Sent today Message Stat Detail':'In selected period','Read Message Stat Value':n(s.notificationRead),'Read Message Stat Detail':'Read in Mini App','Live Activity Label':'Saved activity · UTC'});
  const prev=Number(s.previousRevenueTiyin);values['Revenue Growth Label']=prev?percent((Number(s.revenueTiyin)-prev)/prev*100):'No prior revenue';
+ // The archived card prints a compact money figure and a period-over-period delta.
+ values['Paid Access Value']=compactMoney(s.revenueTiyin);
+ values['Paid Access Delta']=prev>0?'UZS · '+percent((Number(s.revenueTiyin)-prev)/prev*100)+' vs prior period':'UZS · gross paid';
+ values['Live Activity Label']=n(s.activeLearners)+' active in selected period';
+ if(s.health){
+  const attention=s.health.paymentsPending+s.health.mediaFailed;
+  Object.assign(values,{'Needs Attention Value':n(attention),'Needs Attention Delta':n(s.health.mediaFailed)+' media · '+n(s.health.paymentsPending)+' payments',
+   'Overall Health Label':attention?n(attention)+' need action':'Operational',
+   'API Service Status':'Ready',
+   'Payments Service Status':s.health.paymentsPending?n(s.health.paymentsPending)+' pending':'No pending orders',
+   'Media Service Status':s.health.mediaFailed?n(s.health.mediaFailed)+' failed':s.health.mediaProcessing?n(s.health.mediaProcessing)+' processing':'All media ready',
+   'Writing AI Service Status':'Not tracked'});
+ }
+ if(s.lifetimeAccess!==undefined){
+  values['Paid Learners Metric Value']=n(s.lifetimeAccess);
+  values['Paid Learners Metric Delta']=percent(s.learnersTotal?s.lifetimeAccess/s.learnersTotal*100:null);
+ }
+ if(s.attention){
+  const attentionTotal=s.attention.access+s.attention.learning;
+  Object.assign(values,{'Learners Need Help Metric Value':n(attentionTotal),
+   'Learners Need Help Metric Delta':n(s.attention.access)+' access · '+n(s.attention.learning)+' learning',
+   'Learner Attention Count Label':n(attentionTotal),
+   'Attention Signal Label 0':'Paid, access missing · '+n(s.attention.paidWithoutAccess),
+   'Attention Signal Label 1':'Pending > 24h · '+n(s.attention.pendingOver24h),
+   'Attention Signal Label 2':'Inactive after purchase · '+n(s.attention.inactiveAfterPurchase),
+   'Learner Attention Updated':'Recomputed from saved records'});
+ }
  for(let i=0;i<4;i++){const product=s.products[i],method=s.paymentMethods[i];Object.assign(values,{['Course Name '+(i+1)]:product?.title??'—',['Course Revenue Amount '+(i+1)]:product?'UZS '+money(product.revenueTiyin):'—',['Course Revenue Share '+(i+1)]:product?percent(Number(s.revenueTiyin)?Number(product.revenueTiyin)/Number(s.revenueTiyin)*100:null):'—',['Method Name '+(i+1)]:method?.method??'—',['Method Amount '+(i+1)]:method?'UZS '+money(method.revenueTiyin):'—',['Method Share '+(i+1)]:method?percent(Number(s.revenueTiyin)?Number(method.revenueTiyin)/Number(s.revenueTiyin)*100:null):'—'});}}
  if(l){Object.assign(values,{'Active learners Learning Stat Value':n(l.activeLearners),'Active learners Learning Stat Detail':'Progress updated in period','Lessons completed Learning Stat Value':n(l.completedLessons),'Lessons completed Learning Stat Detail':'Saved completions','Completion rate Learning Stat Value':percent(l.completionRate),'Completion rate Learning Stat Detail':'Completed / started learners','Learning Funnel Title':'Cohort learning funnel','Learning Funnel Conversion Label':percent(l.completionRate)+' complete','Weekly Activity Subtitle':'Saved completions · selected UTC dates','Weekly Activity Peak':'Select a bar to inspect','Avg score Quality Label':'Quiz pass rate','Avg score Quality Value':percent(l.assessment.passRate),'Retries Quality Label':'Writing pass rate','Retries Quality Value':percent(l.writing.passRate),'Rated Quality Value':l.ratings.average?.toFixed(1)??'—','Assessment Quality Note':n(l.assessment.attempts)+' attempts · '+n(l.writing.submissions)+' writing submissions','Learning Insights Count Label':n(l.bottlenecks.length)});for(let i=0;i<4;i++)Object.assign(values,{['Learning Issue Title '+i]:l.bottlenecks[i]?.title??'No additional bottleneck',['Learning Issue Detail '+i]:l.bottlenecks[i]?n(l.bottlenecks[i].unfinished)+' unfinished of '+n(l.bottlenecks[i].started)+' started':'—'});}
  if(p)Object.assign(values,{'Completed Metric Value':n(p.completedLessons)+' lessons','Access Metric Value':p.catalogAccess?'Whole catalog':n(p.sectionAccess.length)+' sections','Access Learner Fact Value':p.catalogAccess?'Whole catalog · Lifetime':p.sectionAccess.map(a=>a.title).join(', ')||'No paid access','Lessons Learner Fact Value':n(p.completedLessons)+' / '+n(p.startedLessons)+' started lessons','Selected Learner Profile Status Label':'REGISTERED'});
+ if(p){
+  values['Current streak Metric Value']=p.streak===undefined?'—':n(p.streak)+' days';
+  values['Rank Metric Value']=p.rank===undefined?'—':'#'+n(p.rank);
+  values['Streak Learner Fact Value']=p.streak===undefined?'—':n(p.streak)+' days';
+ }
  return values;
 }
 export function DailyChart({items,onSelect,label}:{items:{date:string;value:number}[];onSelect:(day:string)=>void;label:string}){

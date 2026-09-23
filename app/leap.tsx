@@ -23,6 +23,31 @@ const screens=Object.fromEntries(Object.entries(design).map(([key,node])=>[key,a
 const indexes=Object.fromEntries(Object.entries(screens).map(([key,node])=>[key,indexDesign(node)])) as Record<string,Record<string,N>>;
 const unavailable='Unavailable: the read-only API does not provide this data or action.';
 const chartNames=new Set(['Weekly Completion Chart','Revenue Trend Chart','Weekly Activity Bars','Payment Mix Segments']);
+const weekdays=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const activityRowIndex:Record<string,number>={'Present Perfect · Video Activity Row':0,'Travel plans · Writing Activity Row':1,'Unit 7 assessment Activity Row':2};
+const courseRowIndex:Record<string,number>={'Foundation ':0,'Self-study Assistant ':1,'Advanced Vocabulary ':2};
+function relativeSeen(iso?:string|null){
+ if(!iso)return '—';
+ const then=new Date(iso).getTime();
+ if(Number.isNaN(then))return iso;
+ const minutes=Math.max(0,Math.round((Date.now()-then)/60000));
+ if(minutes<60)return `Seen ${minutes} min ago`;
+ const hours=Math.round(minutes/60);
+ if(hours<24)return `Seen ${hours} h ago`;
+ const days=Math.round(hours/24);
+ return days<7?`Seen ${days} d ago`:'Seen '+iso.slice(0,10);
+}
+function progressText(person:{startedLessons?:number;completedLessons?:number}){
+ const started=person.startedLessons??0;
+ return started?Math.round(100*(person.completedLessons??0)/started)+'%':'—';
+}
+function activityFields(item:{title:string;completed:boolean;completedAt?:string|null;watchedSeconds?:number;durationSeconds?:number}){
+ const percent=item.durationSeconds?Math.min(100,Math.round((item.watchedSeconds??0)/item.durationSeconds*100)):null;
+ return {title:item.title,meta:item.completed?'Completed '+(item.completedAt??'').slice(0,10):'In progress',value:percent===null?(item.completed?'Completed':'—'):percent+'%'};
+}
+// Bars keep the archived geometry: a 38px track, tallest archived bar 29px.
+function barHeights(values:number[],max=29,min=3){const top=Math.max(0,...values);return values.map(value=>top>0&&value>0?Math.max(min,Math.round(max*value/top)):0);}
+function weekdayIndex(iso:string){const date=new Date(iso+'T00:00:00Z');return Number.isNaN(date.getTime())?0:(date.getUTCDay()+6)%7;}
 function useRead<T>(path:string|null,revision:number){
  const key=`${path}:${revision}`;
  const [result,setResult]=useState<{key:string;path?:string;data?:T;error?:string;syncedAt?:string}>({key:''});
@@ -154,7 +179,15 @@ export default function Home({session}:{session:AdminSession}){
  function state(){return directory.error?<div className="pencil-data-state error" role="alert"><strong>Refresh failed</strong><p>The latest records could not be loaded.</p><dl><dt>Connection</dt><dd>{directory.error}</dd><dt>Last successful sync</dt><dd>{directory.syncedAt??'Not yet loaded'}</dd></dl><p>{directory.data?'Previously loaded records remain visible.':'No previous records are available.'}</p><button className="action" onClick={()=>setRevision(r=>r+1)}>Retry</button></div>:directory.loading?<div className="pencil-data-state" role="status"><strong>Data is updating</strong><p>Loading summary and records…</p>{!directory.data&&<div className="pencil-skeleton" aria-hidden="true"><i/><i/><i/></div>}</div>:directory.data&&people.length===0?<div className="pencil-data-state" role="status"><strong>No results</strong><p>No learner matches your current search.</p><dl><dt>Search / filters</dt><dd>{username||'All learners'} · Offset {offset}</dd><dt>Result</dt><dd>0 matching learners on this page</dd></dl><p>Clear the query or broaden the filters.</p><button className="action" onClick={clear}>Clear filters</button></div>:null;}
  function search(){return <form className="readonly-search" onSubmit={filter}><label className="search-box"><Search size={15}/><input aria-label="Username — exact, case-sensitive" placeholder="Exact username (without @)" maxLength={64} value={draft} onChange={e=>setDraft(e.target.value)}/></label><button className="action">Apply filter</button><button type="button" className="action" onClick={clear}>Clear</button></form>;}
  function facts(){return person?<dl className="readonly-facts">{[['Telegram ID',person.telegramUserId],['Username',person.username],['First name',person.firstName],['Last name',person.lastName],['Language',person.languageCode],['Created at',person.createdAt],['Last seen at',person.lastSeenAt]].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value??'—'}</dd></div>)}<p>Last seen is a persisted timestamp, not current presence.</p></dl>:<p>No learner selected.</p>;}
- function render(n:N|string,ctx:{person?:Learner;notification?:Notification;insideButton?:boolean}={}):ReactNode{
+  const trendSeries:Record<string,number[]|undefined>={
+   'Active Learners Trend Bars':summary.data?.daily.length&&summary.data.daily.every(day=>day.activeLearners!==undefined)?summary.data.daily.map(day=>day.activeLearners!):undefined,
+   'Lessons Completed Trend Bars':summary.data?.daily.map(day=>day.completedLessons),
+   'Paid Access Trend Bars':summary.data?.daily.map(day=>Number(day.revenueTiyin)/100),
+   'Needs Attention Trend Bars':summary.data?.daily.length&&summary.data.daily.every(day=>day.attention!==undefined)?summary.data.daily.map(day=>day.attention!):undefined,
+  };
+  const trendLabel:Record<string,string>={'Active Learners Trend Bars':'Learners last seen by UTC day','Lessons Completed Trend Bars':'Saved completions by UTC day','Paid Access Trend Bars':'Collected UZS by UTC payment day','Needs Attention Trend Bars':'New payment and media attention by UTC day'};
+  const trendEmpty:Record<string,string>={'Active Learners Trend Bars':'No recorded presence in this period','Lessons Completed Trend Bars':'No saved completions in this period','Paid Access Trend Bars':'No collected payments in this period','Needs Attention Trend Bars':'No new attention recorded in this period'};
+  function render(n:N|string,ctx:{person?:Learner;notification?:Notification;insideButton?:boolean;bars?:number[];pulse?:Record<string,number>;activity?:{title:string;meta:string;value:string}}={}):ReactNode{
   if(typeof n==='string')return n;
   const name=n.attrs['data-pencil-name']??'',id=n.attrs['data-pencil-id'];
   let tag=n.tag;let content:ReactNode;let click:(()=>void)|undefined;
@@ -167,7 +200,22 @@ export default function Home({session}:{session:AdminSession}){
   if(values[name]!==undefined)content=values[name];
 
   if(chartNames.has(name)||name.endsWith('Trend Bars')){attrs.className+=' readonly-chart';attrs['data-unavailable-chart']='true';attrs['aria-label']='Chart unavailable — no analytics API';}
-  if(['Weekly Completion Chart','Weekly Activity Bars','Revenue Trend Chart'].includes(name)){const daily=name==='Weekly Activity Bars'?learning.data?.daily:summary.data?.daily;if(daily){attrs.className=String(attrs.className).replace('readonly-chart','');delete attrs['data-unavailable-chart'];attrs['aria-label']='Daily observations';content=<DailyChart items={daily.slice(-30).map(d=>({date:d.date,value:name==='Revenue Trend Chart'?Number('revenueTiyin' in d?d.revenueTiyin:0)/100:d.completedLessons}))} label={name==='Revenue Trend Chart'?'Revenue UZS':'Completions'} onSelect={day=>{if(name==='Revenue Trend Chart'){setDateRange({start:day,end:day});setReportFilters(previous=>({...previous,payments:{...previous.payments,dateField:'paidAt',currency:'UZS'}}));setPaymentStatus('paid');setOrderOffset(0);setOrderId(null);setCommerceTab('transactions');}else setActivityQuery(new URLSearchParams({...dateRange,day,cohort}).toString());}}/>;}}
+  if(ctx.bars&&/ Bar (\d+)$/.test(name)){const height=ctx.bars[Number(/(\d+)$/.exec(name)![1])-1];if(height!==undefined)attrs.style={height:`${height}px`};}
+  if(ctx.pulse&&/ Completion Bar$/.test(name)&&ctx.pulse[name]!==undefined)attrs.style={height:`${ctx.pulse[name]}%`};
+  const trend=trendSeries[name];
+  if(trend&&trend.length){
+   const heights=barHeights(trend.slice(-6));
+   if(Math.max(0,...heights)>0){attrs.className=String(attrs.className).replace('readonly-chart','');delete attrs['data-unavailable-chart'];attrs['aria-label']=trendLabel[name];content=<>{n.children.map(child=>render(child,{...ctx,bars:heights}))}</>;}
+   else attrs['data-empty-chart']=trendEmpty[name];
+  }
+  if(name==='Weekly Completion Chart'&&summary.data?.daily.length){
+   const daily=summary.data.daily;
+   const totals=weekdays.map((_,index)=>daily.filter(day=>weekdayIndex(day.date)===index).reduce((sum,day)=>sum+day.completedLessons,0));
+   const top=Math.max(...totals);
+   if(top>0){attrs.className=String(attrs.className).replace('readonly-chart','');delete attrs['data-unavailable-chart'];attrs['aria-label']='Saved completions by UTC weekday';content=<>{n.children.map(child=>render(child,{...ctx,pulse:Object.fromEntries(weekdays.map((day,index)=>[day+' Completion Bar',Math.max(4,Math.round(100*totals[index]/top))]))}))}</>;}
+   else attrs['data-empty-chart']='No saved completions in this period';
+  }
+  if(['Weekly Activity Bars','Revenue Trend Chart'].includes(name)){const daily=name==='Weekly Activity Bars'?learning.data?.daily:summary.data?.daily;if(daily){attrs.className=String(attrs.className).replace('readonly-chart','');delete attrs['data-unavailable-chart'];attrs['aria-label']='Daily observations';content=<DailyChart items={daily.slice(-30).map(d=>({date:d.date,value:name==='Revenue Trend Chart'?Number('revenueTiyin' in d?d.revenueTiyin:0)/100:d.completedLessons}))} label={name==='Revenue Trend Chart'?'Revenue UZS':'Completions'} onSelect={day=>{if(name==='Revenue Trend Chart'){setDateRange({start:day,end:day});setReportFilters(previous=>({...previous,payments:{...previous.payments,dateField:'paidAt',currency:'UZS'}}));setPaymentStatus('paid');setOrderOffset(0);setOrderId(null);setCommerceTab('transactions');}else setActivityQuery(new URLSearchParams({...dateRange,day,cohort}).toString());}}/>;}}
   if(/(?:Progress Fill|Funnel Fill|Course Revenue Fill|Status Dot|Healthy Dot|Live Dot|Live Finance Dot|Timeline Check|Publish Check Icon|Finance Healthy Badge Icon)/.test(name)){attrs.className+=' readonly-signal';attrs['aria-hidden']=true;}
   const nav=Object.keys(routes).find(k=>name===k+' Nav Item') as Section|undefined;
   if(nav){click=()=>go(nav);attrs.className+=' design-nav';attrs['aria-current']=section===nav?'page':undefined;attrs['aria-label']=nav;}
@@ -189,8 +237,25 @@ export default function Home({session}:{session:AdminSession}){
    const p=ctx.person;
    if(/(?:Learner Row|Access Row|Learner Directory Row)$/.test(name)){click=()=>select(p);attrs.className+=' readonly-person';attrs['aria-label']=`Select ${personName(p)}`;attrs['aria-pressed']=person?.telegramUserId===p.telegramUserId;}
    if(n.children.some(c=>typeof c==='string')){
-    content=/Initials$/.test(name)?initials(p):/(?:Directory Name| Name)$/.test(name)?personName(p):/(?:Username|Directory Username)$/.test(name)?(p.username?'@'+p.username:'—'):/Registered Value$/.test(name)?p.createdAt.slice(0,10):/Metadata$/.test(name)?(p.username?'@'+p.username:p.telegramUserId):'—';
+    content=/Initials$/.test(name)?initials(p):/(?:Directory Name| Name)$/.test(name)?personName(p):/(?:Username|Directory Username)$/.test(name)?(p.username?'@'+p.username:'—'):/Registered Value$/.test(name)?p.createdAt.slice(0,10):/Directory State Label$/.test(name)?relativeSeen(p.lastSeenAt):/Directory Progress$/.test(name)?progressText(p):/Metadata$/.test(name)?(p.username?'@'+p.username:p.telegramUserId):'—';
    }
+  }
+  // Canonical profile: per-section course progress from saved records.
+  const coursePrefix=Object.keys(courseRowIndex).find(prefix=>name.startsWith(prefix));
+  if(coursePrefix){
+   const section=learnerAnalytics.data?.sections?.[courseRowIndex[coursePrefix]];
+   if(name.endsWith('Progress Label')&&section)content=section.title;
+   else if(name.endsWith('Progress Value')){content=section&&section.completionRate!==null?Math.round(section.completionRate)+'%':'—';}
+   else if(name.endsWith('Progress Fill')){
+    attrs.className=String(attrs.className).replace('readonly-signal','');
+    attrs.style={width:section&&section.completionRate!==null?`${Math.min(100,Math.round(section.completionRate))}%`:'0%'};
+    attrs['aria-hidden']=undefined;
+   }
+  }
+  const activityLabel=/^Learner Activity Label (\d)$/.exec(name);
+  if(activityLabel){
+   const item=learnerAnalytics.data?.items[Number(activityLabel[1])];
+   content=item?`${item.completed?'Completed':'In progress'}: ${item.title}${item.completedAt?' · '+item.completedAt.slice(11,16):''}`:'—';
   }
   if((content===undefined||content==='—')&&n.children.some(c=>c==='—'))attrs.title=unavailable;
   if(['Open Learner Link','Open Learner Profile Button'].includes(name))click=openSelectedLearner;
@@ -225,7 +290,18 @@ export default function Home({session}:{session:AdminSession}){
    if(['stroke-width','stroke-linecap','stroke-linejoin','fill-rule','clip-rule'].includes(k)){attrs[k.replace(/-([a-z])/g,(_,c:string)=>c.toUpperCase())]=attrs[k];delete attrs[k];}
    if(k==='xmlns:xlink')delete attrs[k];
   }
-  return createElement(tag,attrs,content===undefined?n.children.map(child=>render(child,{...ctx,insideButton:ctx.insideButton||tag==='button'})):content);
+  let nested=ctx;
+  const activityRow=activityRowIndex[name];
+  if(activityRow!==undefined){
+   const item=learnerAnalytics.data?.items[activityRow];
+   if(item)nested={...nested,activity:activityFields(item)};
+  }
+  if(ctx.activity){
+   if(name.endsWith('Activity Title'))content=ctx.activity.title;
+   else if(name.endsWith('Activity Meta'))content=ctx.activity.meta;
+   else if(name.endsWith('Activity Value'))content=ctx.activity.value;
+  }else if(activityRow!==undefined&&!learnerAnalytics.data?.items[activityRow]&&/ Activity (?:Title|Meta|Value)$/.test(name))content='—';
+  return createElement(tag,attrs,content===undefined?n.children.map(child=>render(child,{...nested,insideButton:nested.insideButton||tag==='button'})):content);
  }
  return <main id="main-content" data-route={section} className={mobileDetail?'mobile-detail':''}>
   {render(screens[routes[section]])}
