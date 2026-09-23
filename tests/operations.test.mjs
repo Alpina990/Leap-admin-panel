@@ -27,3 +27,10 @@ test('payment allowlist is bounded and permits actual order DTOs only',async()=>
  assert.equal((await proxyAdmin(get('payment?orderId=missing'),'payment',config,async()=>Response.json({error:{code:'admin_not_found',message:'Not found'}},{status:404}))).status,404);
  assert.equal((await proxyAdmin(get('payments'),'payments',config,async()=>Response.json({...data,secret:'leak'}))).status,502);
 });
+
+test('catalog payment orders with no section are accepted',async()=>{
+ const order={id:'727ac75f-f104-4740-b037-e2ef675c885b',learnerId:'1479914025',sectionId:null,amountTiyin:'100000',currency:'UZS',gateway:'WLCM',method:'payme',status:'pending',createdAt:'2026-09-23T15:00:00+00:00',paidAt:null,cancelledAt:null,externalId:'LE-727ac75f-f104-4740-b037-e2ef675c885b',gatewayOrderId:'wlcm-order-1',gatewayPaymentId:null};
+ const page={items:[order],total:1,limit:25,offset:0,hasMore:false};
+ const response=await proxyAdmin(get('payments?limit=25&offset=0'),'payments',config,async()=>Response.json(page));
+ assert.equal(response.status,200);assert.deepEqual(await response.json(),page);
+});

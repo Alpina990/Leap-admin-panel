@@ -1,6 +1,6 @@
 'use client';
 import {useState} from 'react';
-export type Order={id:string;learnerId:string;sectionId:string;amountTiyin:string;currency:string;gateway:string;method:string;status:string;createdAt:string;paidAt:string|null;cancelledAt:string|null;externalId:string;gatewayOrderId:string|null;gatewayPaymentId:string|null};
+export type Order={id:string;learnerId:string;sectionId:string|null;amountTiyin:string;currency:string;gateway:string;method:string;status:string;createdAt:string;paidAt:string|null;cancelledAt:string|null;externalId:string;gatewayOrderId:string|null;gatewayPaymentId:string|null};
 export type Orders={items:Order[];total:number;limit:number;offset:number;hasMore:boolean};
 export type Payment={order:Order;entitlement:{source:string;grantedAt:string;expiresAt:string|null;revokedAt:string|null;matchesPayment:boolean}|null};
 export function money(order:Order){const amount=BigInt(order.amountTiyin);return `${(amount/BigInt(100)).toLocaleString('en-US')}.${String(amount%BigInt(100)).padStart(2,'0')} ${order.currency}`;}
