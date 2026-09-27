@@ -48,6 +48,9 @@ The BFF allows only:
 | `/api/admin/logout` | POST | `/api/v1/admin/logout` |
 | `/api/admin/overview` | GET | `/api/v1/admin/overview` |
 | `/api/admin/learners` | GET | `/api/v1/admin/learners` |
+| `/api/admin/content-price` | GET, POST | `/api/v1/admin/content-price` |
+
+The course price is stored in the backend database and audited with the same version-checked content permission. Deploy backend migration `d4f7b2c8e1a9` with this release; the Mini App reads the public offer price from the same row.
 
 The server page validates `/session`; every read is separately authorized by FastAPI, so expiry/revocation/disabled accounts are rechecked. Login requires actual exact Origin and `X-Admin-CSRF: login`; logout forwards the in-memory CSRF token acquired with the session. Login and logout change authentication state only. The opaque session never enters JSON or localStorage. Only `__Host-leap_admin` is forwarded: Secure, HttpOnly, SameSite=Strict, Path=/, no Domain. Login/logout cookies are validated against the narrow contract then relayed **verbatim**. Other headers/cookies are not proxied. Duplicate session cookies fail closed.
 
