@@ -1,0 +1,86 @@
+[
+  {
+    "name": "PushDay / Admin Users",
+    "file": "designs/pushday-admin-reference/previews/users.png",
+    "layout": {
+      "textNodes": 114,
+      "maxBottom": 885,
+      "minTop": 16,
+      "outOfBounds": 0
+    }
+  },
+  {
+    "name": "PushDay / Admin To‘lovlar",
+    "file": "designs/pushday-admin-reference/previews/tolovlar.png",
+    "layout": {
+      "textNodes": 75,
+      "maxBottom": 860,
+      "minTop": 16,
+      "outOfBounds": 0
+    }
+  },
+  {
+    "name": "PushDay / Admin Maqsadlar",
+    "file": "designs/pushday-admin-reference/previews/maqsadlar.png",
+    "layout": {
+      "textNodes": 74,
+      "maxBottom": 792,
+      "minTop": 16,
+      "outOfBounds": 0
+    }
+  },
+  {
+    "name": "PushDay / Admin Promokodlar",
+    "file": "designs/pushday-admin-reference/previews/promokodlar.png",
+    "layout": {
+      "textNodes": 39,
+      "maxBottom": 586,
+      "minTop": 16,
+      "outOfBounds": 0
+    }
+  },
+  {
+    "name": "PushDay / Admin Chellenjlar",
+    "file": "designs/pushday-admin-reference/previews/chellenjlar.png",
+    "layout": {
+      "textNodes": 84,
+      "maxBottom": 862,
+      "minTop": 16,
+      "outOfBounds": 0
+    }
+  },
+  {
+    "name": "PushDay / Admin Xabarnoma",
+    "file": "designs/pushday-admin-reference/previews/xabarnoma.png",
+    "layout": {
+      "textNodes": 32,
+      "maxBottom": 567,
+      "minTop": 16,
+      "outOfBounds": 0
+    }
+  },
+  {
+    "name": "PushDay / Admin AI",
+    "file": "designs/pushday-admin-reference/previews/ai.png",
+    "layout": {
+      "textNodes": 88,
+      "maxBottom": 916,
+      "minTop": 16,
+      "outOfBounds": 0
+    }
+  },
+  {
+    "name": "PushDay / Admin Demo hisob",
+    "file": "designs/pushday-admin-reference/previews/demo-hisob.png",
+    "layout": {
+      "textNodes": 106,
+      "maxBottom": 650,
+      "minTop": 16,
+      "outOfBounds": 0
+    }
+  },
+  {
+    "name": "Contact sheet",
+    "file": "designs/pushday-admin-reference/previews/pushday-admin-contact-sheet.png"
+  }
+]

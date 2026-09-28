@@ -369,7 +369,7 @@ a:focus-visible {
 }
 
 .pd-period-control input {
-  padding-right: 10px;
+  padding-right: 30px;
 }
 
 .pd-period-control > svg {
@@ -474,6 +474,37 @@ a:focus-visible {
   color: var(--pd-muted);
   font-size: 18px;
   line-height: 1;
+}
+
+.pd-filter-select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 11px;
+  border: 1px solid var(--pd-border);
+  border-radius: 12px;
+  background: var(--pd-raised);
+  color: var(--pd-muted);
+}
+
+.pd-filter-select select {
+  min-width: 138px;
+  height: 34px;
+  border: 0;
+  outline: 0;
+  appearance: none;
+  background: transparent;
+  color: var(--pd-text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+.pd-filter-select > svg:last-child {
+  margin-left: -2px;
+  pointer-events: none;
 }
 
 .pd-select,
@@ -675,7 +706,7 @@ button.pd-metric-card:focus-visible {
 
 .pd-table {
   width: 100%;
-  min-width: 1180px;
+  min-width: 1280px;
   border-collapse: collapse;
   color: var(--pd-text);
 }
@@ -914,8 +945,24 @@ button.pd-metric-card:focus-visible {
   font-weight: 650;
 }
 
-.pd-row-action.primary:hover {
+.pd-row-action.pro {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pd-row-action.pro:hover {
   background: color-mix(in srgb, var(--pd-primary) 16%, transparent);
+}
+
+.pd-row-action.fire {
+  background: color-mix(in srgb, #f97316 14%, transparent);
+  color: color-mix(in srgb, #f97316 72%, var(--pd-text));
+}
+
+.pd-row-action.fire:hover {
+  background: color-mix(in srgb, #f97316 24%, transparent);
+  color: color-mix(in srgb, #ef4444 72%, var(--pd-text));
 }
 
 .pd-pager {
@@ -1785,7 +1832,10 @@ button.pd-metric-card:focus-visible {
 .pd-profile-drawer[data-slot="sheet-content"] {
   width: min(94vw, 460px) !important;
   max-width: 460px !important;
+  height: 100%;
+  max-height: 100dvh;
   gap: 0;
+  overflow: hidden;
   padding: 0;
   border-left: 1px solid var(--pd-border);
   background: var(--pd-surface);
@@ -1797,8 +1847,12 @@ button.pd-metric-card:focus-visible {
 }
 
 .pd-drawer-header {
-  padding: 22px 22px 18px;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 1;
+  padding: max(22px, env(safe-area-inset-top)) 22px 18px;
   border-bottom: 1px solid var(--pd-border);
+  background: var(--pd-surface);
 }
 
 .pd-drawer-person {
@@ -1835,6 +1889,7 @@ button.pd-metric-card:focus-visible {
 
 .pd-drawer-body {
   display: grid;
+  flex: 1 1 auto;
   gap: 16px;
   min-height: 0;
   padding: 20px 22px 24px;
@@ -2565,7 +2620,7 @@ button.pd-metric-card:focus-visible {
   }
 
   .pd-table {
-    min-width: 1080px;
+    min-width: 1220px;
   }
 
   .pd-dialog {

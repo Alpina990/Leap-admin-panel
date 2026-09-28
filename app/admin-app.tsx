@@ -59,10 +59,11 @@ type ContentTreeUnit={id:string;sectionId:string;sectionTitle:string;title:strin
 type ContentTreeCourse={id:string;title:string;slug:string;version:string;units:ContentTreeUnit[]};
 type ContentTree={items:ContentTreeCourse[];total:number;limit:number;offset:number;hasMore:boolean;canWrite:boolean};
 type AudienceFilter="all"|"active"|"access"|"attention";
-type Metric={icon:LucideIcon;label:string;value:string;detail:string;tone?:"success"|"warning"|"danger";filter?:AudienceFilter};
+type MetricFilter=AudienceFilter|"content-courses"|"content-units"|"content-lessons"|"content-published"|"commerce-revenue"|"commerce-paid"|"commerce-average"|"commerce-pending"|"messages-sent"|"messages-read"|"messages-unread"|"messages-total";
+type Metric={icon:LucideIcon;label:string;value:string;detail:string;tone?:"success"|"warning"|"danger";filter?:MetricFilter};
 
 const navRoutes:Section[]=["Overview","Learners","Content","Commerce","AI","Messages"];
-const audienceLabels:Record<AudienceFilter,string>={all:"Barcha profillar",active:"Faol foydalanuvchilar",access:"Access egalari",attention:"E’tibor kerak"};
+const audienceLabels:Record<AudienceFilter,string>={all:"Barcha profillar",active:"Faol foydalanuvchilar",access:"PRO",attention:"E’tibor kerak"};
 function formatMoney(tiyin?:string|null){
   if(tiyin===undefined||tiyin===null)return "—";
   const value=BigInt(tiyin);
@@ -198,10 +199,10 @@ function StatusPill({children,tone="neutral"}:{children:ReactNode;tone?:"success
   return <span className={`pd-status ${tone}`}>{children}</span>;
 }
 
-function ProgressBar({value,label}:{value:number;label?:string}){
+function ProgressBar({value,label,hideLabel=false}:{value:number;label?:string;hideLabel?:boolean}){
   const safe=Math.max(0,Math.min(100,value));
   return <div className="pd-progress">
-    <div className="pd-progress-copy"><span>{label??"Progress"}</span><strong>{safe}%</strong></div>
+    <div className="pd-progress-copy">{!hideLabel&&<span>{label??"Progress"}</span>}<strong>{safe}%</strong></div>
     <div className="pd-progress-track"><i style={{width:`${safe}%`}}/></div>
   </div>;
 }
@@ -278,9 +279,43 @@ function ErrorState({message,onRetry}:{message:string;onRetry:()=>void}){
 function SearchField({value,onChange,onSubmit,onClear}:{value:string;onChange:(value:string)=>void;onSubmit:()=>void;onClear:()=>void}){
   return <form className="pd-search" onSubmit={event=>{event.preventDefault();onSubmit();}}>
     <Search size={15}/>
-    <input aria-label="Foydalanuvchi username" value={value} onChange={event=>onChange(event.target.value)} placeholder="Username yoki ID..."/>
+    <input aria-label="Foydalanuvchini qidirish" value={value} onChange={event=>onChange(event.target.value)} placeholder="Ism, username yoki ID..."/>
     {value&&<button type="button" aria-label="Qidiruvni tozalash" onClick={onClear}>×</button>}
   </form>;
+}
+
+function manualDateToIso(value:string){
+  const match=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+  if(!match)return null;
+  const day=Number(match[1]),month=Number(match[2]),year=Number(match[3]);
+  const date=new Date(Date.UTC(year,month-1,day));
+  if(date.getUTCFullYear()!==year||date.getUTCMonth()!==month-1||date.getUTCDate()!==day)return null;
+  return `${match[3]}-${match[2]}-${match[1]}`;
+}
+
+function isoToManualDate(value?:string){
+  return value&&/^\d{4}-\d{2}-\d{2}$/.test(value)?`${value.slice(8,10)}/${value.slice(5,7)}/${value.slice(0,4)}`:"";
+}
+
+function ManualDateField({label,value,min,max,onChange}:{label:string;value?:string;min?:string;max?:string;onChange:(value:string)=>void}){
+  const [draft,setDraft]=useState(isoToManualDate(value));
+  function update(raw:string){
+    const digits=raw.replace(/\D/g,"").slice(0,8);
+    let next=digits;
+    if(digits.length>4)next=`${digits.slice(0,2)}/${digits.slice(2,4)}/${digits.slice(4)}`;
+    else if(digits.length>2)next=`${digits.slice(0,2)}/${digits.slice(2)}`;
+    setDraft(next);
+    if(!digits){onChange("");return;}
+    const iso=manualDateToIso(next);
+    if(iso&&(!min||iso>=min)&&(!max||iso<=max))onChange(iso);
+  }
+  return <label className="pd-period-field">
+    <span>{label}</span>
+    <div className="pd-period-control">
+      <input aria-label={label} inputMode="numeric" maxLength={10} value={draft} onBlur={()=>setDraft(isoToManualDate(value))} onChange={event=>update(event.target.value)} placeholder="kk/oo/yyyy"/>
+      <CalendarDays size={14}/>
+    </div>
+  </label>;
 }
 
 function PeriodBar({value,onChange}:{value:Record<string,string>;onChange:(value:Record<string,string>)=>void}){
@@ -311,14 +346,8 @@ function PeriodBar({value,onChange}:{value:Record<string,string>;onChange:(value
         <label className="pd-period-control"><select aria-label="Oy" value={month} onChange={event=>setMonth(year,Number(event.target.value))}>{months.map((item,index)=><option key={item} value={index}>{item}</option>)}</select><ChevronDown size={14}/></label>
       </div>
     </div>
-    <label className="pd-period-field">
-      <span>BOSHLANISH</span>
-      <div className="pd-period-control"><input aria-label="Boshlanish sanasi" type="date" max={end||undefined} value={start} onChange={event=>onChange({...(event.target.value?{start:event.target.value}:{}),...(end?{end}:{})})}/></div>
-    </label>
-    <label className="pd-period-field">
-      <span>TUGASH</span>
-      <div className="pd-period-control"><input aria-label="Tugash sanasi" type="date" min={start||undefined} value={end} onChange={event=>onChange({...(start?{start}:{}),...(event.target.value?{end:event.target.value}:{})})}/></div>
-    </label>
+    <ManualDateField key={`start-${start}`} label="BOSHLANISH" value={start||undefined} max={end||undefined} onChange={next=>onChange({...(next?{start:next}:{}),...(end?{end}:{})})}/>
+    <ManualDateField key={`end-${end}`} label="TUGASH" value={end||undefined} min={start||undefined} onChange={next=>onChange({...(start?{start}:{}),...(next?{end:next}:{})})}/>
     <div className="pd-period-status"><span>HOLAT</span><strong>{status}</strong></div>
   </section>;
 }
@@ -337,6 +366,10 @@ export default function AdminApp({session}:{session:AdminSession}){
   const [section,setSection]=useState<Section>("Overview");
   const [revision,setRevision]=useState(0);
   const [audience,setAudience]=useState<AudienceFilter>("all");
+  const [contentMetric,setContentMetric]=useState<MetricFilter|null>(null);
+  const [commerceMetric,setCommerceMetric]=useState<MetricFilter|null>(null);
+  const [messagesMetric,setMessagesMetric]=useState<MetricFilter|null>(null);
+  const [notificationRead,setNotificationRead]=useState<"all"|"read"|"unread">("all");
   const [draft,setDraft]=useState("");
   const [username,setUsername]=useState("");
   const [offset,setOffset]=useState(0);
@@ -408,19 +441,49 @@ export default function AdminApp({session}:{session:AdminSession}){
   const learnerByTelegramId=new Map([...people,...(transactionSummaries.data?.items??[]).flatMap(item=>item.learner?[item.learner]:[])].map(item=>[item.telegramUserId,item]));
   const activeOrder=orders.data?.items.find(item=>item.id===orderId)?.id??orders.data?.items[0]?.id??null;
   const payment=useRead<Payment>(activeOrder?"/api/admin/payment?"+new URLSearchParams({orderId:activeOrder}):null,revision);
-  const notifications=useRead<{items:Notification[];total:number;hasMore:boolean}>(section==="Messages"?"/api/admin/notifications?"+new URLSearchParams({limit:"25",offset:String(notificationOffset),...dateRange,...reportFilters.notifications}):null,revision);
+  const notificationQuery=new URLSearchParams({limit:"25",offset:String(notificationOffset),read:notificationRead,...dateRange,...reportFilters.notifications});
+  const notifications=useRead<{items:Notification[];total:number;hasMore:boolean}>(section==="Messages"?"/api/admin/notifications?"+notificationQuery:null,revision);
   const notification=useRead<Notification>(notificationId?"/api/admin/notification?"+new URLSearchParams({notificationId}):null,revision);
   const globalResults=useRead<LearnerDirectory>(modal==="search"&&globalQuery?"/api/admin/learners?"+new URLSearchParams({limit:"25",offset:"0",username:globalQuery}):null,searchRevision);
   const reportResource:ReportingResource=section==="Messages"?"notifications":section==="Commerce"&&commerceTab==="transactions"?"payments":"learners";
-  const reportQuery=reportResource==="notifications"?new URLSearchParams({limit:"25",offset:String(notificationOffset),...dateRange,...reportFilters.notifications}):reportResource==="payments"?ordersQuery:query;
+  const reportQuery=reportResource==="notifications"?notificationQuery:reportResource==="payments"?ordersQuery:query;
   const isLight=themeReady&&resolvedTheme==="light";
 
   useEffect(()=>{queueMicrotask(()=>{try{setAutoRefresh(localStorage.getItem("leap-auto-refresh")==="true");}catch{}});},[]);
+  useEffect(()=>{
+    let active=true;
+    async function keepSessionAlive(){
+      try{
+        const response=await fetch("/api/admin/session",{credentials:"same-origin",cache:"no-store",signal:AbortSignal.timeout(12000)});
+        if(active&&response.status===401)window.location.replace("/login");
+      }catch{return;}
+    }
+    void keepSessionAlive();
+    const timer=setInterval(()=>{if(document.visibilityState==="visible")void keepSessionAlive();},300000);
+    const onVisibility=()=>{if(document.visibilityState==="visible")void keepSessionAlive();};
+    document.addEventListener("visibilitychange",onVisibility);
+    return()=>{active=false;clearInterval(timer);document.removeEventListener("visibilitychange",onVisibility);};
+  },[]);
   useEffect(()=>{if(!autoRefresh)return;const timer=setInterval(()=>{if(document.visibilityState==="visible")setRevision(value=>value+1);},60000);return()=>clearInterval(timer);},[autoRefresh]);
+  useEffect(()=>{
+    const next=draft.trim();
+    const timer=setTimeout(()=>{
+      setUsername(current=>current===next?current:next);
+      setOffset(0);
+      setSelected(null);
+    },300);
+    return()=>clearTimeout(timer);
+  },[draft]);
+  useEffect(()=>{
+    if(modal!=="search")return;
+    const next=globalDraft.trim();
+    const timer=setTimeout(()=>setGlobalQuery(next||null),300);
+    return()=>clearTimeout(timer);
+  },[globalDraft,modal]);
   useEffect(()=>{
     const hash=()=>{
       const route=navRoutes.find(key=>key.toLowerCase()===location.hash.slice(1).split("/")[0]);
-      if(route){setSection(route);setAudience("all");setOffset(0);setUsername("");setDraft("");setSelected(null);setProfileId(null);}
+      if(route){setSection(route);setAudience("all");setContentMetric(null);setCommerceMetric(null);setMessagesMetric(null);setNotificationRead("all");setOffset(0);setUsername("");setDraft("");setSelected(null);setProfileId(null);}
     };
     queueMicrotask(()=>{setThemeReady(true);hash();});
     addEventListener("hashchange",hash);
@@ -429,9 +492,42 @@ export default function AdminApp({session}:{session:AdminSession}){
 
   function go(route:Section,preserveAudience=false){
     setSection(route);if(!preserveAudience)setAudience("all");setOffset(0);setUsername("");setDraft("");setSelected(null);setProfileId(null);
+    if(!preserveAudience){setContentMetric(null);setCommerceMetric(null);setMessagesMetric(null);setNotificationRead("all");}
     history.pushState(null,"","#"+route.toLowerCase());window.scrollTo({top:0,behavior:"smooth"});
   }
   function changeAudience(next:AudienceFilter){setAudience(next);setOffset(0);setSelected(null);}
+  function toggleContentMetric(next:MetricFilter){
+    setContentMetric(current=>current===next?null:next);
+    setUnitId(null);setLessonId(null);
+  }
+  function toggleCommerceMetric(next:MetricFilter){
+    const selected=commerceMetric===next?null:next;
+    setCommerceMetric(selected);
+    setPaymentStatus(selected==="commerce-pending"?"pending":selected?"paid":"");
+    setPaymentMethod("");
+    setOrderOffset(0);
+    setOrderId(null);
+  }
+  function toggleMessagesMetric(next:MetricFilter){
+    const selected=messagesMetric===next?null:next;
+    setMessagesMetric(selected);
+    setNotificationRead(selected==="messages-read"?"read":selected==="messages-unread"?"unread":"all");
+    setNotificationOffset(0);
+    setNotificationId(null);
+  }
+  function changeMetricFilter(sectionValue:Section,filter:MetricFilter){
+    if(sectionValue==="Overview"||sectionValue==="Learners"){changeAudience(filter as AudienceFilter);return;}
+    if(sectionValue==="Content"){toggleContentMetric(filter);return;}
+    if(sectionValue==="Commerce"){toggleCommerceMetric(filter);return;}
+    toggleMessagesMetric(filter);
+  }
+  function metricIsActive(sectionValue:Section,filter?:MetricFilter){
+    if(!filter)return false;
+    if(sectionValue==="Overview"||sectionValue==="Learners")return filter===audience;
+    if(sectionValue==="Content")return filter===contentMetric;
+    if(sectionValue==="Commerce")return filter===commerceMetric;
+    return filter===messagesMetric;
+  }
   function clearSearch(){setDraft("");setUsername("");setAudience("all");setOffset(0);setSelected(null);setRevision(value=>value+1);}
   function openModal(value:"settings"|"account"|"search"){
     if(value==="settings"){setPreferenceTheme(isLight?"light":"dark");setPreferenceRefresh(autoRefresh);setPreferenceError("");}
@@ -464,28 +560,27 @@ export default function AdminApp({session}:{session:AdminSession}){
       {icon:Flame,label:"E’tibor kerak",value:summary.data?.attention?(summary.data.attention.learners??summary.data.attention.access+summary.data.attention.learning).toLocaleString("en-US"):"—",detail:"Access va o‘quv signallari",tone:"warning" as const,filter:"attention"},
     ];
     if(sectionValue==="Content")return [
-      {icon:Library,label:"Kurslar",value:overview.data?.coursesTotal.toLocaleString("en-US")??"—",detail:"Katalogdagi kurslar",tone:"success" as const},
-      {icon:BookOpen,label:"Unitlar",value:contentTree.data?treeUnits.length.toLocaleString("en-US"):"—",detail:"Ko‘rinayotgan kurslarda",tone:"success" as const},
-      {icon:FileText,label:"Darslar",value:overview.data?.lessonsTotal.toLocaleString("en-US")??"—",detail:"Draft va published",tone:"success" as const},
-      {icon:Check,label:"Published",value:contentTree.data?treeUnits.flatMap(item=>item.lessons).filter(item=>item.status==="published").length.toLocaleString("en-US"):"—",detail:"Ko‘rinayotgan darslarda",tone:"success" as const},
+      {icon:Library,label:"Kurslar",value:overview.data?.coursesTotal.toLocaleString("en-US")??"—",detail:"Katalogdagi kurslar",tone:"success" as const,filter:"content-courses"},
+      {icon:BookOpen,label:"Unitlar",value:contentTree.data?treeUnits.length.toLocaleString("en-US"):"—",detail:"Ko‘rinayotgan kurslarda",tone:"success" as const,filter:"content-units"},
+      {icon:FileText,label:"Darslar",value:overview.data?.lessonsTotal.toLocaleString("en-US")??"—",detail:"Draft va published",tone:"success" as const,filter:"content-lessons"},
+      {icon:Check,label:"Published",value:contentTree.data?treeUnits.flatMap(item=>item.lessons).filter(item=>item.status==="published").length.toLocaleString("en-US"):"—",detail:"Ko‘rinayotgan darslarda",tone:"success" as const,filter:"content-published"},
     ];
     if(sectionValue==="Commerce")return [
-      {icon:CircleDollarSign,label:"Jami tushum",value:formatMoneyCompact(summary.data?.revenueTiyin),detail:"Tanlangan davr",tone:"success" as const},
-      {icon:WalletCards,label:"To‘langan buyurtmalar",value:summary.data?.paidOrders.toLocaleString("en-US")??"—",detail:"Muvaffaqiyatli to‘lovlar",tone:"success" as const},
-      {icon:TrendingUp,label:"O‘rtacha chek",value:summary.data?.paidOrders?formatMoneyCompact(String(BigInt(summary.data.revenueTiyin)/BigInt(summary.data.paidOrders))):"—",detail:"Bir buyurtma o‘rtachasi",tone:"success" as const},
-      {icon:Clock3,label:"Kutilayotgan",value:summary.data?.health?.paymentsPending.toLocaleString("en-US")??"—",detail:"Pending buyurtmalar",tone:"warning" as const},
+      {icon:CircleDollarSign,label:"Jami tushum",value:formatMoneyCompact(summary.data?.revenueTiyin),detail:"Tanlangan davr",tone:"success" as const,filter:"commerce-revenue"},
+      {icon:WalletCards,label:"To‘langan buyurtmalar",value:summary.data?.paidOrders.toLocaleString("en-US")??"—",detail:"Muvaffaqiyatli to‘lovlar",tone:"success" as const,filter:"commerce-paid"},
+      {icon:TrendingUp,label:"O‘rtacha chek",value:summary.data?.paidOrders?formatMoneyCompact(String(BigInt(summary.data.revenueTiyin)/BigInt(summary.data.paidOrders))):"—",detail:"Bir buyurtma o‘rtachasi",tone:"success" as const,filter:"commerce-average"},
+      {icon:Clock3,label:"Kutilayotgan",value:summary.data?.health?.paymentsPending.toLocaleString("en-US")??"—",detail:"Pending buyurtmalar",tone:"warning" as const,filter:"commerce-pending"},
     ];
     return [
-      {icon:Send,label:"Yuborilgan",value:summary.data?.notificationCreated.toLocaleString("en-US")??"—",detail:"Tanlangan davrda",tone:"success" as const},
-      {icon:MessageSquare,label:"O‘qilgan",value:summary.data?.notificationRead.toLocaleString("en-US")??"—",detail:"Mini App ichida",tone:"success" as const},
-      {icon:Clock3,label:"O‘qilmagan",value:summary.data?Math.max(0,summary.data.notificationCreated-summary.data.notificationRead).toLocaleString("en-US"):"—",detail:"Hali ochilmagan",tone:"warning" as const},
-      {icon:BarChart3,label:"Jami xabarlar",value:notifications.data?.total.toLocaleString("en-US")??"—",detail:"Filtrlangan natijalar",tone:"success" as const},
+      {icon:Send,label:"Yuborilgan",value:summary.data?.notificationCreated.toLocaleString("en-US")??"—",detail:"Tanlangan davrda",tone:"success" as const,filter:"messages-sent"},
+      {icon:MessageSquare,label:"O‘qilgan",value:summary.data?.notificationRead.toLocaleString("en-US")??"—",detail:"Mini App ichida",tone:"success" as const,filter:"messages-read"},
+      {icon:Clock3,label:"O‘qilmagan",value:summary.data?Math.max(0,summary.data.notificationCreated-summary.data.notificationRead).toLocaleString("en-US"):"—",detail:"Hali ochilmagan",tone:"warning" as const,filter:"messages-unread"},
+      {icon:BarChart3,label:"Jami xabarlar",value:notifications.data?.total.toLocaleString("en-US")??"—",detail:"Filtrlangan natijalar",tone:"success" as const,filter:"messages-total"},
     ];
   }
 
   function metrics(sectionValue:Section){
-    const clickable=sectionValue==="Overview"||sectionValue==="Learners";
-    return <div className="pd-metric-grid">{metricsFor(sectionValue).map(metric=><MetricCard key={metric.label} {...metric} onClick={clickable&&metric.filter?()=>changeAudience(metric.filter!):undefined} active={clickable&&metric.filter===audience}/>)}</div>;
+    return <div className="pd-metric-grid">{metricsFor(sectionValue).map(metric=><MetricCard key={metric.label} {...metric} onClick={metric.filter?()=>changeMetricFilter(sectionValue,metric.filter!):undefined} active={metricIsActive(sectionValue,metric.filter)}/>)}</div>;
   }
 
   function learnerRows(compact=false){
@@ -501,14 +596,14 @@ export default function AdminApp({session}:{session:AdminSession}){
       return <tr key={personValue.telegramUserId} data-learner-id={personValue.telegramUserId}>
         <td><span className="pd-id">{personValue.telegramUserId}</span></td>
         <td><button className="pd-person" onClick={()=>openLearner(personValue)}><span>{learnerInitials(personValue)}</span><div><strong>{learnerName(personValue)}</strong><small>{personValue.username?`@${personValue.username}`:"Username yo‘q"}</small></div></button></td>
-        <td><ProgressBar value={progress} label={`${personValue.completedLessons??0}/${personValue.startedLessons??0}`}/></td>
+        <td><ProgressBar value={progress} hideLabel/></td>
         <td><StatusPill tone={toneForProgress(progress)}>{progress>=70?"Yaxshi":progress>=30?"Davom etmoqda":"Yangi"}</StatusPill></td>
         <td className="pd-table-number">{paymentCount}</td>
         <td className="pd-money">{paidTotal}</td>
         <td><span className="pd-muted">{formatDate(personValue.createdAt)}</span></td>
         <td><span className="pd-muted">{relativeSeen(personValue.lastSeenAt)}</span></td>
-        <td><button className="pd-pro-check" aria-label={`${learnerName(personValue)} PRO accessini boshqarish`} title="Accessni boshqarish" onClick={()=>openBusiness("Manage access",personValue.telegramUserId)}><BadgeCheck size={14}/></button></td>
-        <td><div className="pd-row-actions">{hasCatalogAccess?<StatusPill tone="success">PRO</StatusPill>:<button className="pd-row-action primary" onClick={()=>openBusiness("Manage access",personValue.telegramUserId)}>PRO qilish</button>}<button className="pd-text-button" onClick={()=>openLearner(personValue)}>Batafsil</button></div></td>
+        <td><div className="pd-row-actions">{hasCatalogAccess?<button className="pd-row-action pro" title="Accessni o‘zgartirish" onClick={()=>openBusiness("Manage access",personValue.telegramUserId)}><BadgeCheck size={13}/>PRO</button>:<button className="pd-row-action fire" onClick={()=>openBusiness("Manage access",personValue.telegramUserId)}>PRO qilish</button>}</div></td>
+        <td><button className="pd-text-button" onClick={()=>openLearner(personValue)}>Batafsil</button></td>
       </tr>;
     });
   }
@@ -516,11 +611,12 @@ export default function AdminApp({session}:{session:AdminSession}){
   function learnerPanel(compact=false){
     return <Panel title="Foydalanuvchilar" subtitle={`Jami ${directory.data?.total.toLocaleString("en-US")??"—"} ta profil${audience==="all"?"":` · ${audienceLabels[audience]}`}`} action={<button className="pd-button" onClick={openAllLearners}>Barchasini ko‘rish</button>}>
       <div className="pd-toolbar">
-        <SearchField value={draft} onChange={setDraft} onSubmit={()=>{setUsername(draft);setOffset(0);setSelected(null);setRevision(value=>value+1);}} onClear={clearSearch}/>
+        <SearchField value={draft} onChange={setDraft} onSubmit={()=>{setUsername(draft.trim());setOffset(0);setSelected(null);setRevision(value=>value+1);}} onClear={clearSearch}/>
+        <label className="pd-filter-select"><Filter size={14}/><select aria-label="Foydalanuvchi filtri" value={audience} onChange={event=>changeAudience(event.target.value as AudienceFilter)}><option value="all">Barcha profillar</option><option value="active">Faol foydalanuvchilar</option><option value="access">PRO</option><option value="attention">E’tibor kerak</option></select><ChevronDown size={14}/></label>
         <button className="pd-button" onClick={()=>setReporting("Sort & paginate")}><Filter size={14}/>Saralash</button>
         <button className="pd-button" onClick={()=>setReporting("Export report")}><Download size={14}/>Eksport</button>
       </div>
-      <DataTable headers={["ID","Foydalanuvchi","Progress","Holat","To‘lovlar","Jami","Ro‘yxatdan o‘tgan","Oxirgi faollik","PRO","Amal"]}>{learnerRows(compact)}</DataTable>
+      <DataTable headers={["ID","Foydalanuvchi","Progress","Holat","To‘lovlar","Jami","Ro‘yxatdan o‘tgan","Oxirgi faollik","PRO","Batafsil"]}>{learnerRows(compact)}</DataTable>
       {!compact&&<Pager offset={directory.data?.offset??0} limit={directory.data?.limit??25} total={directory.data?.total??0} hasMore={directory.data?.hasMore??false} loading={directory.loading} onPrevious={()=>{setOffset(Math.max(0,offset-25));setSelected(null);}} onNext={()=>{setOffset(offset+25);setSelected(null);}}/>}
     </Panel>;
   }
@@ -560,6 +656,15 @@ export default function AdminApp({session}:{session:AdminSession}){
   function contentScreen(){
     const courses=contentTree.data?.items??[];
     const canWrite=contentTree.data?.canWrite??false;
+    const visibleCourses=courses.map(course=>{
+      const units=course.units.flatMap(unit=>{
+        const lessons=contentMetric==="content-published"?unit.lessons.filter(lesson=>lesson.status==="published"):unit.lessons;
+        if(contentMetric==="content-published"&&!lessons.length)return [];
+        return [{...unit,lessons:contentMetric==="content-units"?[]:lessons}];
+      });
+      return {...course,units:contentMetric==="content-courses"?[]:units};
+    }).filter(course=>contentMetric==="content-lessons"||contentMetric==="content-published"?course.units.some(unit=>unit.lessons.length):true);
+    const contentMetricText=contentMetric==="content-units"?"unitlar":contentMetric==="content-lessons"?"darslar":contentMetric==="content-published"?"published darslar":"barcha kontent";
     const selectedUnit=treeUnits.find(item=>item.id===activeUnit);
     const selectedLesson=selectedUnit?.lessons.find(item=>item.id===activeLesson);
     const blocks=contentDetail.data?.lesson.blocks??[];
@@ -567,9 +672,9 @@ export default function AdminApp({session}:{session:AdminSession}){
       <PageHeader title="Content" subtitle="Kurslar, unitlar va darslarni yagona joydan boshqaring" actions={<><button className="pd-button" disabled={!canWrite} onClick={()=>openContent("Import content")}><Plus size={14}/>Import</button><button className="pd-button" disabled={!canWrite||!activeUnit} onClick={()=>setStructureTarget({kind:"lesson",mode:"create",unitId:activeUnit??undefined})}><Plus size={14}/>Dars qo‘shish</button><button className="pd-button primary" disabled={!canWrite} onClick={()=>setStructureTarget({kind:"course",mode:"create"})}><Plus size={14}/>Kurs qo‘shish</button></>}/>
       {metrics("Content")}
       <div className="pd-content-grid">
-        <Panel title="Kontent daraxti" subtitle={`${contentTree.data?.total??"—"} ta kurs`} className="pd-catalog-panel">
+        <Panel title="Kontent daraxti" subtitle={`${contentTree.data?.total??"—"} ta kurs · ${contentMetricText}`} className="pd-catalog-panel">
           {contentTree.loading&&!contentTree.data?<div className="pd-loading">Kontent yuklanmoqda…</div>:contentTree.error&&!contentTree.data?<ErrorState message={contentTree.error} onRetry={()=>setRevision(value=>value+1)}/>:<div className="pd-tree">
-            {courses.map((course,index)=><details key={course.id} className="pd-tree-course" open={index===0}>
+            {visibleCourses.map((course,index)=><details key={course.id} className="pd-tree-course" open={index===0}>
               <summary className="pd-tree-course-head">
                 <span className="pd-tree-course-icon"><Folder size={16}/></span>
                 <div><strong>{course.title}</strong><small>{course.slug} · {course.units.length} unit</small></div>
@@ -595,7 +700,7 @@ export default function AdminApp({session}:{session:AdminSession}){
                 {!course.units.length&&<EmptyState title="Unit topilmadi" description="Bu kursda hali unit mavjud emas." action={<button className="pd-button primary" disabled={!canWrite} onClick={()=>setStructureTarget({kind:"unit",mode:"create",courseId:course.id})}><Plus size={14}/>Unit qo‘shish</button>}/>}
               </div>
             </details>)}
-            {!courses.length&&<EmptyState title="Kurs topilmadi" description="Content bo‘limiga birinchi kursni qo‘shing." action={<button className="pd-button primary" disabled={!canWrite} onClick={()=>setStructureTarget({kind:"course",mode:"create"})}><Plus size={14}/>Kurs qo‘shish</button>}/>}
+            {!visibleCourses.length&&<EmptyState title="Kontent topilmadi" description={courses.length?"Tanlangan metrika uchun mos kontent mavjud emas.":"Content bo‘limiga birinchi kursni qo‘shing."} action={!courses.length?<button className="pd-button primary" disabled={!canWrite} onClick={()=>setStructureTarget({kind:"course",mode:"create"})}><Plus size={14}/>Kurs qo‘shish</button>:undefined}/>}
           </div>
           }
           <Pager offset={catalogOffset} limit={25} total={contentTree.data?.total??0} hasMore={contentTree.data?.hasMore??false} loading={contentTree.loading} onPrevious={()=>{setCatalogOffset(Math.max(0,catalogOffset-25));setUnitId(null);setLessonId(null);}} onNext={()=>{setCatalogOffset(catalogOffset+25);setUnitId(null);setLessonId(null);}}/>
@@ -716,15 +821,15 @@ export default function AdminApp({session}:{session:AdminSession}){
     {priceOpen&&<PriceDialog current={catalogPrice.data} csrf={session.csrfToken} onSaved={()=>setRevision(value=>value+1)} onClose={()=>{setPriceOpen(false);setRevision(value=>value+1);}}/>}
     {business&&<BusinessDialog mode={business} learnerId={businessLearner??person?.telegramUserId} learnerName={businessLearner&&businessLearner!==person?.telegramUserId?businessLearner:person?learnerName(person):undefined} csrf={session.csrfToken} onClose={()=>setBusiness(null)} onSaved={()=>setRevision(value=>value+1)}/>}
     {reporting&&<ReportingDialog mode={reporting} resource={reportResource} query={reportQuery.toString()} onClose={()=>setReporting(null)} onApply={values=>{if(reporting==="Date range")setDateRange(Object.fromEntries(Object.entries(values).filter(([,value])=>value)));else setReportFilters(previous=>({...previous,[reportResource]:values}));setOffset(0);setOrderOffset(0);setNotificationOffset(0);setSelected(null);setOrderId(null);}}/>}
-    {paymentFilter&&<Dialog open onOpenChange={setPaymentFilter}><DialogBody title="To‘lov filtrlari" description="Buyurtmalarni holat va to‘lov usuli bo‘yicha filtrlang."><label className="pd-field"><span>Holat</span><select value={statusDraft} onChange={event=>setStatusDraft(event.target.value)}><option value="">Barcha holatlar</option><option value="paid">Paid</option><option value="pending">Pending</option><option value="cancelled">Cancelled</option></select></label><label className="pd-field"><span>Usul</span><select value={methodDraft} onChange={event=>setMethodDraft(event.target.value)}><option value="">Barcha usullar</option>{["payme","click","uzum","paylov"].map(method=><option key={method} value={method}>{method}</option>)}</select></label><div className="pd-dialog-actions"><button className="pd-button" onClick={()=>setPaymentFilter(false)}>Bekor qilish</button><button className="pd-button primary" onClick={()=>{setPaymentStatus(statusDraft);setPaymentMethod(methodDraft);setOrderOffset(0);setOrderId(null);setPaymentFilter(false);}}>Qo‘llash</button></div></DialogBody></Dialog>}
+    {paymentFilter&&<Dialog open onOpenChange={setPaymentFilter}><DialogBody title="To‘lov filtrlari" description="Buyurtmalarni holat va to‘lov usuli bo‘yicha filtrlang."><label className="pd-field"><span>Holat</span><select value={statusDraft} onChange={event=>setStatusDraft(event.target.value)}><option value="">Barcha holatlar</option><option value="paid">Paid</option><option value="pending">Pending</option><option value="cancelled">Cancelled</option></select></label><label className="pd-field"><span>Usul</span><select value={methodDraft} onChange={event=>setMethodDraft(event.target.value)}><option value="">Barcha usullar</option>{["payme","click","uzum","paylov"].map(method=><option key={method} value={method}>{method}</option>)}</select></label><div className="pd-dialog-actions"><button className="pd-button" onClick={()=>setPaymentFilter(false)}>Bekor qilish</button><button className="pd-button primary" onClick={()=>{setCommerceMetric(null);setPaymentStatus(statusDraft);setPaymentMethod(methodDraft);setOrderOffset(0);setOrderId(null);setPaymentFilter(false);}}>Qo‘llash</button></div></DialogBody></Dialog>}
     {notificationId&&<Dialog open onOpenChange={value=>{if(!value)setNotificationId(null);}}><DialogBody title={notification.data?.title??"Xabar tafsiloti"} description="Mini App inbox yozuvi. Bu oynada o‘qilgan holat o‘zgartirilmaydi.">{notification.loading?<div className="pd-loading">Yuklanmoqda…</div>:notification.data?<><p className="pd-message-body">{notification.data.body}</p><dl className="pd-facts"><div><dt>Foydalanuvchi</dt><dd>{notification.data.learnerId}</dd></div><div><dt>Yaratilgan</dt><dd>{formatDateTime(notification.data.createdAt)}</dd></div><div><dt>O‘qilgan</dt><dd>{formatDateTime(notification.data.readAt)}</dd></div></dl></>:<ErrorState message={notification.error??"Xabar topilmadi"} onRetry={()=>setRevision(value=>value+1)}/>}<div className="pd-dialog-actions"><button className="pd-button primary" onClick={()=>setNotificationId(null)}>Yopish</button></div></DialogBody></Dialog>}
     {noteTarget&&<NoteDialog key={noteTarget.telegramUserId} learnerId={noteTarget.telegramUserId} learnerName={learnerName(noteTarget)} csrf={session.csrfToken} onViewRecord={()=>{setSelected(noteTarget.telegramUserId);setProfileId(noteTarget.telegramUserId);setNoteTarget(null);setRevision(value=>value+1);}} onClose={()=>{setNoteTarget(null);setRevision(value=>value+1);}}/>}
     <Dialog open={workflow!==null} onOpenChange={value=>{if(!value)setWorkflow(null);}}><DialogBody title={workflow??"Workflow"} description={workflow?workflowCards[workflow].description:"Bu amal hozircha mavjud emas."}><p className="pd-feedback">Bu workflow hozircha read-only rejimda. Backend API ulanmaguncha o‘zgartirish yaratilmaydi.</p><div className="pd-dialog-actions"><button className="pd-button" onClick={()=>setWorkflow(null)}>Bekor qilish</button><button className="pd-button primary" disabled>Mavjud emas</button></div></DialogBody></Dialog>
     <Dialog open={modal!==null} onOpenChange={value=>{if(!value)setModal(null);}}>
-      <DialogBody title={modal==="settings"?"Sozlamalar":modal==="search"?"Qidiruv":"Administrator"} description={modal==="settings"?"Interfeys va avtomatik yangilash sozlamalari.":modal==="search"?"Aniq username bo‘yicha foydalanuvchi qidirish.":"Tizimga kirgan administrator."}>
+      <DialogBody title={modal==="settings"?"Sozlamalar":modal==="search"?"Qidiruv":"Administrator"} description={modal==="settings"?"Interfeys va avtomatik yangilash sozlamalari.":modal==="search"?"Ism, username yoki ID bo‘yicha foydalanuvchi qidirish.":"Tizimga kirgan administrator."}>
         {modal==="settings"&&<><label className="pd-field"><span>Ko‘rinish</span><select value={preferenceTheme} onChange={event=>setPreferenceTheme(event.target.value)}><option value="light">Light</option><option value="dark">Dark</option></select></label><label className="pd-field"><span>Avtomatik yangilash</span><select value={preferenceRefresh?"on":"off"} onChange={event=>setPreferenceRefresh(event.target.value==="on")}><option value="off">O‘chirilgan</option><option value="on">Har 60 sekundda</option></select></label>{preferenceError&&<p className="pd-error-text">{preferenceError}</p>}</>}
         {modal==="account"&&<><div className="pd-field"><span>Administrator</span><strong>{session.admin.username}</strong></div><div className="pd-field"><span>Sessiya</span><strong>Faol · Administrator</strong></div>{logoutError&&<p className="pd-error-text">{logoutError}</p>}</>}
-        {modal==="search"&&<><form onSubmit={event=>{event.preventDefault();setGlobalQuery(globalDraft);setSearchRevision(value=>value+1);}}><label className="pd-field"><span>Username</span><input value={globalDraft} onChange={event=>{setGlobalDraft(event.target.value);setGlobalQuery(null);}} placeholder="Masalan: username" required/></label><button className="pd-button primary" type="submit">Qidirish</button></form><div className="pd-search-results">{!globalQuery?<p>Username kiriting.</p>:globalResults.loading?<p>Qidirilmoqda…</p>:globalResults.error?<ErrorState message={globalResults.error} onRetry={()=>setSearchRevision(value=>value+1)}/>:globalResults.data?.items.length?globalResults.data.items.map(result=><button key={result.telegramUserId} onClick={()=>{setModal(null);openLearner(result);}}><span>{learnerInitials(result)}</span><div><strong>{learnerName(result)}</strong><small>{result.username?`@${result.username}`:result.telegramUserId}</small></div><ChevronRight size={15}/></button>):<p>Natija topilmadi.</p>}</div></>}
+        {modal==="search"&&<><form onSubmit={event=>{event.preventDefault();const next=globalDraft.trim();setGlobalQuery(next||null);setSearchRevision(value=>value+1);}}><label className="pd-field"><span>Qidiruv</span><input value={globalDraft} onChange={event=>setGlobalDraft(event.target.value)} placeholder="Ism, username yoki ID" required/></label><button className="pd-button primary" type="submit">Qidirish</button></form><div className="pd-search-results">{!globalQuery?<p>Kamida bitta harf yoki raqam kiriting.</p>:globalResults.loading?<p>Qidirilmoqda…</p>:globalResults.error?<ErrorState message={globalResults.error} onRetry={()=>setSearchRevision(value=>value+1)}/>:globalResults.data?.items.length?globalResults.data.items.map(result=><button key={result.telegramUserId} onClick={()=>{setModal(null);openLearner(result);}}><span>{learnerInitials(result)}</span><div><strong>{learnerName(result)}</strong><small>{result.username?`@${result.username}`:result.telegramUserId}</small></div><ChevronRight size={15}/></button>):<p>Natija topilmadi.</p>}</div></>}
         <div className="pd-dialog-actions"><button className="pd-button" onClick={()=>setModal(null)}>Yopish</button>{modal==="settings"&&<button className="pd-button primary" onClick={savePreferences}>Saqlash</button>}{modal==="account"&&<button className="pd-button primary" disabled={signingOut} onClick={logout}>{signingOut?"Chiqilmoqda…":"Chiqish"}</button>}</div>
       </DialogBody>
     </Dialog>

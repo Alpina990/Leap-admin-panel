@@ -50,27 +50,46 @@ test('shared search and device preferences use the new read-only surface', () =>
   assert.match(ui, /Qidiruv/);
 });
 
+test('admin session cookie is renewed while the panel stays open', () => {
+  const ui = read('app/admin-app.tsx');
+  assert.match(ui, /keepSessionAlive/);
+  assert.match(ui, /\/api\/admin\/session/);
+  assert.match(ui, /visibilitychange/);
+  assert.match(ui, /300000/);
+});
+
 test('users surface includes period filtering, payment totals and manual PRO access', () => {
   const ui = read('app/admin-app.tsx');
   assert.match(ui, /PeriodBar/);
   assert.match(ui, /To‘lovlar","Jami/);
   assert.match(ui, /PRO qilish/);
   assert.match(ui, /catalogAccess===true/);
-  assert.match(ui, /<StatusPill tone="success">PRO<\/StatusPill>/);
+  assert.match(ui, /pd-row-action pro/);
+  assert.match(ui, /pd-row-action fire/);
+  assert.match(ui, /title="Accessni o‘zgartirish"/);
+  assert.match(ui, /PRO","Batafsil/);
+  assert.match(ui, /pd-filter-select/);
+  assert.match(ui, /ManualDateField/);
+  assert.match(ui, /inputMode="numeric"/);
   assert.match(ui, /learner-payments/);
   assert.match(read('app/pushday.css'), /\.pd-period-bar/);
 });
 
 test('user metric cards filter the directory by audience', () => {
   const ui = read('app/admin-app.tsx');
-  assert.match(ui, /type AudienceFilter=/);
+  assert.match(ui, /type MetricFilter=/);
   assert.match(ui, /changeAudience/);
+  assert.match(ui, /changeMetricFilter/);
   assert.match(ui, /aria-pressed=\{active\}/);
   assert.match(ui, /filter:"all"/);
   assert.match(ui, /filter:"active"/);
   assert.match(ui, /filter:"access"/);
   assert.match(ui, /filter:"attention"/);
   assert.match(ui, /audience,\.\.\.dateRange/);
+  assert.match(ui, /filter:"content-published"/);
+  assert.match(ui, /filter:"commerce-pending"/);
+  assert.match(ui, /filter:"messages-unread"/);
+  assert.match(ui, /read:notificationRead/);
   assert.match(read('app/pushday.css'), /button\.pd-metric-card\.active/);
 });
 
@@ -81,7 +100,10 @@ test('commerce reuses the period bar, provider distribution and the shared learn
   assert.match(ui, /providerLabel/);
   assert.match(ui, /LearnerDetailDrawer/);
   assert.match(ui, /pd-person-link/);
-  assert.match(read('app/pushday.css'), /\.pd-profile-drawer/);
+  const css = read('app/pushday.css');
+  assert.match(css, /\.pd-profile-drawer/);
+  assert.match(css, /\.pd-drawer-header\s*\{[^}]*flex:\s*0 0 auto/s);
+  assert.match(css, /\.pd-profile-drawer\[data-slot="sheet-content"\]\s*\{[^}]*overflow:\s*hidden/s);
 });
 
 test('PRO access dialog mirrors the PushDay single-select confirmation flow', () => {
