@@ -91,6 +91,9 @@ test('PRO access dialog mirrors the PushDay single-select confirmation flow', ()
   assert.match(dialog, /pd-pro-dialog/);
   assert.match(dialog, /'Tasdiqlash'/);
   assert.match(dialog, /'Bekor qilish'/);
+  assert.match(dialog, /'Saqlanmoqda…'/);
+  assert.match(dialog, /'Qayta urinish'/);
+  assert.doesNotMatch(dialog, /Lifetime access|No access/);
   assert.match(read('app/pushday.css'), /\.pd-dialog\.pd-pro-dialog/);
 });
 
