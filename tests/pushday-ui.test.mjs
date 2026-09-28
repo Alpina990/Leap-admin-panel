@@ -82,6 +82,18 @@ test('commerce reuses the period bar, provider distribution and the shared learn
   assert.match(read('app/pushday.css'), /\.pd-profile-drawer/);
 });
 
+test('PRO access dialog mirrors the PushDay single-select confirmation flow', () => {
+  const dialog = read('app/business-dialog.tsx');
+  assert.match(dialog, /PRO qilish/);
+  assert.match(dialog, /aria-label="Tarif"/);
+  assert.match(dialog, /1 yillik obuna/);
+  assert.match(dialog, /Obunani bekor qilish/);
+  assert.match(dialog, /pd-pro-dialog/);
+  assert.match(dialog, /'Tasdiqlash'/);
+  assert.match(dialog, /'Bekor qilish'/);
+  assert.match(read('app/pushday.css'), /\.pd-dialog\.pd-pro-dialog/);
+});
+
 test('content uses a course-unit-lesson tree with add and edit actions but no delete', () => {
   const ui = read('app/admin-app.tsx');
   const dialog = read('app/content-structure-dialog.tsx');

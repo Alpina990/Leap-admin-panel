@@ -2063,6 +2063,49 @@ button.pd-metric-card:focus-visible {
   box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18) !important;
 }
 
+.pd-dialog.pd-pro-dialog {
+  width: min(480px, calc(100vw - 28px)) !important;
+  max-width: 480px !important;
+  padding: 24px !important;
+  border-radius: 22px !important;
+}
+
+.pd-pro-dialog [data-slot="dialog-title"],
+.pd-pro-dialog h2 {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.pd-pro-dialog [data-slot="dialog-description"],
+.pd-pro-dialog p {
+  font-size: 13px;
+}
+
+.pd-pro-dialog .pd-field {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.pd-pro-dialog .pd-field select,
+.pd-pro-dialog .pd-field input {
+  min-height: 36px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--pd-raised) 84%, transparent);
+  font-size: 13.5px;
+}
+
+.pd-pro-dialog .pd-dialog-actions {
+  justify-content: flex-end;
+}
+
+.pd-pro-dialog .pd-dialog-actions > button {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 16px;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
 .pd-dialog [data-slot="dialog-title"],
 .pd-dialog h2 {
   color: var(--pd-text);
