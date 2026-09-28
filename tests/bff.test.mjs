@@ -36,12 +36,15 @@ test('read-only allowlist validates DTOs and exact query, filters identity heade
  assert.equal((await proxyAdmin(get(),'overview',config,async()=>new Response(null,{status:302,headers:{location:'http://evil'}}))).status,502);
  assert.equal((await proxyAdmin(get(),'overview',config,async()=>Response.json({learnersTotal:3,coursesTotal:1,sectionsTotal:2,lessonsTotal:9}))).status,200);
  assert.equal((await proxyAdmin(get('session'),'session',config,async()=>Response.json(session))).status,200);
+ const renewed=await proxyAdmin(get('session'),'session',config,async()=>Response.json(session,{headers:{'Set-Cookie':cookie}}));
+ assert.equal(renewed.status,200);assert.equal(renewed.headers.get('set-cookie'),cookie);assert.deepEqual(await renewed.json(),session);
 });
 
 test('configuration, cookies, upstream failures and logout fail closed',async()=>{
  for(const api of ['http://upstream/path','https://user:pass@upstream','file:///secret','http://upstream?url=evil'])assert.equal((await proxyAdmin(get(),'overview',{...config,api})).status,503);
  assert.equal((await proxyAdmin(login(),'login',{...config,origin:'http://localhost'})).status,503);
  for(const value of [cookie+'; Domain=admin.leapeng.uz',cookie.replace('; Secure',''),cookie+', other=bad']) assert.equal((await proxyAdmin(login(),'login',config,async()=>Response.json(session,{headers:{'Set-Cookie':value}}))).status,502);
+ assert.equal((await proxyAdmin(get('session'),'session',config,async()=>Response.json(session,{headers:{'Set-Cookie':cookie+'; Domain=admin.leapeng.uz'}}))).status,502);
  const unauthorized={error:{code:'admin_unauthorized',message:'Invalid administrator credentials.'}};
  assert.equal((await proxyAdmin(login(),'login',config,async()=>Response.json(unauthorized,{status:401}))).status,401);
  const logout=new Request(config.origin+'/api/admin/logout',{method:'POST',headers:{cookie:cookie.split(';')[0],Origin:config.origin,'X-Admin-CSRF':session.csrfToken}});
