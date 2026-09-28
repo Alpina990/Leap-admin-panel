@@ -11,7 +11,7 @@ function call(path,body,extra={}){return new Promise((resolve,reject)=>{const re
 assert.equal((await call('analytics-summary')).status,401);
 let result=await call('login',{username:'smoke_operator',password:'disposable-test-only-password-92!'});assert.equal(result.status,200);
 cookie=result.headers['set-cookie'][0].split(';')[0];csrf=result.data.csrfToken;
-for(const path of ['analytics-summary','analytics-learning','analytics-learner?learnerId=1','content-catalog','business-state?learnerId=1','business-cases']){result=await call(path);assert.equal(result.status,200,path+': '+JSON.stringify(result.data));assert.equal(result.headers['cache-control'],'no-store');}
+for(const path of ['analytics-summary','analytics-learning','analytics-learner?learnerId=1','content-catalog','content-tree','business-state?learnerId=1','business-cases']){result=await call(path);assert.equal(result.status,200,path+': '+JSON.stringify(result.data));assert.equal(result.headers['cache-control'],'no-store');}
 let grant={learnerId:'1',baseVersion:0,reason:'Disposable integration check for catalog lifetime access.',requestId:randomUUID()};
 result=await call('business-grant',grant,{'X-Admin-CSRF':'wrong'});assert.equal(result.status,403);
 result=await call('business-grant',grant);assert.equal(result.status,200,JSON.stringify(result.data));const saved=result.data;

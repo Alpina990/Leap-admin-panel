@@ -1,10 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Funnel+Sans:wght@300..800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "../vendor/shadcn-tailwind-4.13.0.css";
-/* Only immutable design geometry participates; archived demo code stays excluded. */
-@source "../archive/legacy/app/design.json";
-@source not "../archive/legacy/lib";
 
 @utility scrollbar-thin {
   scrollbar-width: thin;

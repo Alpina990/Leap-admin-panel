@@ -15,3 +15,14 @@ test('content BFF validates authoring identity, operation allowlist and CSRF',as
  assert.equal((await proxyAdmin(reviewRequest,'content-import-review',config,async()=>Response.json({digest:'a'.repeat(64),courseId:'c',units:1,lessons:1,blocks:1,issues:[]}))).status,200);
  assert.equal((await proxyAdmin(request({action:'import',requestId:body.requestId,manifest:{},reviewDigest:'a'.repeat(64)}),'content-write',config,async()=>Response.json(result))).status,200);
 });
+
+test('content tree and structure authoring expose add/edit without deletion',async()=>{
+ const tree={items:[{id:'c',title:'Course',slug:'course',version:'a'.repeat(64),units:[{id:'u',sectionId:'s',sectionTitle:'Course',title:'Unit',slug:'unit',subtitle:'',position:1,version:'b'.repeat(64),lessons:[{id:'l',unitId:'u',title:'Lesson',slug:'lesson',status:'draft',position:1,version:'c'.repeat(64)}]}]}],total:1,limit:25,offset:0,hasMore:false,canWrite:true};
+ const read=new Request(config.origin+'/api/admin/content-tree?limit=25&offset=0',{headers:{cookie}});
+ assert.equal((await proxyAdmin(read,'content-tree',config,async()=>Response.json(tree))).status,200);
+ const body={action:'course_create',requestId:'12345678-1234-1234-1234-123456789012',title:'Course',slug:'course'};
+ const write=data=>new Request(config.origin+'/api/admin/content-structure-write',{method:'POST',headers:{cookie,Origin:config.origin,'X-Admin-CSRF':'b'.repeat(64),'Content-Type':'application/json'},body:JSON.stringify(data)});
+ const result={kind:'course',id:'c',version:'a'.repeat(64)};
+ assert.equal((await proxyAdmin(write(body),'content-structure-write',config,async()=>Response.json(result))).status,200);
+ assert.equal((await proxyAdmin(write({...body,action:'course_delete'}),'content-structure-write',config)).status,422);
+});

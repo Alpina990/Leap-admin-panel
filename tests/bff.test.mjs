@@ -67,3 +67,39 @@ test('missing session and spoofed identity never reach upstream', async () => {
   assert.equal(response.headers.get('cache-control'),'no-store');
   assert.equal(calls,0);
 });
+
+test('learner payment summaries aggregate paid pages without accepting cross-learner rows',async()=>{
+ const request=get('learner-payments?learnerIds=7,8&start=2026-09-01&end=2026-09-30');
+ const order=(id,learnerId,amountTiyin)=>({id,learnerId,sectionId:null,amountTiyin,currency:'UZS',gateway:'WLCM',method:'payme',status:'paid',createdAt:'2026-09-02T00:00:00+00:00',paidAt:'2026-09-02T00:01:00+00:00',cancelledAt:null,externalId:id,gatewayOrderId:null,gatewayPaymentId:null});
+ const calls=[];
+ const upstream=async url=>{
+  calls.push(url);
+  const page=new URL(url),learnerId=page.searchParams.get('learnerId');
+  assert.equal(page.searchParams.get('status'),'paid');
+  assert.equal(page.searchParams.get('dateField'),'paidAt');
+  assert.equal(page.searchParams.get('start'),'2026-09-01');
+  assert.equal(page.searchParams.get('end'),'2026-09-30');
+  if(page.searchParams.get('offset')==='0')return Response.json({items:[order('one',learnerId,'12000')],total:2,limit:100,offset:0,hasMore:true});
+  return Response.json({items:[order('two',learnerId,'8000')],total:2,limit:100,offset:1,hasMore:false});
+ };
+ const response=await proxyAdmin(request,'learner-payments',config,upstream);
+ assert.equal(response.status,200);
+ assert.deepEqual(await response.json(),{items:[{learnerId:'7',paymentsCount:2,paidTotalTiyin:'20000',lastPaidAt:'2026-09-02T00:01:00+00:00'},{learnerId:'8',paymentsCount:2,paidTotalTiyin:'20000',lastPaidAt:'2026-09-02T00:01:00+00:00'}]});
+ assert.equal(calls.length,4);
+ for(const path of ['learner-payments','learner-payments?learnerIds=7,abc','learner-payments?learnerIds=7&start=2026-09-31'])assert.equal((await proxyAdmin(get(path),'learner-payments',config)).status,422);
+});
+
+test('learner payment summaries can include an identity-checked profile for transaction rows',async()=>{
+ const request=get('learner-payments?learnerIds=7&includeProfiles=1');
+ const order={id:'one',learnerId:'7',sectionId:null,amountTiyin:'49000',currency:'UZS',gateway:'WLCM',method:'payme',status:'paid',createdAt:'2026-09-02T00:00:00+00:00',paidAt:'2026-09-02T00:01:00+00:00',cancelledAt:null,externalId:'one',gatewayOrderId:null,gatewayPaymentId:null};
+ const learner={telegramUserId:'7',username:'Exact_Case',firstName:'Disposable',lastName:null,languageCode:'uz',createdAt:'2026-09-01T00:00:00+00:00',lastSeenAt:'2026-09-02T00:00:00+00:00',startedLessons:1,completedLessons:1};
+ const upstream=async url=>{
+  const parsed=new URL(url);
+  if(parsed.pathname.endsWith('/learners')){assert.equal(parsed.searchParams.get('learnerId'),'7');return Response.json({items:[learner],total:1,limit:1,offset:0,hasMore:false});}
+  return Response.json({items:[order],total:1,limit:100,offset:0,hasMore:false});
+ };
+ const response=await proxyAdmin(request,'learner-payments',config,upstream);
+ assert.equal(response.status,200);
+ assert.deepEqual(await response.json(),{items:[{learnerId:'7',paymentsCount:1,paidTotalTiyin:'49000',lastPaidAt:'2026-09-02T00:01:00+00:00',learner}]});
+ assert.equal((await proxyAdmin(get('learner-payments?learnerIds=7&includeProfiles=yes'),'learner-payments',config)).status,422);
+});

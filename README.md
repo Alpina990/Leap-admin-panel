@@ -48,6 +48,9 @@ The BFF allows only:
 | `/api/admin/logout` | POST | `/api/v1/admin/logout` |
 | `/api/admin/overview` | GET | `/api/v1/admin/overview` |
 | `/api/admin/learners` | GET | `/api/v1/admin/learners` |
+| `/api/admin/content-price` | GET, POST | `/api/v1/admin/content-price` |
+
+The course price is stored in the backend database and audited with the same version-checked content permission. Deploy backend migration `d4f7b2c8e1a9` with this release; the Mini App reads the public offer price from the same row.
 
 The server page validates `/session`; every read is separately authorized by FastAPI, so expiry/revocation/disabled accounts are rechecked. Login requires actual exact Origin and `X-Admin-CSRF: login`; logout forwards the in-memory CSRF token acquired with the session. Login and logout change authentication state only. The opaque session never enters JSON or localStorage. Only `__Host-leap_admin` is forwarded: Secure, HttpOnly, SameSite=Strict, Path=/, no Domain. Login/logout cookies are validated against the narrow contract then relayed **verbatim**. Other headers/cookies are not proxied. Duplicate session cookies fail closed.
 
@@ -55,7 +58,7 @@ Bodies are streamed with byte limits (8 KiB request, 256 KiB upstream response),
 
 Overview displays only four real database totals. Learners use server pagination (25 rows), authoritative filtered total, exact case-sensitive username equality and string IDs. Timestamps are displayed as returned, not interpreted as online status. Empty and failure states never show demos. Counts/pages may drift under concurrent learner activity, as documented by the backend. Unsupported navigation sections explicitly say Unavailable and expose no actions.
 
-Existing palette, theme provider, fonts, action styling and top-navigation concept are retained. This is a functional replacement of demo data surfaces, **not a claim of Pencil/graphical parity**. No `.pen` file was read. Legacy Sites auth, D1/demo code and build scripts are quarantined in `archive/legacy/`, outside runtime/TypeScript/Tailwind source graphs. Do not run those scripts, particularly the old destructive `check-admin.mjs`. Existing local `.wrangler` database state was not touched.
+The authenticated shell is a complete PushDay-style replacement: cool-gray canvas, translucent white surfaces, emerald primary actions, compact pill navigation and 1200px centered workspaces. The previous LEAP admin visual layer is no longer in the runtime graph. Existing authentication, data contracts, dialogs and actions are unchanged. Legacy Sites auth, D1/demo code and build scripts remain quarantined in `archive/legacy/`, outside runtime/TypeScript/Tailwind source graphs. Do not run those scripts, particularly the old destructive `check-admin.mjs`. Existing local `.wrangler` database state was not touched.
 
 ## Local HTTPS development — no bypass
 

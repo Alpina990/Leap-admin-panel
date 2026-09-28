@@ -1,6 +1,6 @@
 {
   "Date range": {
-    "description": "Apply one reporting period to the current view.",
+    "description": "Apply one reporting period to the current dashboard view.",
     "fields": [
       "Period",
       "Start / End"

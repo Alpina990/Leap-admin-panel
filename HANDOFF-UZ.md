@@ -1,9 +1,9 @@
 # LeapEnglish / Leap Admin / Coolify — topshirish ma’lumoti
 
 ## 1. Ish holati va cheklov
-Ish foydalanuvchi buyrug‘i bilan TO‘XTATILGAN. Bu hujjat ishni davom ettirish buyrug‘i emas. Oxirgi ishlar tugallanmagan, commit/push/deploy qilinmagan. Ikkala repoda modified va untracked fayllar bor; faqat GitHub clone qilish oxirgi ishlarni olib kelmaydi. Reset/clean/checkout bilan o‘chirib yubormang. Maxfiy .env, sertifikat private key, cookie va bazalarni chatga yoki Gitga qo‘shmang.
+Ish foydalanuvchi buyrug‘i bilan TO‘XTATILGAN. Bu hujjat ishni davom ettirish buyrug‘i emas. Oxirgi ishlar commit/push/deploy qilinmagan. Ikkala repoda modified va untracked fayllar bor; faqat GitHub clone qilish oxirgi ishlarni olib kelmaydi. Reset/clean/checkout bilan o‘chirib yubormang. Maxfiy .env, sertifikat private key, cookie va bazalarni chatga yoki Gitga qo‘shmang.
 
-Maqsad: admin panel Pencil’dagi asl UI/UX bilan birga bir mos bo‘lsin; faqat haqiqiy ma’lumotlar oqimi moslashishi mumkin. Dizaynni generic dashboardga almashtirish mumkin emas. Foydalanuvchi lokal ko‘rinishni tasdiqlamaguncha push/deploy qilinmaydi. Soxta raqamlar, demo success, ishlamaydigan tugmalar tayyor ish hisoblanmaydi.
+Maqsad: admin panel `app.pushday.uz/admin` UI/UX uslubida bo‘lsin; eski Pencil/LEAP runtime dizayni butunlay olib tashlandi. LEAP funksiyalari yangi PushDay qobig‘iga ulangan, mos backend yo‘q bo‘lgan qo‘shimcha bo‘limlar qo‘shilmagan. Foydalanuvchi lokal ko‘rinishni tasdiqlamaguncha push/deploy qilinmaydi. Soxta raqamlar, demo success, ishlamaydigan tugmalar tayyor ish hisoblanmaydi.
 
 ## 2. Repolar — handoff vaqtida git orqali tekshirildi
 | Qism | Lokal manzil | GitHub | Branch | Oxirgi commit |

@@ -68,13 +68,13 @@ async function main() {
     const server = net.createServer(); server.once('error', reject); server.listen(port, '127.0.0.1', () => server.close(resolve));
   });
   let fixture, buildDir, logs = '';
-  const output = process.env.PENCIL_AUDIT_OUTPUT || 'work/pencil/updated-runtime';
+  const output = process.env.PENCIL_AUDIT_OUTPUT || 'work/pushday/updated-runtime';
   try {
-    fixture = mkdtempSync(resolve(tmpdir(), 'pencil-audit-'));
+    fixture = mkdtempSync(resolve(tmpdir(), 'pushday-audit-'));
     mkdirSync('work/live-qa', {recursive:true});
     // A fresh owned directory prevents obsolete tracked files surviving a rebuild.
     buildDir = mkdtempSync(resolve('work/live-qa/build-site-'));
-    for (const file of execFileSync('git', ['ls-files', '-z'], {encoding:'utf8'}).split('\0')) {
+    for (const file of execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], {encoding:'utf8'}).split('\0')) {
       if(!file || file.endsWith('.pen') || file.startsWith('work/') || file.startsWith('docs/') || file.startsWith('.env') || !existsSync(file))continue;
       mkdirSync(dirname(buildDir+'/'+file), {recursive:true}); copyFileSync(file, buildDir+'/'+file);
     }
@@ -104,8 +104,8 @@ async function main() {
     });
   } finally {
     tls.closeAllConnections(); await new Promise(resolve => tls.close(resolve));
-    if(fixture)rmSync(fixture, {recursive:true, force:true, maxRetries:10, retryDelay:250});
-    if(buildDir)rmSync(buildDir, {recursive:true, force:true, maxRetries:10, retryDelay:250});
+    if(fixture)rmSync(fixture, {recursive:true, force:true, maxRetries:20, retryDelay:250});
+    if(buildDir)rmSync(buildDir, {recursive:true, force:true, maxRetries:20, retryDelay:250});
     mkdirSync(output, {recursive:true}); writeFileSync(output+'/isolated-next.log', logs);
   }
 }

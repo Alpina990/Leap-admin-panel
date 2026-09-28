@@ -10,7 +10,7 @@ try{
  const cookie=login.headers['set-cookie'][0].split(';')[0];
  const page=await request('/',null,cookie);
  assert.equal(page.status,200,'Authenticated dashboard SSR must succeed');
- assert.match(page.text,/Operations overview/);
+ assert.match(page.text,/Boshqaruv/);
  assert.doesNotMatch(page.text,/Too many re-renders|Administrator service unavailable|NEXT_HTTP_ERROR_FALLBACK/);
  console.log('PASS authenticated production dashboard renders without state-update loop.');
 }finally{agent.destroy();}
