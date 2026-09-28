@@ -55,6 +55,8 @@ test('users surface includes period filtering, payment totals and manual PRO acc
   assert.match(ui, /PeriodBar/);
   assert.match(ui, /To‘lovlar","Jami/);
   assert.match(ui, /PRO qilish/);
+  assert.match(ui, /catalogAccess===true/);
+  assert.match(ui, /<StatusPill tone="success">PRO<\/StatusPill>/);
   assert.match(ui, /learner-payments/);
   assert.match(read('app/pushday.css'), /\.pd-period-bar/);
 });

@@ -494,6 +494,7 @@ export default function AdminApp({session}:{session:AdminSession}){
     if(!people.length)return <tr><td colSpan={10}><EmptyState title="Foydalanuvchi topilmadi" description="Qidiruv yoki filtrlarni o‘zgartirib qayta urinib ko‘ring." action={<button className="pd-button" onClick={clearSearch}>Filtrlarni tozalash</button>}/></td></tr>;
     return people.slice(0,compact?5:25).map(personValue=>{
       const progress=learnerProgress(personValue);
+      const hasCatalogAccess=personValue.catalogAccess===true;
       const payment=paymentSummaryByLearner.get(personValue.telegramUserId);
       const paymentCount=payment?payment.paymentsCount.toLocaleString("en-US"):paymentSummaries.loading?"…":"—";
       const paidTotal=payment?formatUzs(payment.paidTotalTiyin):paymentSummaries.loading?"…":"—";
@@ -507,7 +508,7 @@ export default function AdminApp({session}:{session:AdminSession}){
         <td><span className="pd-muted">{formatDate(personValue.createdAt)}</span></td>
         <td><span className="pd-muted">{relativeSeen(personValue.lastSeenAt)}</span></td>
         <td><button className="pd-pro-check" aria-label={`${learnerName(personValue)} PRO accessini boshqarish`} title="Accessni boshqarish" onClick={()=>openBusiness("Manage access",personValue.telegramUserId)}><BadgeCheck size={14}/></button></td>
-        <td><div className="pd-row-actions"><button className="pd-row-action primary" onClick={()=>openBusiness("Manage access",personValue.telegramUserId)}>PRO qilish</button><button className="pd-text-button" onClick={()=>openLearner(personValue)}>Batafsil</button></div></td>
+        <td><div className="pd-row-actions">{hasCatalogAccess?<StatusPill tone="success">PRO</StatusPill>:<button className="pd-row-action primary" onClick={()=>openBusiness("Manage access",personValue.telegramUserId)}>PRO qilish</button>}<button className="pd-text-button" onClick={()=>openLearner(personValue)}>Batafsil</button></div></td>
       </tr>;
     });
   }
