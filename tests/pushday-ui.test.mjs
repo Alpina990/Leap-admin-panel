@@ -59,6 +59,19 @@ test('users surface includes period filtering, payment totals and manual PRO acc
   assert.match(read('app/pushday.css'), /\.pd-period-bar/);
 });
 
+test('user metric cards filter the directory by audience', () => {
+  const ui = read('app/admin-app.tsx');
+  assert.match(ui, /type AudienceFilter=/);
+  assert.match(ui, /changeAudience/);
+  assert.match(ui, /aria-pressed=\{active\}/);
+  assert.match(ui, /filter:"all"/);
+  assert.match(ui, /filter:"active"/);
+  assert.match(ui, /filter:"access"/);
+  assert.match(ui, /filter:"attention"/);
+  assert.match(ui, /audience,\.\.\.dateRange/);
+  assert.match(read('app/pushday.css'), /button\.pd-metric-card\.active/);
+});
+
 test('commerce reuses the period bar, provider distribution and the shared learner drawer', () => {
   const ui = read('app/admin-app.tsx');
   assert.match(ui, /Daromad taqsimoti/);

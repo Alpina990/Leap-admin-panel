@@ -527,6 +527,30 @@ a:focus-visible {
   box-shadow: var(--pd-shadow);
 }
 
+button.pd-metric-card {
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+button.pd-metric-card:hover {
+  border-color: color-mix(in srgb, var(--pd-primary) 38%, var(--pd-border));
+  transform: translateY(-1px);
+}
+
+button.pd-metric-card.active {
+  border-color: var(--pd-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--pd-primary) 18%, transparent), var(--pd-shadow);
+}
+
+button.pd-metric-card:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--pd-primary) 45%, transparent);
+  outline-offset: 2px;
+}
+
 .pd-metric-icon {
   display: grid;
   place-items: center;

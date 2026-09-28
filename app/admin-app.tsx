@@ -58,8 +58,11 @@ type ContentTreeLesson={id:string;unitId:string;title:string;slug:string;positio
 type ContentTreeUnit={id:string;sectionId:string;sectionTitle:string;title:string;slug:string;subtitle:string;position:number;version:string;lessons:ContentTreeLesson[]};
 type ContentTreeCourse={id:string;title:string;slug:string;version:string;units:ContentTreeUnit[]};
 type ContentTree={items:ContentTreeCourse[];total:number;limit:number;offset:number;hasMore:boolean;canWrite:boolean};
+type AudienceFilter="all"|"active"|"access"|"attention";
+type Metric={icon:LucideIcon;label:string;value:string;detail:string;tone?:"success"|"warning"|"danger";filter?:AudienceFilter};
 
 const navRoutes:Section[]=["Overview","Learners","Content","Commerce","AI","Messages"];
+const audienceLabels:Record<AudienceFilter,string>={all:"Barcha profillar",active:"Faol foydalanuvchilar",access:"Access egalari",attention:"E’tibor kerak"};
 function formatMoney(tiyin?:string|null){
   if(tiyin===undefined||tiyin===null)return "—";
   const value=BigInt(tiyin);
@@ -168,15 +171,17 @@ function PageHeader({title,subtitle,actions}:{title:string;subtitle:string;actio
   </header>;
 }
 
-function MetricCard({icon:Icon,label,value,detail,tone="success"}:{icon:LucideIcon;label:string;value:string;detail:string;tone?:"success"|"warning"|"danger"}){
-  return <article className="pd-metric-card">
+function MetricCard({icon:Icon,label,value,detail,tone="success",onClick,active=false}:{icon:LucideIcon;label:string;value:string;detail:string;tone?:"success"|"warning"|"danger";onClick?:()=>void;active?:boolean}){
+  const body=<>
     <span className={`pd-metric-icon ${tone}`}><Icon size={19}/></span>
     <div>
       <p>{label}</p>
       <strong>{value}</strong>
       <small>{detail}</small>
     </div>
-  </article>;
+  </>;
+  const className=`pd-metric-card${active?" active":""}`;
+  return onClick?<button type="button" className={className} aria-pressed={active} onClick={onClick}>{body}</button>:<article className={className}>{body}</article>;
 }
 
 function Panel({title,subtitle,action,children,className=""}:{title?:string;subtitle?:string;action?:ReactNode;children:ReactNode;className?:string}){
@@ -331,6 +336,7 @@ export default function AdminApp({session}:{session:AdminSession}){
   const [themeReady,setThemeReady]=useState(false);
   const [section,setSection]=useState<Section>("Overview");
   const [revision,setRevision]=useState(0);
+  const [audience,setAudience]=useState<AudienceFilter>("all");
   const [draft,setDraft]=useState("");
   const [username,setUsername]=useState("");
   const [offset,setOffset]=useState(0);
@@ -372,7 +378,7 @@ export default function AdminApp({session}:{session:AdminSession}){
 
   const overview=useRead<AdminOverview>("/api/admin/overview",revision);
   const summary=useRead<Summary>("/api/admin/analytics-summary?"+new URLSearchParams(dateRange),revision);
-  const query=new URLSearchParams({limit:"25",offset:String(offset),...dateRange,...reportFilters.learners});
+  const query=new URLSearchParams({limit:"25",offset:String(offset),audience,...dateRange,...reportFilters.learners});
   if(username)query.set("username",username);
   const directory=useRead<LearnerDirectory>(["Overview","Learners","Commerce"].includes(section)?"/api/admin/learners?"+query:null,revision);
   const people=directory.data?.items??[];
@@ -414,18 +420,19 @@ export default function AdminApp({session}:{session:AdminSession}){
   useEffect(()=>{
     const hash=()=>{
       const route=navRoutes.find(key=>key.toLowerCase()===location.hash.slice(1).split("/")[0]);
-      if(route){setSection(route);setOffset(0);setUsername("");setDraft("");setSelected(null);setProfileId(null);}
+      if(route){setSection(route);setAudience("all");setOffset(0);setUsername("");setDraft("");setSelected(null);setProfileId(null);}
     };
     queueMicrotask(()=>{setThemeReady(true);hash();});
     addEventListener("hashchange",hash);
     return()=>removeEventListener("hashchange",hash);
   },[]);
 
-  function go(route:Section){
-    setSection(route);setOffset(0);setUsername("");setDraft("");setSelected(null);setProfileId(null);
+  function go(route:Section,preserveAudience=false){
+    setSection(route);if(!preserveAudience)setAudience("all");setOffset(0);setUsername("");setDraft("");setSelected(null);setProfileId(null);
     history.pushState(null,"","#"+route.toLowerCase());window.scrollTo({top:0,behavior:"smooth"});
   }
-  function clearSearch(){setDraft("");setUsername("");setOffset(0);setSelected(null);setRevision(value=>value+1);}
+  function changeAudience(next:AudienceFilter){setAudience(next);setOffset(0);setSelected(null);}
+  function clearSearch(){setDraft("");setUsername("");setAudience("all");setOffset(0);setSelected(null);setRevision(value=>value+1);}
   function openModal(value:"settings"|"account"|"search"){
     if(value==="settings"){setPreferenceTheme(isLight?"light":"dark");setPreferenceRefresh(autoRefresh);setPreferenceError("");}
     if(value==="search"){setGlobalDraft("");setGlobalQuery(null);}
@@ -443,18 +450,18 @@ export default function AdminApp({session}:{session:AdminSession}){
 
   function openLearnerById(learnerId:string){setSelected(learnerId);setProfileId(learnerId);}
   function openLearner(personValue:Learner){openLearnerById(personValue.telegramUserId);}
-  function openAllLearners(){go("Learners");}
+  function openAllLearners(){go("Learners",true);}
   function openContent(mode:ContentMode){setContentMode(mode);}
   function openPaymentFilter(){setStatusDraft(paymentStatus);setMethodDraft(paymentMethod);setPaymentFilter(true);}
   function openNotification(id:string){setNotificationId(id);}
   function openBusiness(mode:"Manage access"|"Reconcile case"|"Learning intervention",learnerId?:string){setBusinessLearner(learnerId);setBusiness(mode);}
 
-  function metricsFor(sectionValue:Section){
+  function metricsFor(sectionValue:Section):Metric[]{
     if(sectionValue==="Learners"||sectionValue==="Overview")return [
-      {icon:UsersRound,label:"Jami foydalanuvchilar",value:overview.data?.learnersTotal.toLocaleString("en-US")??"—",detail:"Bazadagi barcha profillar",tone:"success" as const},
-      {icon:Activity,label:"Faol foydalanuvchilar",value:summary.data?.activeLearners.toLocaleString("en-US")??"—",detail:"Tanlangan davrda",tone:"success" as const},
-      {icon:BadgeCheck,label:"PRO / access",value:summary.data?.lifetimeAccess?.toLocaleString("en-US")??"—",detail:"Lifetime access egalari",tone:"success" as const},
-      {icon:Flame,label:"E’tibor kerak",value:summary.data?.attention?(summary.data.attention.access+summary.data.attention.learning).toLocaleString("en-US"):"—",detail:"Access va o‘quv signallari",tone:"warning" as const},
+      {icon:UsersRound,label:"Jami foydalanuvchilar",value:overview.data?.learnersTotal.toLocaleString("en-US")??"—",detail:"Bazadagi barcha profillar",tone:"success" as const,filter:"all"},
+      {icon:Activity,label:"Faol foydalanuvchilar",value:summary.data?.activeLearners.toLocaleString("en-US")??"—",detail:"Tanlangan davrda",tone:"success" as const,filter:"active"},
+      {icon:BadgeCheck,label:"PRO / access",value:summary.data?.lifetimeAccess?.toLocaleString("en-US")??"—",detail:"Lifetime access egalari",tone:"success" as const,filter:"access"},
+      {icon:Flame,label:"E’tibor kerak",value:summary.data?.attention?(summary.data.attention.learners??summary.data.attention.access+summary.data.attention.learning).toLocaleString("en-US"):"—",detail:"Access va o‘quv signallari",tone:"warning" as const,filter:"attention"},
     ];
     if(sectionValue==="Content")return [
       {icon:Library,label:"Kurslar",value:overview.data?.coursesTotal.toLocaleString("en-US")??"—",detail:"Katalogdagi kurslar",tone:"success" as const},
@@ -477,7 +484,8 @@ export default function AdminApp({session}:{session:AdminSession}){
   }
 
   function metrics(sectionValue:Section){
-    return <div className="pd-metric-grid">{metricsFor(sectionValue).map(metric=><MetricCard key={metric.label} {...metric}/>)}</div>;
+    const clickable=sectionValue==="Overview"||sectionValue==="Learners";
+    return <div className="pd-metric-grid">{metricsFor(sectionValue).map(metric=><MetricCard key={metric.label} {...metric} onClick={clickable&&metric.filter?()=>changeAudience(metric.filter!):undefined} active={clickable&&metric.filter===audience}/>)}</div>;
   }
 
   function learnerRows(compact=false){
@@ -505,7 +513,7 @@ export default function AdminApp({session}:{session:AdminSession}){
   }
 
   function learnerPanel(compact=false){
-    return <Panel title="Foydalanuvchilar" subtitle={`Jami ${directory.data?.total.toLocaleString("en-US")??"—"} ta profil`} action={<button className="pd-button" onClick={openAllLearners}>Barchasini ko‘rish</button>}>
+    return <Panel title="Foydalanuvchilar" subtitle={`Jami ${directory.data?.total.toLocaleString("en-US")??"—"} ta profil${audience==="all"?"":` · ${audienceLabels[audience]}`}`} action={<button className="pd-button" onClick={openAllLearners}>Barchasini ko‘rish</button>}>
       <div className="pd-toolbar">
         <SearchField value={draft} onChange={setDraft} onSubmit={()=>{setUsername(draft);setOffset(0);setSelected(null);setRevision(value=>value+1);}} onClear={clearSearch}/>
         <button className="pd-button" onClick={()=>setReporting("Sort & paginate")}><Filter size={14}/>Saralash</button>

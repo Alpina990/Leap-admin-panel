@@ -26,7 +26,9 @@ test('read-only allowlist validates DTOs and exact query, filters identity heade
  const directory={items:[{telegramUserId:'9223372036854775807',username:'Ab_C',firstName:null,lastName:null,languageCode:null,createdAt:'2026-01-01T00:00:00+00:00',lastSeenAt:'2026-01-01T00:00:00+00:00'}],total:41,limit:25,offset:0,hasMore:true};
  const res=await proxyAdmin(get('learners?username=Ab_C&limit=25&offset=0'),'learners',config,async(url,init)=>{assert.equal(url,config.api+'/api/v1/admin/learners?username=Ab_C&limit=25&offset=0');assert.deepEqual([...init.headers.keys()],['cookie']);return Response.json(directory);});
  assert.equal(res.status,200);assert.deepEqual(await res.json(),directory);
- for(const query of ['?url=http://evil','?limit=101','?limit=1&limit=2','?offset=-1','?username='])assert.equal((await proxyAdmin(get('learners'+query),'learners',config)).status,422);
+ const filtered=await proxyAdmin(get('learners?limit=25&offset=0&audience=access'),'learners',config,async url=>{assert.equal(url,config.api+'/api/v1/admin/learners?limit=25&offset=0&audience=access');return Response.json(directory);});
+ assert.equal(filtered.status,200);
+ for(const query of ['?url=http://evil','?limit=101','?limit=1&limit=2','?offset=-1','?username=','?audience=everything'])assert.equal((await proxyAdmin(get('learners'+query),'learners',config)).status,422);
  for(const action of ['../session','http://evil','note'])assert.equal((await proxyAdmin(get(),action,config)).status,404);
  assert.equal((await proxyAdmin(login(),'overview',config)).status,405);
  const invalid={...directory,items:[{...directory.items[0],telegramUserId:123}]};
