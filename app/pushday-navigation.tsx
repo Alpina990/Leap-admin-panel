@@ -1,8 +1,8 @@
 "use client";
 import {useState} from 'react';
-import {Bell,Settings,Search,Sun,Moon,Menu,LayoutDashboard,Users,Library,CreditCard,Bot,MessageSquare,ChevronRight,LogOut,RefreshCw} from 'lucide-react';
+import {Bell,Settings,Search,Sun,Moon,Menu,LayoutDashboard,Users,Trophy,Library,CreditCard,Bot,MessageSquare,ChevronRight,LogOut,RefreshCw} from 'lucide-react';
 import {Sheet,SheetContent,SheetHeader,SheetTitle,SheetDescription} from '@/components/ui/sheet';
-const entries=[['Overview','Boshqaruv',LayoutDashboard],['Learners','Foydalanuvchilar',Users],['Content','Content',Library],['Commerce','To‘lovlar',CreditCard],['AI','AI',Bot],['Messages','Xabarnoma',MessageSquare]] as const;
+const entries=[['Overview','Boshqaruv',LayoutDashboard],['Learners','Foydalanuvchilar',Users],['Ratings','Reyting',Trophy],['Content','Content',Library],['Commerce','To‘lovlar',CreditCard],['AI','AI',Bot],['Messages','Xabarnoma',MessageSquare]] as const;
 export type PushdaySection=typeof entries[number][0];
 export function PushdayNavigation({section,go,light,toggle,open,username,logout,refresh}:{section:PushdaySection;go:(s:PushdaySection)=>void;light:boolean;toggle:()=>void;open:(s:'settings'|'account'|'search')=>void;username:string;logout:()=>void;refresh:()=>void}){
  const [mobile,setMobile]=useState(false);

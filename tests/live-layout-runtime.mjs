@@ -12,6 +12,7 @@ mkdirSync(out, {recursive: true});
 const routes = {
   overview: {route: 'Overview', heading: 'Boshqaruv'},
   learners: {route: 'Learners', heading: 'Foydalanuvchilar'},
+  ratings: {route: 'Ratings', heading: 'Reyting'},
   content: {route: 'Content', heading: 'Content'},
   commerce: {route: 'Commerce', heading: 'To‘lovlar'},
   ai: {route: 'AI', heading: 'Selfingo'},
@@ -66,6 +67,14 @@ try {
   await page.waitForTimeout(600);
   const drawerBox=await drawer.boundingBox();
   assert(drawerBox && drawerBox.x>=0 && drawerBox.x+drawerBox.width<=1440 && drawerBox.y>=0 && drawerBox.y+drawerBox.height<=1000, 'learner drawer is clipped');
+  const drawerTopHit=await page.evaluate(() => {
+    const element=document.querySelector('.pd-profile-drawer');
+    if(!element)return {inside:false, hit:null};
+    const box=element.getBoundingClientRect();
+    const hit=document.elementFromPoint(box.left+box.width/2, Math.max(1, box.top+1));
+    return {inside:element.contains(hit), hit:hit instanceof HTMLElement?hit.className:null};
+  });
+  assert(drawerTopHit.inside, `learner drawer top is covered: ${JSON.stringify(drawerTopHit)}`);
   await page.screenshot({path: `${out}/commerce-learner-drawer-1440.png`});
   await page.keyboard.press('Escape');
   await page.getByRole('button', {name: 'Filtr', exact: true}).click();

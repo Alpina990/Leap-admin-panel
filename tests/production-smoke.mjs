@@ -147,6 +147,7 @@ try {
   const routes = [
     ['overview', 'Boshqaruv', 'Overview'],
     ['learners', 'Foydalanuvchilar', 'Learners'],
+    ['ratings', 'Reyting', 'Ratings'],
     ['content', 'Content', 'Content'],
     ['commerce', 'To‘lovlar', 'Commerce'],
     ['ai', 'Selfingo', 'AI'],

@@ -30,6 +30,7 @@ import {
   Sparkles,
   Target,
   TrendingUp,
+  Trophy,
   UsersRound,
   WalletCards,
   type LucideIcon,
@@ -48,7 +49,7 @@ import {readState} from "@/lib/read-state.mjs";
 import workflowCards from "@/lib/pushday-workflows.json";
 import {Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle} from "@/components/ui/dialog";
 import {Sheet,SheetContent,SheetDescription,SheetHeader,SheetTitle} from "@/components/ui/sheet";
-import type {AdminOverview,AdminSession,Learner,LearnerDirectory} from "@/lib/admin-types";
+import type {AdminOverview,AdminSession,Learner,LearnerDirectory,RatingDirectory} from "@/lib/admin-types";
 
 type Notification={id:string;learnerId:string;kind:string;title:string;body:string;actionPath:string|null;createdAt:string;readAt:string|null};
 type Section=PushdaySection;
@@ -62,7 +63,7 @@ type AudienceFilter="all"|"active"|"access"|"attention";
 type MetricFilter=AudienceFilter|"content-courses"|"content-units"|"content-lessons"|"content-published"|"commerce-revenue"|"commerce-paid"|"commerce-average"|"commerce-pending"|"messages-sent"|"messages-read"|"messages-unread"|"messages-total";
 type Metric={icon:LucideIcon;label:string;value:string;detail:string;tone?:"success"|"warning"|"danger";filter?:MetricFilter};
 
-const navRoutes:Section[]=["Overview","Learners","Content","Commerce","AI","Messages"];
+const navRoutes:Section[]=["Overview","Learners","Ratings","Content","Commerce","AI","Messages"];
 const audienceLabels:Record<AudienceFilter,string>={all:"Barcha profillar",active:"Faol foydalanuvchilar",access:"PRO",attention:"E’tibor kerak"};
 function formatMoney(tiyin?:string|null){
   if(tiyin===undefined||tiyin===null)return "—";
@@ -415,6 +416,9 @@ export default function AdminApp({session}:{session:AdminSession}){
   if(username)query.set("username",username);
   const directory=useRead<LearnerDirectory>(["Overview","Learners","Commerce"].includes(section)?"/api/admin/learners?"+query:null,revision);
   const people=directory.data?.items??[];
+  const ratingQuery=new URLSearchParams({limit:"25",offset:String(offset)});
+  if(username)ratingQuery.set("username",username);
+  const ratings=useRead<RatingDirectory>(section==="Ratings"?"/api/admin/ratings?"+ratingQuery:null,revision);
   const paymentLearnerIds=people.slice(0,25).map(item=>item.telegramUserId);
   const showPaymentColumns=section==="Overview"||section==="Learners"||(section==="Commerce"&&commerceTab==="learners");
   const paymentSummaries=useRead<PaymentSummaries>(showPaymentColumns&&paymentLearnerIds.length?"/api/admin/learner-payments?"+new URLSearchParams({learnerIds:paymentLearnerIds.join(","),...dateRange}):null,revision);
@@ -559,6 +563,12 @@ export default function AdminApp({session}:{session:AdminSession}){
       {icon:BadgeCheck,label:"PRO / access",value:summary.data?.lifetimeAccess?.toLocaleString("en-US")??"—",detail:"Lifetime access egalari",tone:"success" as const,filter:"access"},
       {icon:Flame,label:"E’tibor kerak",value:summary.data?.attention?(summary.data.attention.learners??summary.data.attention.access+summary.data.attention.learning).toLocaleString("en-US"):"—",detail:"Access va o‘quv signallari",tone:"warning" as const,filter:"attention"},
     ];
+    if(sectionValue==="Ratings")return [
+      {icon:UsersRound,label:"Jami profillar",value:ratings.data?.total.toLocaleString("en-US")??"—",detail:"Reyting ro‘yxatida",tone:"success" as const},
+      {icon:Trophy,label:"Reytingda",value:ratings.data?.summary.ranked.toLocaleString("en-US")??"—",detail:"Kamida bitta dars tugatgan",tone:"success" as const},
+      {icon:Target,label:"Eng yuqori natija",value:ratings.data?.summary.topCompleted.toLocaleString("en-US")??"—",detail:"Tugatilgan darslar soni",tone:"success" as const},
+      {icon:TrendingUp,label:"O‘rtacha o‘zlashtirish",value:ratings.data?.summary.averageProgress===null||ratings.data?.summary.averageProgress===undefined?"—":`${ratings.data.summary.averageProgress}%`,detail:"Dars boshlaganlarda",tone:"success" as const},
+    ];
     if(sectionValue==="Content")return [
       {icon:Library,label:"Kurslar",value:overview.data?.coursesTotal.toLocaleString("en-US")??"—",detail:"Katalogdagi kurslar",tone:"success" as const,filter:"content-courses"},
       {icon:BookOpen,label:"Unitlar",value:contentTree.data?treeUnits.length.toLocaleString("en-US"):"—",detail:"Ko‘rinayotgan kurslarda",tone:"success" as const,filter:"content-units"},
@@ -608,6 +618,25 @@ export default function AdminApp({session}:{session:AdminSession}){
     });
   }
 
+  function ratingRows(){
+    if(ratings.loading&&!ratings.data)return <tr><td colSpan={8}><div className="pd-loading">Reyting yuklanmoqda…</div></td></tr>;
+    if(ratings.error&&!ratings.data)return <tr><td colSpan={8}><ErrorState message={ratings.error} onRetry={()=>setRevision(value=>value+1)}/></td></tr>;
+    if(!ratings.data?.items.length)return <tr><td colSpan={8}><EmptyState title="Reyting topilmadi" description="Qidiruvni o‘zgartirib qayta urinib ko‘ring." action={<button className="pd-button" onClick={clearSearch}>Qidiruvni tozalash</button>}/></td></tr>;
+    return ratings.data.items.map(entry=>{
+      const progress=entry.completionRate===null?0:Math.round(entry.completionRate);
+      return <tr key={entry.learner.telegramUserId} data-rating-learner-id={entry.learner.telegramUserId}>
+        <td><div className="pd-cell-stack"><strong>#{entry.rank}</strong><small>{entry.rankPool?`${entry.rankPool} ishtirokchi`:"Hali shakllanmagan"}</small></div></td>
+        <td><button className="pd-person" onClick={()=>openLearner(entry.learner)}><span>{learnerInitials(entry.learner)}</span><div><strong>{learnerName(entry.learner)}</strong><small>{entry.learner.username?`@${entry.learner.username}`:entry.learner.telegramUserId}</small></div></button></td>
+        <td className="pd-table-number">{entry.completedLessons.toLocaleString("en-US")}</td>
+        <td className="pd-table-number">{entry.startedLessons.toLocaleString("en-US")}</td>
+        <td><ProgressBar value={progress} hideLabel/></td>
+        <td><StatusPill tone={toneForProgress(progress)}>{progress>=70?"Yaxshi":progress>=30?"Davom etmoqda":"Yangi"}</StatusPill></td>
+        <td><span className="pd-muted">{relativeSeen(entry.learner.lastSeenAt)}</span></td>
+        <td><button className="pd-text-button" onClick={()=>openLearner(entry.learner)}>Batafsil</button></td>
+      </tr>;
+    });
+  }
+
   function learnerPanel(compact=false){
     return <Panel title="Foydalanuvchilar" subtitle={`Jami ${directory.data?.total.toLocaleString("en-US")??"—"} ta profil${audience==="all"?"":` · ${audienceLabels[audience]}`}`} action={<button className="pd-button" onClick={openAllLearners}>Barchasini ko‘rish</button>}>
       <div className="pd-toolbar">
@@ -619,6 +648,20 @@ export default function AdminApp({session}:{session:AdminSession}){
       <DataTable headers={["ID","Foydalanuvchi","Progress","Holat","To‘lovlar","Jami","Ro‘yxatdan o‘tgan","Oxirgi faollik","PRO","Batafsil"]}>{learnerRows(compact)}</DataTable>
       {!compact&&<Pager offset={directory.data?.offset??0} limit={directory.data?.limit??25} total={directory.data?.total??0} hasMore={directory.data?.hasMore??false} loading={directory.loading} onPrevious={()=>{setOffset(Math.max(0,offset-25));setSelected(null);}} onNext={()=>{setOffset(offset+25);setSelected(null);}}/>}
     </Panel>;
+  }
+
+  function ratingsScreen(){
+    return <>
+      <PageHeader title="Reyting" subtitle="Tugatilgan darslar va o‘zlashtirish bo‘yicha foydalanuvchilar reytingi" actions={<button className="pd-button primary" onClick={()=>setRevision(value=>value+1)}><RefreshCw size={14}/>Yangilash</button>}/>
+      {metrics("Ratings")}
+      <Panel title="Foydalanuvchilar reytingi" subtitle={`Jami ${ratings.data?.total.toLocaleString("en-US")??"—"} ta profil`}>
+        <div className="pd-toolbar">
+          <SearchField value={draft} onChange={setDraft} onSubmit={()=>{setUsername(draft.trim());setOffset(0);setSelected(null);setRevision(value=>value+1);}} onClear={clearSearch}/>
+        </div>
+        <DataTable headers={["O‘rin","Foydalanuvchi","Tugatilgan darslar","Boshlangan darslar","O‘zlashtirish","Holat","Oxirgi faollik","Batafsil"]}>{ratingRows()}</DataTable>
+        <Pager offset={ratings.data?.offset??0} limit={ratings.data?.limit??25} total={ratings.data?.total??0} hasMore={ratings.data?.hasMore??false} loading={ratings.loading} onPrevious={()=>{setOffset(Math.max(0,offset-25));setSelected(null);}} onNext={()=>{setOffset(offset+25);setSelected(null);}}/>
+      </Panel>
+    </>;
   }
 
   function overviewScreen(){
@@ -804,6 +847,7 @@ export default function AdminApp({session}:{session:AdminSession}){
 
   function renderSection(){
     if(section==="Learners")return learnersScreen();
+    if(section==="Ratings")return ratingsScreen();
     if(section==="Content")return contentScreen();
     if(section==="Commerce")return commerceScreen();
     if(section==="AI")return <SelfingoScreen/>;

@@ -40,6 +40,28 @@ test('read-only allowlist validates DTOs and exact query, filters identity heade
  assert.equal(renewed.status,200);assert.equal(renewed.headers.get('set-cookie'),cookie);assert.deepEqual(await renewed.json(),session);
 });
 
+test('rating directory aggregates all learners, ranks completions and paginates locally',async()=>{
+ const learner=(telegramUserId,completedLessons,startedLessons=completedLessons)=>({telegramUserId,username:`user_${telegramUserId}`,firstName:null,lastName:null,languageCode:null,createdAt:'2026-01-01T00:00:00+00:00',lastSeenAt:'2026-01-02T00:00:00+00:00',startedLessons,completedLessons});
+ const upstream=async url=>{
+  const parsed=new URL(url);
+  assert.equal(parsed.pathname,'/api/v1/admin/learners');
+  assert.equal(parsed.searchParams.get('limit'),'100');
+  assert.equal(parsed.searchParams.get('username'),'Ab');
+  return Response.json({items:[learner('9',8),learner('7',3),learner('8',8),learner('6',0,2)],total:4,limit:100,offset:0,hasMore:false});
+ };
+ const response=await proxyAdmin(get('ratings?username=Ab&limit=2&offset=2'),'ratings',config,upstream);
+ assert.equal(response.status,200);
+ assert.deepEqual(await response.json(),{
+  items:[
+   {rank:3,rankPool:3,learner:learner('7',3),startedLessons:3,completedLessons:3,completionRate:100},
+   {rank:4,rankPool:3,learner:learner('6',0,2),startedLessons:2,completedLessons:0,completionRate:0},
+  ],
+  total:4,limit:2,offset:2,hasMore:false,
+  summary:{ranked:3,topCompleted:8,averageProgress:75},
+ });
+ for(const query of ['?limit=101','?username=','?sort=rank'])assert.equal((await proxyAdmin(get('ratings'+query),'ratings',config)).status,422);
+});
+
 test('configuration, cookies, upstream failures and logout fail closed',async()=>{
  for(const api of ['http://upstream/path','https://user:pass@upstream','file:///secret','http://upstream?url=evil'])assert.equal((await proxyAdmin(get(),'overview',{...config,api})).status,503);
  assert.equal((await proxyAdmin(login(),'login',{...config,origin:'http://localhost'})).status,503);

@@ -25,7 +25,7 @@ test('canonical PushDay navigation is reused by the admin shell', () => {
   assert.ok(existsSync('app/pushday-navigation.tsx'), 'missing canonical navigation');
   const navigation = read('app/pushday-navigation.tsx');
   assert.match(read('app/admin-app.tsx'), /<PushdayNavigation/);
-  for (const label of ['Boshqaruv', 'Foydalanuvchilar', 'Content', 'To‘lovlar', 'AI', 'Xabarnoma']) {
+  for (const label of ['Boshqaruv', 'Foydalanuvchilar', 'Reyting', 'Content', 'To‘lovlar', 'AI', 'Xabarnoma']) {
     assert.match(navigation, new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
   assert.doesNotMatch(navigation, /Maqsadlar|Ilova/);
@@ -93,6 +93,18 @@ test('user metric cards filter the directory by audience', () => {
   assert.match(read('app/pushday.css'), /button\.pd-metric-card\.active/);
 });
 
+test('rating surface reuses the shared table, search, pager and learner drawer', () => {
+  const ui = read('app/admin-app.tsx');
+  assert.match(ui, /RatingDirectory/);
+  assert.match(ui, /\/api\/admin\/ratings/);
+  assert.match(ui, /function ratingsScreen/);
+  assert.match(ui, /Foydalanuvchilar reytingi/);
+  assert.match(ui, /Tugatilgan darslar/);
+  assert.match(ui, /O‘zlashtirish/);
+  assert.match(ui, /data-rating-learner-id/);
+  assert.match(ui, /openLearner\(entry\.learner\)/);
+});
+
 test('commerce reuses the period bar, provider distribution and the shared learner drawer', () => {
   const ui = read('app/admin-app.tsx');
   assert.match(ui, /Daromad taqsimoti/);
@@ -104,6 +116,7 @@ test('commerce reuses the period bar, provider distribution and the shared learn
   assert.match(css, /\.pd-profile-drawer/);
   assert.match(css, /\.pd-drawer-header\s*\{[^}]*flex:\s*0 0 auto/s);
   assert.match(css, /\.pd-profile-drawer\[data-slot="sheet-content"\]\s*\{[^}]*overflow:\s*hidden/s);
+  assert.match(css, /\.pd-topbar\s*\{[^}]*z-index:\s*40/s);
 });
 
 test('PRO access dialog mirrors the PushDay single-select confirmation flow', () => {
