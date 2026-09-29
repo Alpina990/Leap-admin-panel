@@ -40,14 +40,14 @@ test('read-only allowlist validates DTOs and exact query, filters identity heade
  assert.equal(renewed.status,200);assert.equal(renewed.headers.get('set-cookie'),cookie);assert.deepEqual(await renewed.json(),session);
 });
 
-test('rating directory aggregates all learners, ranks completions and paginates locally',async()=>{
- const learner=(telegramUserId,completedLessons,startedLessons=completedLessons)=>({telegramUserId,username:`user_${telegramUserId}`,firstName:null,lastName:null,languageCode:null,createdAt:'2026-01-01T00:00:00+00:00',lastSeenAt:'2026-01-02T00:00:00+00:00',startedLessons,completedLessons});
+test('rating directory includes only PRO learners and ranks their completions',async()=>{
+ const learner=(telegramUserId,completedLessons,startedLessons=completedLessons,catalogAccess=true)=>({telegramUserId,username:`user_${telegramUserId}`,firstName:null,lastName:null,languageCode:null,createdAt:'2026-01-01T00:00:00+00:00',lastSeenAt:'2026-01-02T00:00:00+00:00',startedLessons,completedLessons,catalogAccess});
  const upstream=async url=>{
   const parsed=new URL(url);
   assert.equal(parsed.pathname,'/api/v1/admin/learners');
   assert.equal(parsed.searchParams.get('limit'),'100');
   assert.equal(parsed.searchParams.get('username'),'Ab');
-  return Response.json({items:[learner('9',8),learner('7',3),learner('8',8),learner('6',0,2)],total:4,limit:100,offset:0,hasMore:false});
+  return Response.json({items:[learner('9',8),learner('7',3),learner('8',8,8,false),learner('6',0,2),learner('5',5)],total:5,limit:100,offset:0,hasMore:false});
  };
  const response=await proxyAdmin(get('ratings?username=Ab&limit=2&offset=2'),'ratings',config,upstream);
  assert.equal(response.status,200);

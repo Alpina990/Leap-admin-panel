@@ -564,10 +564,10 @@ export default function AdminApp({session}:{session:AdminSession}){
       {icon:Flame,label:"E’tibor kerak",value:summary.data?.attention?(summary.data.attention.learners??summary.data.attention.access+summary.data.attention.learning).toLocaleString("en-US"):"—",detail:"Access va o‘quv signallari",tone:"warning" as const,filter:"attention"},
     ];
     if(sectionValue==="Ratings")return [
-      {icon:UsersRound,label:"Jami profillar",value:ratings.data?.total.toLocaleString("en-US")??"—",detail:"Reyting ro‘yxatida",tone:"success" as const},
-      {icon:Trophy,label:"Reytingda",value:ratings.data?.summary.ranked.toLocaleString("en-US")??"—",detail:"Kamida bitta dars tugatgan",tone:"success" as const},
-      {icon:Target,label:"Eng yuqori natija",value:ratings.data?.summary.topCompleted.toLocaleString("en-US")??"—",detail:"Tugatilgan darslar soni",tone:"success" as const},
-      {icon:TrendingUp,label:"O‘rtacha o‘zlashtirish",value:ratings.data?.summary.averageProgress===null||ratings.data?.summary.averageProgress===undefined?"—":`${ratings.data.summary.averageProgress}%`,detail:"Dars boshlaganlarda",tone:"success" as const},
+      {icon:UsersRound,label:"Jami PRO",value:ratings.data?.total.toLocaleString("en-US")??"—",detail:"Reyting ro‘yxatida",tone:"success" as const},
+      {icon:Trophy,label:"Reytingda",value:ratings.data?.summary.ranked.toLocaleString("en-US")??"—",detail:"Kamida bitta dars tugatgan PRO",tone:"success" as const},
+      {icon:Target,label:"Eng yuqori natija",value:ratings.data?.summary.topCompleted.toLocaleString("en-US")??"—",detail:"PRO foydalanuvchida",tone:"success" as const},
+      {icon:TrendingUp,label:"O‘rtacha o‘zlashtirish",value:ratings.data?.summary.averageProgress===null||ratings.data?.summary.averageProgress===undefined?"—":`${ratings.data.summary.averageProgress}%`,detail:"Dars boshlagan PRO’larda",tone:"success" as const},
     ];
     if(sectionValue==="Content")return [
       {icon:Library,label:"Kurslar",value:overview.data?.coursesTotal.toLocaleString("en-US")??"—",detail:"Katalogdagi kurslar",tone:"success" as const,filter:"content-courses"},
@@ -621,7 +621,7 @@ export default function AdminApp({session}:{session:AdminSession}){
   function ratingRows(){
     if(ratings.loading&&!ratings.data)return <tr><td colSpan={8}><div className="pd-loading">Reyting yuklanmoqda…</div></td></tr>;
     if(ratings.error&&!ratings.data)return <tr><td colSpan={8}><ErrorState message={ratings.error} onRetry={()=>setRevision(value=>value+1)}/></td></tr>;
-    if(!ratings.data?.items.length)return <tr><td colSpan={8}><EmptyState title="Reyting topilmadi" description="Qidiruvni o‘zgartirib qayta urinib ko‘ring." action={<button className="pd-button" onClick={clearSearch}>Qidiruvni tozalash</button>}/></td></tr>;
+    if(!ratings.data?.items.length)return <tr><td colSpan={8}><EmptyState title="PRO foydalanuvchi topilmadi" description="Qidiruvni o‘zgartirib qayta urinib ko‘ring." action={<button className="pd-button" onClick={clearSearch}>Qidiruvni tozalash</button>}/></td></tr>;
     return ratings.data.items.map(entry=>{
       const progress=entry.completionRate===null?0:Math.round(entry.completionRate);
       return <tr key={entry.learner.telegramUserId} data-rating-learner-id={entry.learner.telegramUserId}>
@@ -652,9 +652,9 @@ export default function AdminApp({session}:{session:AdminSession}){
 
   function ratingsScreen(){
     return <>
-      <PageHeader title="Reyting" subtitle="Tugatilgan darslar va o‘zlashtirish bo‘yicha foydalanuvchilar reytingi" actions={<button className="pd-button primary" onClick={()=>setRevision(value=>value+1)}><RefreshCw size={14}/>Yangilash</button>}/>
+      <PageHeader title="Reyting" subtitle="PRO foydalanuvchilar o‘rtasida tugatilgan darslar va o‘zlashtirish reytingi" actions={<button className="pd-button primary" onClick={()=>setRevision(value=>value+1)}><RefreshCw size={14}/>Yangilash</button>}/>
       {metrics("Ratings")}
-      <Panel title="Foydalanuvchilar reytingi" subtitle={`Jami ${ratings.data?.total.toLocaleString("en-US")??"—"} ta profil`}>
+      <Panel title="PRO foydalanuvchilar reytingi" subtitle={`Jami ${ratings.data?.total.toLocaleString("en-US")??"—"} ta PRO profil`}>
         <div className="pd-toolbar">
           <SearchField value={draft} onChange={setDraft} onSubmit={()=>{setUsername(draft.trim());setOffset(0);setSelected(null);setRevision(value=>value+1);}} onClear={clearSearch}/>
         </div>

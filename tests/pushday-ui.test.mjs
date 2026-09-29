@@ -98,7 +98,8 @@ test('rating surface reuses the shared table, search, pager and learner drawer',
   assert.match(ui, /RatingDirectory/);
   assert.match(ui, /\/api\/admin\/ratings/);
   assert.match(ui, /function ratingsScreen/);
-  assert.match(ui, /Foydalanuvchilar reytingi/);
+  assert.match(ui, /PRO foydalanuvchilar reytingi/);
+  assert.match(ui, /Jami PRO/);
   assert.match(ui, /Tugatilgan darslar/);
   assert.match(ui, /O‘zlashtirish/);
   assert.match(ui, /data-rating-learner-id/);
