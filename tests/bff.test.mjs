@@ -23,7 +23,7 @@ test('stalled request bodies are bounded by a deadline', {timeout:10000},async()
 });
 
 test('read-only allowlist validates DTOs and exact query, filters identity headers',async()=>{
- const directory={items:[{telegramUserId:'9223372036854775807',username:'Ab_C',firstName:null,lastName:null,languageCode:null,createdAt:'2026-01-01T00:00:00+00:00',lastSeenAt:'2026-01-01T00:00:00+00:00'}],total:41,limit:25,offset:0,hasMore:true};
+ const directory={items:[{telegramUserId:'9223372036854775807',username:'Ab_C',firstName:null,lastName:null,languageCode:null,botStartedAt:'2026-01-01T00:00:00+00:00',miniAppOpenedAt:'2026-01-02T00:00:00+00:00',createdAt:'2026-01-01T00:00:00+00:00',lastSeenAt:'2026-01-01T00:00:00+00:00'}],total:41,limit:25,offset:0,hasMore:true};
  const res=await proxyAdmin(get('learners?username=Ab_C&limit=25&offset=0'),'learners',config,async(url,init)=>{assert.equal(url,config.api+'/api/v1/admin/learners?username=Ab_C&limit=25&offset=0');assert.deepEqual([...init.headers.keys()],['cookie']);return Response.json(directory);});
  assert.equal(res.status,200);assert.deepEqual(await res.json(),directory);
  const filtered=await proxyAdmin(get('learners?limit=25&offset=0&audience=access'),'learners',config,async url=>{assert.equal(url,config.api+'/api/v1/admin/learners?limit=25&offset=0&audience=access');return Response.json(directory);});
@@ -33,6 +33,8 @@ test('read-only allowlist validates DTOs and exact query, filters identity heade
  assert.equal((await proxyAdmin(login(),'overview',config)).status,405);
  const invalid={...directory,items:[{...directory.items[0],telegramUserId:123}]};
  assert.equal((await proxyAdmin(get('learners'),'learners',config,async()=>Response.json(invalid))).status,502);
+ const invalidApp={...directory,items:[{...directory.items[0],miniAppOpenedAt:'not-a-timestamp'}]};
+ assert.equal((await proxyAdmin(get('learners'),'learners',config,async()=>Response.json(invalidApp))).status,502);
  assert.equal((await proxyAdmin(get(),'overview',config,async()=>new Response(null,{status:302,headers:{location:'http://evil'}}))).status,502);
  assert.equal((await proxyAdmin(get(),'overview',config,async()=>Response.json({learnersTotal:3,coursesTotal:1,sectionsTotal:2,lessonsTotal:9}))).status,200);
  assert.equal((await proxyAdmin(get('session'),'session',config,async()=>Response.json(session))).status,200);

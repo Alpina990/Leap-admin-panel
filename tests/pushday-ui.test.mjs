@@ -61,6 +61,9 @@ test('admin session cookie is renewed while the panel stays open', () => {
 test('users surface includes period filtering, payment totals and manual PRO access', () => {
   const ui = read('app/admin-app.tsx');
   assert.match(ui, /PeriodBar/);
+  assert.match(ui, /"Mini App"/);
+  assert.match(ui, /miniAppOpenedAt\?"\(app\)":/);
+  assert.match(ui, /personValue\.botStartedAt\?"Yangi":/);
   assert.match(ui, /To‘lovlar","Jami/);
   assert.match(ui, /PRO qilish/);
   assert.match(ui, /catalogAccess===true/);

@@ -594,9 +594,9 @@ export default function AdminApp({session}:{session:AdminSession}){
   }
 
   function learnerRows(compact=false){
-    if(directory.loading&&!directory.data)return <tr><td colSpan={10}><div className="pd-loading">Ma’lumotlar yuklanmoqda…</div></td></tr>;
-    if(directory.error&&!directory.data)return <tr><td colSpan={10}><ErrorState message={directory.error} onRetry={()=>setRevision(value=>value+1)}/></td></tr>;
-    if(!people.length)return <tr><td colSpan={10}><EmptyState title="Foydalanuvchi topilmadi" description="Qidiruv yoki filtrlarni o‘zgartirib qayta urinib ko‘ring." action={<button className="pd-button" onClick={clearSearch}>Filtrlarni tozalash</button>}/></td></tr>;
+    if(directory.loading&&!directory.data)return <tr><td colSpan={11}><div className="pd-loading">Ma’lumotlar yuklanmoqda…</div></td></tr>;
+    if(directory.error&&!directory.data)return <tr><td colSpan={11}><ErrorState message={directory.error} onRetry={()=>setRevision(value=>value+1)}/></td></tr>;
+    if(!people.length)return <tr><td colSpan={11}><EmptyState title="Foydalanuvchi topilmadi" description="Qidiruv yoki filtrlarni o‘zgartirib qayta urinib ko‘ring." action={<button className="pd-button" onClick={clearSearch}>Filtrlarni tozalash</button>}/></td></tr>;
     return people.slice(0,compact?5:25).map(personValue=>{
       const progress=learnerProgress(personValue);
       const hasCatalogAccess=personValue.catalogAccess===true;
@@ -607,7 +607,8 @@ export default function AdminApp({session}:{session:AdminSession}){
         <td><span className="pd-id">{personValue.telegramUserId}</span></td>
         <td><button className="pd-person" onClick={()=>openLearner(personValue)}><span>{learnerInitials(personValue)}</span><div><strong>{learnerName(personValue)}</strong><small>{personValue.username?`@${personValue.username}`:"Username yo‘q"}</small></div></button></td>
         <td><ProgressBar value={progress} hideLabel/></td>
-        <td><StatusPill tone={toneForProgress(progress)}>{progress>=70?"Yaxshi":progress>=30?"Davom etmoqda":"Yangi"}</StatusPill></td>
+        <td><StatusPill tone={toneForProgress(progress)}>{personValue.botStartedAt?"Yangi":progress>=70?"Yaxshi":progress>=30?"Davom etmoqda":"Yangi"}</StatusPill></td>
+        <td><span className="pd-muted">{personValue.miniAppOpenedAt?"(app)":"—"}</span></td>
         <td className="pd-table-number">{paymentCount}</td>
         <td className="pd-money">{paidTotal}</td>
         <td><span className="pd-muted">{formatDate(personValue.createdAt)}</span></td>
@@ -645,7 +646,7 @@ export default function AdminApp({session}:{session:AdminSession}){
         <button className="pd-button" onClick={()=>setReporting("Sort & paginate")}><Filter size={14}/>Saralash</button>
         <button className="pd-button" onClick={()=>setReporting("Export report")}><Download size={14}/>Eksport</button>
       </div>
-      <DataTable headers={["ID","Foydalanuvchi","Progress","Holat","To‘lovlar","Jami","Ro‘yxatdan o‘tgan","Oxirgi faollik","PRO","Batafsil"]}>{learnerRows(compact)}</DataTable>
+      <DataTable headers={["ID","Foydalanuvchi","Progress","Holat","Mini App","To‘lovlar","Jami","Ro‘yxatdan o‘tgan","Oxirgi faollik","PRO","Batafsil"]}>{learnerRows(compact)}</DataTable>
       {!compact&&<Pager offset={directory.data?.offset??0} limit={directory.data?.limit??25} total={directory.data?.total??0} hasMore={directory.data?.hasMore??false} loading={directory.loading} onPrevious={()=>{setOffset(Math.max(0,offset-25));setSelected(null);}} onNext={()=>{setOffset(offset+25);setSelected(null);}}/>}
     </Panel>;
   }
