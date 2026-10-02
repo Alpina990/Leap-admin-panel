@@ -108,6 +108,18 @@ try {
       if (slug === 'learners') await expect(page.locator('[data-learner-id]')).toHaveCount(25);
       if (slug === 'commerce') await expect(page.locator('[data-order-id]')).toHaveCount(25);
       if (slug === 'messages') await expect(page.locator('[data-notification-id]')).toHaveCount(25);
+      if (slug === 'learners' && viewport.width === 1440) {
+        await expect(page.locator('.pd-sort')).toHaveCount(8);
+        await page.locator('[data-sort="name"]').click();
+        await expect(page.locator('th[aria-sort="ascending"]')).toContainText('Foydalanuvchi');
+        await page.locator('[data-sort="name"]').click();
+        await expect(page.locator('th[aria-sort="descending"]')).toContainText('Foydalanuvchi');
+      }
+      if (slug === 'commerce' && viewport.width === 1440) {
+        await expect(page.locator('[data-sort="amount"]')).toHaveCount(1);
+        await page.locator('[data-sort="amount"]').click();
+        await expect(page.locator('th[aria-sort="descending"]')).toContainText('Summa');
+      }
       const geometry = await page.evaluate(() => ({
         viewport: innerWidth,
         documentWidth: document.documentElement.scrollWidth,

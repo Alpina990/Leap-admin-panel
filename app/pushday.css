@@ -722,6 +722,52 @@ button.pd-metric-card:focus-visible {
   white-space: nowrap;
 }
 
+.pd-table th.r {
+  text-align: right;
+}
+
+.pd-sort {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--pd-muted);
+  font: inherit;
+  font-weight: 750;
+  letter-spacing: inherit;
+  text-align: left;
+  text-transform: inherit;
+  white-space: nowrap;
+}
+
+.pd-sort:hover {
+  color: var(--pd-text);
+}
+
+.pd-sort svg {
+  flex: 0 0 12px;
+  width: 12px;
+  height: 12px;
+  opacity: 0.5;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.pd-sort.r {
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.pd-sort.on {
+  color: var(--pd-primary);
+}
+
+.pd-sort.on svg {
+  color: var(--pd-primary);
+  opacity: 1;
+}
+
 .pd-table td {
   height: 62px;
   padding: 10px;
