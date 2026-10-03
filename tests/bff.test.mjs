@@ -36,7 +36,7 @@ test('read-only allowlist validates DTOs and exact query, filters identity heade
  const invalidApp={...directory,items:[{...directory.items[0],miniAppOpenedAt:'not-a-timestamp'}]};
  assert.equal((await proxyAdmin(get('learners'),'learners',config,async()=>Response.json(invalidApp))).status,502);
  assert.equal((await proxyAdmin(get(),'overview',config,async()=>new Response(null,{status:302,headers:{location:'http://evil'}}))).status,502);
- assert.equal((await proxyAdmin(get(),'overview',config,async()=>Response.json({learnersTotal:3,coursesTotal:1,sectionsTotal:2,lessonsTotal:9}))).status,200);
+ assert.equal((await proxyAdmin(get(),'overview',config,async()=>Response.json({learnersTotal:3,uniquePhoneUsers:5,webOnlyPhoneUsers:2,coursesTotal:1,sectionsTotal:2,lessonsTotal:9}))).status,200);
  assert.equal((await proxyAdmin(get('session'),'session',config,async()=>Response.json(session))).status,200);
  const renewed=await proxyAdmin(get('session'),'session',config,async()=>Response.json(session,{headers:{'Set-Cookie':cookie}}));
  assert.equal(renewed.status,200);assert.equal(renewed.headers.get('set-cookie'),cookie);assert.deepEqual(await renewed.json(),session);

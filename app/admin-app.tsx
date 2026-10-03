@@ -693,7 +693,7 @@ export default function AdminApp({session}:{session:AdminSession}){
 
   function metricsFor(sectionValue:Section):Metric[]{
     if(sectionValue==="Learners"||sectionValue==="Overview")return [
-      {icon:UsersRound,label:"Jami foydalanuvchilar",value:overview.data?.learnersTotal.toLocaleString("en-US")??"—",detail:"Bazadagi barcha profillar",tone:"success" as const,filter:"all"},
+      {icon:UsersRound,label:"Unikal telefonlar",value:overview.data?.uniquePhoneUsers.toLocaleString("en-US")??"—",detail:overview.data?`Web-only: ${overview.data.webOnlyPhoneUsers.toLocaleString("en-US")}`:"Bot va webdan olingan raqamlar",tone:"success" as const},
       {icon:Activity,label:"Faol foydalanuvchilar",value:summary.data?.activeLearners.toLocaleString("en-US")??"—",detail:"Tanlangan davrda",tone:"success" as const,filter:"active"},
       {icon:BadgeCheck,label:"PRO / access",value:summary.data?.lifetimeAccess?.toLocaleString("en-US")??"—",detail:"Lifetime access egalari",tone:"success" as const,filter:"access"},
       {icon:Flame,label:"E’tibor kerak",value:summary.data?.attention?(summary.data.attention.learners??summary.data.attention.access+summary.data.attention.learning).toLocaleString("en-US"):"—",detail:"Access va o‘quv signallari",tone:"warning" as const,filter:"attention"},

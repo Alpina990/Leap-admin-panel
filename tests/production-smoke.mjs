@@ -129,7 +129,7 @@ try {
   assert.deepEqual(await page.evaluate(() => Object.keys(localStorage).filter(key => key !== 'leap-theme')), []);
 
   const counts = await context.request.get('/api/admin/overview');
-  assert.deepEqual(await counts.json(), {learnersTotal: 27, coursesTotal: 0, sectionsTotal: 0, lessonsTotal: 0});
+  assert.deepEqual(await counts.json(), {learnersTotal: 27, uniquePhoneUsers: 0, webOnlyPhoneUsers: 0, coursesTotal: 0, sectionsTotal: 0, lessonsTotal: 0});
   const authenticatedSlash = await context.request.get('/api/admin/overview/', {maxRedirects: 0});
   assert.equal(authenticatedSlash.status(), 200);
   assert.match(authenticatedSlash.headers()['cache-control'], /no-store/);

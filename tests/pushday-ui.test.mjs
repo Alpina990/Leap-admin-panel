@@ -84,11 +84,13 @@ test('users surface includes period filtering, payment totals and manual PRO acc
 
 test('user metric cards filter the directory by audience', () => {
   const ui = read('app/admin-app.tsx');
+  assert.match(ui, /label:"Unikal telefonlar"/);
+  assert.match(ui, /overview\.data\?\.uniquePhoneUsers/);
+  assert.match(ui, /Web-only:/);
   assert.match(ui, /type MetricFilter=/);
   assert.match(ui, /changeAudience/);
   assert.match(ui, /changeMetricFilter/);
   assert.match(ui, /aria-pressed=\{active\}/);
-  assert.match(ui, /filter:"all"/);
   assert.match(ui, /filter:"active"/);
   assert.match(ui, /filter:"access"/);
   assert.match(ui, /filter:"attention"/);
