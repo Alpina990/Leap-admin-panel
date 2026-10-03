@@ -285,8 +285,18 @@ function ProgressBar({value,label,hideLabel=false}:{value:number;label?:string;h
 function LearnerDetailDrawer({open,learnerId,learner,analytics,payments,loading,error,onClose,onRetry,onManageAccess}:{open:boolean;learnerId:string|null;learner?:Learner;analytics?:LearnerAnalytics;payments?:PaymentSummary;loading:boolean;error?:string;onClose:()=>void;onRetry:()=>void;onManageAccess:()=>void}){
   const name=learner?learnerName(learner):learnerId?`ID ${learnerId}`:"Foydalanuvchi";
   const initials=learner?learnerInitials(learner):"—";
-  const subscription=analytics?.catalogAccess?"PRO / Lifetime":analytics?.sectionAccess.length?`${analytics.sectionAccess.length} bo‘lim`:"Yo‘q";
-  const mastery=analytics?.completionRate===null||analytics?.completionRate===undefined?null:Math.round(analytics.completionRate);
+  const subscription=analytics
+    ? (analytics.catalogAccess?"PRO / Lifetime":analytics.sectionAccess.length?`${analytics.sectionAccess.length} bo‘lim`:"Yo‘q")
+    : (learner?.catalogAccess?"PRO / Lifetime":"Yo‘q");
+  const directoryRate=learner?.startedLessons
+    ? Math.round(100*(learner.completedLessons??0)/learner.startedLessons)
+    : null;
+  const mastery=analytics
+    ? (analytics.completionRate===null||analytics.completionRate===undefined?null:Math.round(analytics.completionRate))
+    : directoryRate;
+  const completedLessons=analytics?.completedLessons??learner?.completedLessons??0;
+  const startedLessons=analytics?.startedLessons??learner?.startedLessons??0;
+  const progressLabel=startedLessons>0?`${completedLessons} / ${startedLessons} dars`:`${completedLessons} tugatilgan dars`;
   return <Sheet open={open} onOpenChange={value=>{if(!value)onClose();}}>
     <SheetContent side="right" className="pd-profile-drawer">
       <SheetHeader className="pd-drawer-header">
@@ -316,7 +326,7 @@ function LearnerDetailDrawer({open,learnerId,learner,analytics,payments,loading,
           </div>
           <section className="pd-drawer-mastery">
             <div><span>O‘zlashtirish foizi</span><strong>{mastery===null?"—":`${mastery}%`}</strong></div>
-            <ProgressBar value={mastery??0} label={`${analytics?.completedLessons??0} tugatilgan dars`}/>
+            <ProgressBar value={mastery??0} label={progressLabel}/>
           </section>
           {analytics?.sectionAccess.length?<section className="pd-drawer-access"><span>Faol obunalar</span>{analytics.sectionAccess.map(item=><div key={item.sectionId}><strong>{item.title}</strong><small>{item.source}</small></div>)}</section>:null}
           <div className="pd-drawer-actions"><button className="pd-button primary" onClick={onManageAccess}>Accessni boshqarish</button><button className="pd-button" onClick={onClose}>Yopish</button></div>
