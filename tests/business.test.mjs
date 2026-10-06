@@ -4,7 +4,7 @@ import {proxyAdmin} from '../lib/admin-bff.mjs';
 const config={api:'http://127.0.0.1:8125',origin:'https://localhost:3445'};
 const cookie='__Host-leap_admin='+'a'.repeat(43),requestId='12345678-1234-1234-1234-123456789012',reason='A documented learner support decision.';
 const permissions={canGrantCatalogAccess:true,canCloseReconciliation:true,canCreateIntervention:true};
-const grant={learnerId:'123',scope:'whole_catalog',source:'admin_lifetime',reason,version:1,grantedAt:'2026-09-13T10:00:00Z',revokedAt:null,accessState:'lifetime',accessOverride:false,preservedSectionEntitlements:['paid-section']};
+const grant={learnerId:'123',scope:'whole_catalog',source:'admin_lifetime',reason,version:1,grantedAt:'2026-09-13T10:00:00Z',expiresAt:'2027-09-13T10:00:00Z',revokedAt:null,accessState:'lifetime',accessOverride:false,preservedSectionEntitlements:['paid-section']};
 function request(action,body,headers={}){return new Request(config.origin+'/api/admin/'+action,{method:body?'POST':'GET',headers:{cookie,...(body?{Origin:config.origin,'X-Admin-CSRF':'csrf','Content-Type':'application/json'}:{}),...headers},...(body?{body:JSON.stringify(body)}:{})});}
 test('business grant maps fixed upstream path, preserves request identity, and validates audited result',async()=>{
  const body={requestId,learnerId:'123',baseVersion:0,reason};
@@ -23,6 +23,8 @@ test('business writes deny invalid input, path injection, missing CSRF and undoc
 test('learner state and paginated cases reject mismatched identity and page responses',async()=>{
  const state={learnerId:'123',catalogGrant:null,accessState:'no_access',accessVersion:0,accessOverride:false,followUpVersion:0,permissions,followUpTasks:[]};
  assert.equal((await proxyAdmin(request('business-state?learnerId=123'),'business-state',config,async()=>Response.json(state))).status,200);
+ const catalogGrant={learnerId:'123',scope:'whole_catalog',source:'admin_lifetime',reason,version:1,grantedAt:grant.grantedAt,expiresAt:grant.expiresAt,revokedAt:null};
+ assert.equal((await proxyAdmin(request('business-state?learnerId=123'),'business-state',config,async()=>Response.json({...state,catalogGrant,accessState:'lifetime',accessVersion:1}))).status,200);
  assert.equal((await proxyAdmin(request('business-state?learnerId=999'),'business-state',config,async()=>Response.json(state))).status,502);
  assert.equal((await proxyAdmin(request('business-state'),'business-state',config)).status,422);
  assert.equal((await proxyAdmin(request('business-permissions'),'business-permissions',config,async()=>Response.json(permissions))).status,200);
