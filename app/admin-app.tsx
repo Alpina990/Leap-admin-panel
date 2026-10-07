@@ -85,6 +85,10 @@ const learnerColumns:TableColumn[]=[
   {key:"pro",label:"PRO"},
   {key:"actions",label:"Batafsil",right:true}
 ];
+// Every sortable learner column is ordered by the server across the whole filtered
+// result set, not just the rows on the current page.
+const learnerServerSortKeys:Record<string,string>={id:"telegramUserId",name:"name",progress:"progress",status:"status",times:"payments",total:"total",bot_started_at:"botStartedAt",last_seen_at:"lastSeenAt"};
+const defaultLearnerSort={sort:"botStartedAt",direction:"desc"};
 const ratingColumns:TableColumn[]=[
   {key:"rank",label:"O‘rin"},
   {key:"name",label:"Foydalanuvchi"},
@@ -178,11 +182,6 @@ function toneForProgress(value:number){
   return "neutral" as const;
 }
 
-function learnerStatusRank(person:Learner){
-  const progress=learnerProgress(person);
-  return progress>=70?2:progress>=30?1:0;
-}
-
 function compareText(left?:string|null,right?:string|null){
   return (left??"").localeCompare(right??"","uz",{sensitivity:"base"});
 }
@@ -197,10 +196,6 @@ function compareBigInts(left:string|bigint,right:string|bigint){
   const a=typeof left==="bigint"?left:BigInt(left);
   const b=typeof right==="bigint"?right:BigInt(right);
   return a<b?-1:a>b?1:0;
-}
-
-function compareIds(left:string,right:string){
-  return compareBigInts(left,right);
 }
 
 function nextSort(current:SortState,key:string,ascendingKeys:string[]=[]):SortState{
@@ -501,7 +496,7 @@ export default function AdminApp({session}:{session:AdminSession}){
 
   const overview=useRead<AdminOverview>("/api/admin/overview",revision);
   const summary=useRead<Summary>("/api/admin/analytics-summary?"+new URLSearchParams(dateRange),revision);
-  const learnerServerSort=learnerSort.key==="bot_started_at"?{sort:"botStartedAt",direction:learnerSort.direction===1?"asc":"desc"}:{sort:"botStartedAt",direction:"desc"};
+  const learnerServerSort={sort:learnerServerSortKeys[learnerSort.key]??defaultLearnerSort.sort,direction:learnerSort.direction===1?"asc":"desc"};
   const query=new URLSearchParams({limit:"25",offset:String(offset),audience,...dateRange,...learnerServerSort,...reportFilters.learners});
   if(username)query.set("username",username);
   const directory=useRead<LearnerDirectory>(["Overview","Learners","Commerce"].includes(section)?"/api/admin/learners?"+query:null,revision);
@@ -513,20 +508,6 @@ export default function AdminApp({session}:{session:AdminSession}){
   const showPaymentColumns=section==="Overview"||section==="Learners"||(section==="Commerce"&&commerceTab==="learners");
   const paymentSummaries=useRead<PaymentSummaries>(showPaymentColumns&&paymentLearnerIds.length?"/api/admin/learner-payments?"+new URLSearchParams({learnerIds:paymentLearnerIds.join(","),...dateRange}):null,revision);
   const paymentSummaryByLearner=new Map((paymentSummaries.data?.items??[]).map(item=>[item.learnerId,item]));
-  const sortedPeople=[...people].sort((left,right)=>{
-    let result=0;
-    switch(learnerSort.key){
-      case "id": result=compareIds(left.telegramUserId,right.telegramUserId); break;
-      case "name": result=compareText(learnerName(left),learnerName(right)); break;
-      case "progress": result=learnerProgress(left)-learnerProgress(right); break;
-      case "status": result=learnerStatusRank(left)-learnerStatusRank(right); break;
-      case "times": result=(paymentSummaryByLearner.get(left.telegramUserId)?.paymentsCount??0)-(paymentSummaryByLearner.get(right.telegramUserId)?.paymentsCount??0); break;
-      case "total": result=compareBigInts(paymentSummaryByLearner.get(left.telegramUserId)?.paidTotalTiyin??"0",paymentSummaryByLearner.get(right.telegramUserId)?.paidTotalTiyin??"0"); break;
-      case "bot_started_at": result=compareTimestamps(left.botStartedAt??left.createdAt,right.botStartedAt??right.createdAt); break;
-      case "last_seen_at": result=compareTimestamps(left.lastSeenAt,right.lastSeenAt); break;
-    }
-    return result*learnerSort.direction||compareIds(left.telegramUserId,right.telegramUserId);
-  });
   const person=people.find(item=>item.telegramUserId===selected)??people[0];
   const profileDirectory=useRead<LearnerDirectory>(profileId?"/api/admin/learners?"+new URLSearchParams({limit:"1",offset:"0",learnerId:profileId}):null,revision);
   const profileLearner=profileDirectory.data?.items[0]??people.find(item=>item.telegramUserId===profileId);
@@ -749,7 +730,7 @@ export default function AdminApp({session}:{session:AdminSession}){
     if(directory.loading&&!directory.data)return <tr><td colSpan={12}><div className="pd-loading">Ma’lumotlar yuklanmoqda…</div></td></tr>;
     if(directory.error&&!directory.data)return <tr><td colSpan={12}><ErrorState message={directory.error} onRetry={()=>setRevision(value=>value+1)}/></td></tr>;
     if(!people.length)return <tr><td colSpan={12}><EmptyState title="Foydalanuvchi topilmadi" description="Qidiruv yoki filtrlarni o‘zgartirib qayta urinib ko‘ring." action={<button className="pd-button" onClick={clearSearch}>Filtrlarni tozalash</button>}/></td></tr>;
-    return sortedPeople.slice(0,compact?5:25).map(personValue=>{
+    return people.slice(0,compact?5:25).map(personValue=>{
       const progress=learnerProgress(personValue);
       const hasCatalogAccess=personValue.catalogAccess===true;
       const payment=paymentSummaryByLearner.get(personValue.telegramUserId);

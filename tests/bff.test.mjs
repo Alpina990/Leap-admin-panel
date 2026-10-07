@@ -80,6 +80,29 @@ test('rating directory includes only PRO learners and ranks their completions',a
  for(const query of ['?limit=101','?username=','?sort=rank'])assert.equal((await proxyAdmin(get('ratings'+query),'ratings',config)).status,422);
 });
 
+test('learner directory sorts the whole dataset for derived columns',async()=>{
+ const learners=Array.from({length:130},(_,index)=>{const id=String(index+1);return {telegramUserId:id,username:`user_${id}`,firstName:null,lastName:null,languageCode:null,createdAt:'2026-01-01T00:00:00+00:00',lastSeenAt:'2026-01-02T00:00:00+00:00',watchedPercent:(index+1)%100};});
+ const upstream=async url=>{
+  const parsed=new URL(url);
+  assert.equal(parsed.pathname,'/api/v1/admin/learners');
+  assert.equal(parsed.searchParams.get('limit'),'100');
+  assert.equal(parsed.searchParams.get('sort'),'telegramUserId');
+  assert.equal(parsed.searchParams.get('direction'),'asc');
+  const offset=Number(parsed.searchParams.get('offset'));
+  const items=learners.slice(offset,offset+100);
+  return Response.json({items,total:learners.length,limit:100,offset,hasMore:offset+items.length<learners.length});
+ };
+ const response=await proxyAdmin(get('learners?limit=25&offset=0&sort=progress&direction=desc'),'learners',config,upstream);
+ assert.equal(response.status,200);
+ const body=await response.json();
+ assert.equal(body.total,130);
+ assert.equal(body.items.length,25);
+ assert.equal(body.items[0].telegramUserId,'99');
+ assert.equal(body.items[24].telegramUserId,'75');
+ assert.equal(body.hasMore,true);
+ assert.equal((await proxyAdmin(get('learners?limit=25&offset=0&sort=rank&direction=desc'),'learners',config)).status,422);
+});
+
 test('configuration, cookies, upstream failures and logout fail closed',async()=>{
  for(const api of ['http://upstream/path','https://user:pass@upstream','file:///secret','http://upstream?url=evil'])assert.equal((await proxyAdmin(get(),'overview',{...config,api})).status,503);
  assert.equal((await proxyAdmin(login(),'login',{...config,origin:'http://localhost'})).status,503);
