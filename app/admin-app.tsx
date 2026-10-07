@@ -267,7 +267,7 @@ function ProgressBar({value,label,hideLabel=false}:{value:number;label?:string;h
 
 function RegisteredStamp({value}:{value?:string|null}){
   const stamp=formatAdminRegistered(value);
-  return <span className="pd-muted">{stamp.date}{stamp.time?<> <strong className="pd-stamp-time">{stamp.time}</strong></>:null}</span>;
+  return <span className="pd-muted">{stamp.date}{stamp.time?<strong className="pd-stamp-time">{stamp.time}</strong>:null}</span>;
 }
 
 function LearnerDetailDrawer({open,learnerId,learner,analytics,payments,loading,error,onClose,onRetry,onManageAccess}:{open:boolean;learnerId:string|null;learner?:Learner;analytics?:LearnerAnalytics;payments?:PaymentSummary;loading:boolean;error?:string;onClose:()=>void;onRetry:()=>void;onManageAccess:()=>void}){
