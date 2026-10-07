@@ -65,8 +65,8 @@ test('users surface includes period filtering, payment totals and manual PRO acc
   assert.match(ui, /miniAppOpenedAt\?"\(app\)":/);
   assert.match(ui, /personValue\.botStartedAt\?"Yangi":/);
   assert.match(ui, /key:"bot_started_at",label:"Ro‘yxatdan o‘tgan"/);
-  assert.match(ui, /formatDateTime\(personValue\.botStartedAt\?\?personValue\.createdAt\)/);
-  assert.match(ui, /formatDateTime\(personValue\.lastSeenAt\)/);
+  assert.match(ui, /RegisteredStamp value=\{personValue\.botStartedAt\?\?personValue\.createdAt\}/);
+  assert.match(ui, /formatAdminDayMonthTime\(personValue\.lastSeenAt\)/);
   assert.match(ui, /sort:"botStartedAt"/);
   assert.match(ui, /watchedPercent/);
   assert.match(ui, /audience=.*watched|watched:"Darslikni ko‘rganlar"/);
@@ -122,7 +122,7 @@ test('rating surface reuses the shared table, search, pager and learner drawer',
   assert.match(ui, /Tugatilgan darslar/);
   assert.match(ui, /O‘zlashtirish/);
   assert.match(ui, /data-rating-learner-id/);
-  assert.match(ui, /formatDateTime\(entry\.learner\.lastSeenAt\)/);
+  assert.match(ui, /formatAdminDayMonthTime\(entry\.learner\.lastSeenAt\)/);
   assert.match(ui, /openLearner\(entry\.learner\)/);
 });
 

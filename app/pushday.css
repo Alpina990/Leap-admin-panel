@@ -893,6 +893,11 @@ button.pd-metric-card:focus-visible {
   color: var(--pd-muted);
 }
 
+.pd-stamp-time {
+  color: var(--pd-text);
+  font-weight: 700;
+}
+
 .pd-table-number,
 .pd-money {
   white-space: nowrap;

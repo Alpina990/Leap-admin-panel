@@ -48,6 +48,7 @@ import {NoteDialog} from "./note-dialog";
 import {money,type Orders,type Payment} from "./payments";
 import {PushdayNavigation,type PushdaySection} from "./pushday-navigation";
 import {SelfingoScreen} from "./selfingo-screen";
+import {formatAdminDateTime as formatDateTime, formatAdminDayMonthTime, formatAdminRegistered} from "@/lib/admin-date-time.mjs";
 import {readState} from "@/lib/read-state.mjs";
 import workflowCards from "@/lib/pushday-workflows.json";
 import {Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle} from "@/components/ui/dialog";
@@ -151,10 +152,6 @@ function periodRange(kind:string):Record<string,string>{
   const date=new Date(Date.UTC(today.getUTCFullYear(),month,1));
   const year=date.getUTCFullYear(),monthNumber=date.getUTCMonth();
   return {start:isoDate(date),end:monthNumber===today.getUTCMonth()&&year===today.getUTCFullYear()?end:isoDate(new Date(Date.UTC(year,monthNumber+1,0)))};
-}
-
-function formatDateTime(value?:string|null){
-  return value?value.slice(0,16).replace("T"," "):"—";
 }
 
 function learnerName(person:Learner){
@@ -268,6 +265,11 @@ function ProgressBar({value,label,hideLabel=false}:{value:number;label?:string;h
   </div>;
 }
 
+function RegisteredStamp({value}:{value?:string|null}){
+  const stamp=formatAdminRegistered(value);
+  return <span className="pd-muted">{stamp.date}{stamp.time?<> <strong className="pd-stamp-time">{stamp.time}</strong></>:null}</span>;
+}
+
 function LearnerDetailDrawer({open,learnerId,learner,analytics,payments,loading,error,onClose,onRetry,onManageAccess}:{open:boolean;learnerId:string|null;learner?:Learner;analytics?:LearnerAnalytics;payments?:PaymentSummary;loading:boolean;error?:string;onClose:()=>void;onRetry:()=>void;onManageAccess:()=>void}){
   const name=learner?learnerName(learner):learnerId?`ID ${learnerId}`:"Foydalanuvchi";
   const initials=learner?learnerInitials(learner):"—";
@@ -302,7 +304,7 @@ function LearnerDetailDrawer({open,learnerId,learner,analytics,payments,loading,
             <div><dt>Kim</dt><dd>{learnerName(learner)}</dd></div>
             <div><dt>Username</dt><dd>{learner.username?`@${learner.username}`:"—"}</dd></div>
             <div><dt>Telegram ID</dt><dd>{learner.telegramUserId}</dd></div>
-            <div><dt>Ro‘yxatdan o‘tgan</dt><dd>{formatDateTime(learner.botStartedAt??learner.createdAt)}</dd></div>
+            <div><dt>Ro‘yxatdan o‘tgan</dt><dd><RegisteredStamp value={learner.botStartedAt??learner.createdAt}/></dd></div>
           </dl>
           <div className="pd-drawer-summary">
             <article><span><CalendarDays size={16}/></span><div><small>Oxirgi to‘lov</small><strong>{payments?.lastPaidAt?formatDateTime(payments.lastPaidAt):loading?"…":"—"}</strong></div></article>
@@ -744,8 +746,8 @@ export default function AdminApp({session}:{session:AdminSession}){
         <td><span className="pd-muted">{personValue.miniAppOpenedAt?"(app)":"—"}</span></td>
         <td className="pd-table-number">{paymentCount}</td>
         <td className="pd-money">{paidTotal}</td>
-        <td><span className="pd-muted">{formatDateTime(personValue.botStartedAt??personValue.createdAt)}</span></td>
-        <td><span className="pd-muted">{formatDateTime(personValue.lastSeenAt)}</span></td>
+        <td><RegisteredStamp value={personValue.botStartedAt??personValue.createdAt}/></td>
+        <td><span className="pd-muted">{formatAdminDayMonthTime(personValue.lastSeenAt)}</span></td>
         <td><button type="button" className={`pd-contact-check${contactMarked(personValue)?" on":""}`} aria-pressed={contactMarked(personValue)} disabled={Boolean(contactBusy[personValue.telegramUserId])} onClick={()=>void toggleContactMark(personValue)} aria-label={`${learnerName(personValue)} aloqa belgisi`}><Check size={13}/></button></td>
         <td><div className="pd-row-actions">{hasCatalogAccess?<button className="pd-row-action pro" title="Accessni o‘zgartirish" onClick={()=>openBusiness("Manage access",personValue.telegramUserId)}><BadgeCheck size={13}/>PRO</button>:<button className="pd-row-action fire" onClick={()=>openBusiness("Manage access",personValue.telegramUserId)}>PRO qilish</button>}</div></td>
         <td><button className="pd-text-button" onClick={()=>openLearner(personValue)}>Batafsil</button></td>
@@ -766,7 +768,7 @@ export default function AdminApp({session}:{session:AdminSession}){
         <td className="pd-table-number">{entry.startedLessons.toLocaleString("en-US")}</td>
         <td><ProgressBar value={progress} hideLabel/></td>
         <td><StatusPill tone={toneForProgress(progress)}>{progress>=70?"Yaxshi":progress>=30?"Davom etmoqda":"Yangi"}</StatusPill></td>
-        <td><span className="pd-muted">{formatDateTime(entry.learner.lastSeenAt)}</span></td>
+        <td><span className="pd-muted">{formatAdminDayMonthTime(entry.learner.lastSeenAt)}</span></td>
         <td><button className="pd-text-button" onClick={()=>openLearner(entry.learner)}>Batafsil</button></td>
       </tr>;
     });
