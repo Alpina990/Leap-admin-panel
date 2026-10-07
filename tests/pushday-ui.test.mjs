@@ -64,6 +64,15 @@ test('users surface includes period filtering, payment totals and manual PRO acc
   assert.match(ui, /"Mini App"/);
   assert.match(ui, /miniAppOpenedAt\?"\(app\)":/);
   assert.match(ui, /personValue\.botStartedAt\?"Yangi":/);
+  assert.match(ui, /key:"bot_started_at",label:"Ro‘yxatdan o‘tgan"/);
+  assert.match(ui, /formatDateTime\(personValue\.botStartedAt\?\?personValue\.createdAt\)/);
+  assert.match(ui, /formatDateTime\(personValue\.lastSeenAt\)/);
+  assert.match(ui, /sort:"botStartedAt"/);
+  assert.match(ui, /watchedPercent/);
+  assert.match(ui, /audience=.*watched|watched:"Darslikni ko‘rganlar"/);
+  assert.match(ui, /key:"contact",label:"Aloqa",icon:MessageSquare/);
+  assert.match(ui, /contact-marks/);
+  assert.match(ui, /pd-contact-check/);
   assert.match(ui, /label:"To‘lovlar",sortable:true,right:true/);
   assert.match(ui, /label:"Jami",sortable:true,right:true/);
   assert.match(ui, /data-sort=\{column\.key\}/);
@@ -80,6 +89,7 @@ test('users surface includes period filtering, payment totals and manual PRO acc
   assert.match(ui, /inputMode="numeric"/);
   assert.match(ui, /learner-payments/);
   assert.match(read('app/pushday.css'), /\.pd-period-bar/);
+  assert.match(read('app/pushday.css'), /\.pd-contact-check/);
 });
 
 test('user metric cards filter the directory by audience', () => {
@@ -112,6 +122,7 @@ test('rating surface reuses the shared table, search, pager and learner drawer',
   assert.match(ui, /Tugatilgan darslar/);
   assert.match(ui, /O‘zlashtirish/);
   assert.match(ui, /data-rating-learner-id/);
+  assert.match(ui, /formatDateTime\(entry\.learner\.lastSeenAt\)/);
   assert.match(ui, /openLearner\(entry\.learner\)/);
 });
 

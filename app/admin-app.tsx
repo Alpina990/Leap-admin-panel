@@ -62,15 +62,15 @@ type ContentTreeLesson={id:string;unitId:string;title:string;slug:string;positio
 type ContentTreeUnit={id:string;sectionId:string;sectionTitle:string;title:string;slug:string;subtitle:string;position:number;version:string;lessons:ContentTreeLesson[]};
 type ContentTreeCourse={id:string;title:string;slug:string;version:string;units:ContentTreeUnit[]};
 type ContentTree={items:ContentTreeCourse[];total:number;limit:number;offset:number;hasMore:boolean;canWrite:boolean};
-type AudienceFilter="all"|"active"|"access"|"attention";
+type AudienceFilter="all"|"active"|"access"|"attention"|"watched";
 type MetricFilter=AudienceFilter|"content-courses"|"content-units"|"content-lessons"|"content-published"|"commerce-revenue"|"commerce-paid"|"commerce-average"|"commerce-pending"|"messages-sent"|"messages-read"|"messages-unread"|"messages-total";
 type Metric={icon:LucideIcon;label:string;value:string;detail:string;tone?:"success"|"warning"|"danger";filter?:MetricFilter};
 type SortDirection=1|-1;
 type SortState={key:string;direction:SortDirection};
-type TableColumn={key:string;label:string;sortable?:boolean;right?:boolean};
+type TableColumn={key:string;label:string;icon?:LucideIcon;sortable?:boolean;right?:boolean};
 
 const navRoutes:Section[]=["Overview","Learners","Ratings","Content","Commerce","AI","Messages"];
-const audienceLabels:Record<AudienceFilter,string>={all:"Barcha profillar",active:"Faol foydalanuvchilar",access:"PRO",attention:"E’tibor kerak"};
+const audienceLabels:Record<AudienceFilter,string>={all:"Barcha profillar",active:"Faol foydalanuvchilar",access:"PRO",attention:"E’tibor kerak",watched:"Darslikni ko‘rganlar"};
 const learnerColumns:TableColumn[]=[
   {key:"id",label:"ID",sortable:true},
   {key:"name",label:"Foydalanuvchi",sortable:true},
@@ -79,8 +79,9 @@ const learnerColumns:TableColumn[]=[
   {key:"mini_app",label:"Mini App"},
   {key:"times",label:"To‘lovlar",sortable:true,right:true},
   {key:"total",label:"Jami",sortable:true,right:true},
-  {key:"created_at",label:"Ro‘yxatdan o‘tgan",sortable:true},
+  {key:"bot_started_at",label:"Ro‘yxatdan o‘tgan",sortable:true},
   {key:"last_seen_at",label:"Oxirgi faollik",sortable:true},
+  {key:"contact",label:"Aloqa",icon:MessageSquare},
   {key:"pro",label:"PRO"},
   {key:"actions",label:"Batafsil",right:true}
 ];
@@ -148,24 +149,8 @@ function periodRange(kind:string):Record<string,string>{
   return {start:isoDate(date),end:monthNumber===today.getUTCMonth()&&year===today.getUTCFullYear()?end:isoDate(new Date(Date.UTC(year,monthNumber+1,0)))};
 }
 
-function formatDate(value?:string|null){
-  return value?value.slice(0,10):"—";
-}
-
 function formatDateTime(value?:string|null){
   return value?value.slice(0,16).replace("T"," "):"—";
-}
-
-function relativeSeen(value?:string|null){
-  if(!value)return "—";
-  const then=new Date(value).getTime();
-  if(Number.isNaN(then))return value;
-  const minutes=Math.max(0,Math.round((Date.now()-then)/60000));
-  if(minutes<60)return `${minutes} daq oldin`;
-  const hours=Math.round(minutes/60);
-  if(hours<24)return `${hours} soat oldin`;
-  const days=Math.round(hours/24);
-  return days<7?`${days} kun oldin`:value.slice(0,10);
 }
 
 function learnerName(person:Learner){
@@ -177,8 +162,14 @@ function learnerInitials(person:Learner){
 }
 
 function learnerProgress(person:Learner){
+  if(typeof person.watchedPercent==="number")return Math.max(0,Math.min(100,person.watchedPercent));
   const started=person.startedLessons??0;
   return started?Math.round(100*(person.completedLessons??0)/started):0;
+}
+
+function formatProgress(value:number){
+  const rounded=Math.round(value*100)/100;
+  return `${Number.isInteger(rounded)?rounded:rounded.toFixed(2).replace(/0+$/,"").replace(/\.$/,"")}%`;
 }
 
 function toneForProgress(value:number){
@@ -277,7 +268,7 @@ function StatusPill({children,tone="neutral"}:{children:ReactNode;tone?:"success
 function ProgressBar({value,label,hideLabel=false}:{value:number;label?:string;hideLabel?:boolean}){
   const safe=Math.max(0,Math.min(100,value));
   return <div className="pd-progress">
-    <div className="pd-progress-copy">{!hideLabel&&<span>{label??"Progress"}</span>}<strong>{safe}%</strong></div>
+    <div className="pd-progress-copy">{!hideLabel&&<span>{label??"Progress"}</span>}<strong>{formatProgress(safe)}</strong></div>
     <div className="pd-progress-track"><i style={{width:`${safe}%`}}/></div>
   </div>;
 }
@@ -316,7 +307,7 @@ function LearnerDetailDrawer({open,learnerId,learner,analytics,payments,loading,
             <div><dt>Kim</dt><dd>{learnerName(learner)}</dd></div>
             <div><dt>Username</dt><dd>{learner.username?`@${learner.username}`:"—"}</dd></div>
             <div><dt>Telegram ID</dt><dd>{learner.telegramUserId}</dd></div>
-            <div><dt>Ro‘yxatdan o‘tgan</dt><dd>{formatDateTime(learner.createdAt)}</dd></div>
+            <div><dt>Ro‘yxatdan o‘tgan</dt><dd>{formatDateTime(learner.botStartedAt??learner.createdAt)}</dd></div>
           </dl>
           <div className="pd-drawer-summary">
             <article><span><CalendarDays size={16}/></span><div><small>Oxirgi to‘lov</small><strong>{payments?.lastPaidAt?formatDateTime(payments.lastPaidAt):loading?"…":"—"}</strong></div></article>
@@ -442,8 +433,10 @@ function DataTable({columns,children,sortKey,sortDirection,onSort}:{columns:Tabl
     const active=sortKey===column.key;
     const sortable=Boolean(column.sortable&&onSort);
     const Icon=active?(sortDirection===1?ArrowUp:ArrowDown):ArrowUpDown;
+    const LabelIcon=column.icon;
+    const label=LabelIcon?<span className="pd-column-label"><LabelIcon size={12} aria-hidden="true"/><span>{column.label}</span></span>:<span>{column.label}</span>;
     return <th key={column.key} className={column.right?"r":undefined} aria-sort={active?(sortDirection===1?"ascending":"descending"):undefined}>
-      {sortable?<button type="button" data-sort={column.key} className={`pd-sort${active?" on":""}${column.right?" r":""}`} onClick={()=>onSort?.(column.key)} aria-label={`${column.label} bo‘yicha saralash`}><span>{column.label}</span><Icon size={12} aria-hidden="true"/></button>:column.label}
+      {sortable?<button type="button" data-sort={column.key} className={`pd-sort${active?" on":""}${column.right?" r":""}`} onClick={()=>onSort?.(column.key)} aria-label={`${column.label} bo‘yicha saralash`}>{label}<Icon size={12} aria-hidden="true"/></button>:label}
     </th>;
   })}</tr></thead><tbody>{children}</tbody></table></div>;
 }
@@ -458,7 +451,10 @@ export default function AdminApp({session}:{session:AdminSession}){
   const [section,setSection]=useState<Section>("Overview");
   const [revision,setRevision]=useState(0);
   const [audience,setAudience]=useState<AudienceFilter>("all");
-  const [learnerSort,setLearnerSort]=useState<SortState>({key:"created_at",direction:-1});
+  const [learnerSort,setLearnerSort]=useState<SortState>({key:"bot_started_at",direction:-1});
+  const [contactMarks,setContactMarks]=useState<Record<string,boolean>>({});
+  const [contactBusy,setContactBusy]=useState<Record<string,boolean>>({});
+  const [contactError,setContactError]=useState("");
   const [contentMetric,setContentMetric]=useState<MetricFilter|null>(null);
   const [commerceMetric,setCommerceMetric]=useState<MetricFilter|null>(null);
   const [messagesMetric,setMessagesMetric]=useState<MetricFilter|null>(null);
@@ -505,7 +501,8 @@ export default function AdminApp({session}:{session:AdminSession}){
 
   const overview=useRead<AdminOverview>("/api/admin/overview",revision);
   const summary=useRead<Summary>("/api/admin/analytics-summary?"+new URLSearchParams(dateRange),revision);
-  const query=new URLSearchParams({limit:"25",offset:String(offset),audience,...dateRange,...reportFilters.learners});
+  const learnerServerSort=learnerSort.key==="bot_started_at"?{sort:"botStartedAt",direction:learnerSort.direction===1?"asc":"desc"}:{sort:"botStartedAt",direction:"desc"};
+  const query=new URLSearchParams({limit:"25",offset:String(offset),audience,...dateRange,...learnerServerSort,...reportFilters.learners});
   if(username)query.set("username",username);
   const directory=useRead<LearnerDirectory>(["Overview","Learners","Commerce"].includes(section)?"/api/admin/learners?"+query:null,revision);
   const people=directory.data?.items??[];
@@ -525,7 +522,7 @@ export default function AdminApp({session}:{session:AdminSession}){
       case "status": result=learnerStatusRank(left)-learnerStatusRank(right); break;
       case "times": result=(paymentSummaryByLearner.get(left.telegramUserId)?.paymentsCount??0)-(paymentSummaryByLearner.get(right.telegramUserId)?.paymentsCount??0); break;
       case "total": result=compareBigInts(paymentSummaryByLearner.get(left.telegramUserId)?.paidTotalTiyin??"0",paymentSummaryByLearner.get(right.telegramUserId)?.paidTotalTiyin??"0"); break;
-      case "created_at": result=compareTimestamps(left.createdAt,right.createdAt); break;
+      case "bot_started_at": result=compareTimestamps(left.botStartedAt??left.createdAt,right.botStartedAt??right.createdAt); break;
       case "last_seen_at": result=compareTimestamps(left.lastSeenAt,right.lastSeenAt); break;
     }
     return result*learnerSort.direction||compareIds(left.telegramUserId,right.telegramUserId);
@@ -668,6 +665,26 @@ export default function AdminApp({session}:{session:AdminSession}){
     return filter===messagesMetric;
   }
   function clearSearch(){setDraft("");setUsername("");setAudience("all");setOffset(0);setSelected(null);setRevision(value=>value+1);}
+  function contactMarked(person:Learner){return contactMarks[person.telegramUserId]??person.contacted===true;}
+  async function toggleContactMark(person:Learner){
+    const learnerId=person.telegramUserId;
+    const next=!contactMarked(person);
+    setContactError("");
+    setContactMarks(current=>({...current,[learnerId]:next}));
+    setContactBusy(current=>({...current,[learnerId]:true}));
+    try{
+      const response=await fetch("/api/admin/contact-marks",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","X-Admin-CSRF":session.csrfToken},body:JSON.stringify({learnerId,contacted:next}),signal:AbortSignal.timeout(12000)});
+      if(response.status===401){window.location.replace("/login");return;}
+      const data=await response.json();
+      if(!response.ok)throw new Error(data.error?.message??"Aloqa belgisini saqlab bo‘lmadi.");
+      setContactMarks(current=>({...current,[learnerId]:data.contacted===true}));
+    }catch(error){
+      setContactMarks(current=>({...current,[learnerId]:!next}));
+      setContactError(error instanceof Error?error.message:"Aloqa belgisini saqlab bo‘lmadi.");
+    }finally{
+      setContactBusy(current=>{const nextState={...current};delete nextState[learnerId];return nextState;});
+    }
+  }
   function openModal(value:"settings"|"account"|"search"){
     if(value==="settings"){setPreferenceTheme(isLight?"light":"dark");setPreferenceRefresh(autoRefresh);setPreferenceError("");}
     if(value==="search"){setGlobalDraft("");setGlobalQuery(null);}
@@ -729,9 +746,9 @@ export default function AdminApp({session}:{session:AdminSession}){
   }
 
   function learnerRows(compact=false){
-    if(directory.loading&&!directory.data)return <tr><td colSpan={11}><div className="pd-loading">Ma’lumotlar yuklanmoqda…</div></td></tr>;
-    if(directory.error&&!directory.data)return <tr><td colSpan={11}><ErrorState message={directory.error} onRetry={()=>setRevision(value=>value+1)}/></td></tr>;
-    if(!people.length)return <tr><td colSpan={11}><EmptyState title="Foydalanuvchi topilmadi" description="Qidiruv yoki filtrlarni o‘zgartirib qayta urinib ko‘ring." action={<button className="pd-button" onClick={clearSearch}>Filtrlarni tozalash</button>}/></td></tr>;
+    if(directory.loading&&!directory.data)return <tr><td colSpan={12}><div className="pd-loading">Ma’lumotlar yuklanmoqda…</div></td></tr>;
+    if(directory.error&&!directory.data)return <tr><td colSpan={12}><ErrorState message={directory.error} onRetry={()=>setRevision(value=>value+1)}/></td></tr>;
+    if(!people.length)return <tr><td colSpan={12}><EmptyState title="Foydalanuvchi topilmadi" description="Qidiruv yoki filtrlarni o‘zgartirib qayta urinib ko‘ring." action={<button className="pd-button" onClick={clearSearch}>Filtrlarni tozalash</button>}/></td></tr>;
     return sortedPeople.slice(0,compact?5:25).map(personValue=>{
       const progress=learnerProgress(personValue);
       const hasCatalogAccess=personValue.catalogAccess===true;
@@ -746,8 +763,9 @@ export default function AdminApp({session}:{session:AdminSession}){
         <td><span className="pd-muted">{personValue.miniAppOpenedAt?"(app)":"—"}</span></td>
         <td className="pd-table-number">{paymentCount}</td>
         <td className="pd-money">{paidTotal}</td>
-        <td><span className="pd-muted">{formatDate(personValue.createdAt)}</span></td>
-        <td><span className="pd-muted">{relativeSeen(personValue.lastSeenAt)}</span></td>
+        <td><span className="pd-muted">{formatDateTime(personValue.botStartedAt??personValue.createdAt)}</span></td>
+        <td><span className="pd-muted">{formatDateTime(personValue.lastSeenAt)}</span></td>
+        <td><button type="button" className={`pd-contact-check${contactMarked(personValue)?" on":""}`} aria-pressed={contactMarked(personValue)} disabled={Boolean(contactBusy[personValue.telegramUserId])} onClick={()=>void toggleContactMark(personValue)} aria-label={`${learnerName(personValue)} aloqa belgisi`}><Check size={13}/></button></td>
         <td><div className="pd-row-actions">{hasCatalogAccess?<button className="pd-row-action pro" title="Accessni o‘zgartirish" onClick={()=>openBusiness("Manage access",personValue.telegramUserId)}><BadgeCheck size={13}/>PRO</button>:<button className="pd-row-action fire" onClick={()=>openBusiness("Manage access",personValue.telegramUserId)}>PRO qilish</button>}</div></td>
         <td><button className="pd-text-button" onClick={()=>openLearner(personValue)}>Batafsil</button></td>
       </tr>;
@@ -767,7 +785,7 @@ export default function AdminApp({session}:{session:AdminSession}){
         <td className="pd-table-number">{entry.startedLessons.toLocaleString("en-US")}</td>
         <td><ProgressBar value={progress} hideLabel/></td>
         <td><StatusPill tone={toneForProgress(progress)}>{progress>=70?"Yaxshi":progress>=30?"Davom etmoqda":"Yangi"}</StatusPill></td>
-        <td><span className="pd-muted">{relativeSeen(entry.learner.lastSeenAt)}</span></td>
+        <td><span className="pd-muted">{formatDateTime(entry.learner.lastSeenAt)}</span></td>
         <td><button className="pd-text-button" onClick={()=>openLearner(entry.learner)}>Batafsil</button></td>
       </tr>;
     });
@@ -777,9 +795,10 @@ export default function AdminApp({session}:{session:AdminSession}){
     return <Panel title="Foydalanuvchilar" subtitle={`Jami ${directory.data?.total.toLocaleString("en-US")??"—"} ta profil${audience==="all"?"":` · ${audienceLabels[audience]}`}`} action={<button className="pd-button" onClick={openAllLearners}>Barchasini ko‘rish</button>}>
       <div className="pd-toolbar">
         <SearchField value={draft} onChange={setDraft} onSubmit={()=>{setUsername(draft.trim());setOffset(0);setSelected(null);setRevision(value=>value+1);}} onClear={clearSearch}/>
-        <label className="pd-filter-select"><Filter size={14}/><select aria-label="Foydalanuvchi filtri" value={audience} onChange={event=>changeAudience(event.target.value as AudienceFilter)}><option value="all">Barcha profillar</option><option value="active">Faol foydalanuvchilar</option><option value="access">PRO</option><option value="attention">E’tibor kerak</option></select><ChevronDown size={14}/></label>
+        <label className="pd-filter-select"><Filter size={14}/><select aria-label="Foydalanuvchi filtri" value={audience} onChange={event=>changeAudience(event.target.value as AudienceFilter)}><option value="all">Barcha profillar</option><option value="active">Faol foydalanuvchilar</option><option value="access">PRO</option><option value="attention">E’tibor kerak</option><option value="watched">Darslikni ko‘rganlar</option></select><ChevronDown size={14}/></label>
         <button className="pd-button" onClick={()=>setReporting("Export report")}><Download size={14}/>Eksport</button>
       </div>
+      {contactError&&<p className="pd-feedback" role="alert">{contactError}</p>}
       <DataTable columns={learnerColumns} sortKey={learnerSort.key} sortDirection={learnerSort.direction} onSort={toggleLearnerSort}>{learnerRows(compact)}</DataTable>
       {!compact&&<Pager offset={directory.data?.offset??0} limit={directory.data?.limit??25} total={directory.data?.total??0} hasMore={directory.data?.hasMore??false} loading={directory.loading} onPrevious={()=>{setOffset(Math.max(0,offset-25));setSelected(null);}} onNext={()=>{setOffset(offset+25);setSelected(null);}}/>}
     </Panel>;

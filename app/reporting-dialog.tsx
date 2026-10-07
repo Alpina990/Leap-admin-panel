@@ -2,7 +2,7 @@
 import {useState} from 'react';
 import {Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription} from '@/components/ui/dialog';
 export type ReportingResource='learners'|'payments'|'notifications';
-export const reportingSorts={learners:{telegramUserId:'Telegram ID',createdAt:'Registration date',lastSeenAt:'Last seen',username:'Username'},payments:{createdAt:'Order creation',amountTiyin:'Amount (tiyin)',status:'Status'},notifications:{createdAt:'Created',kind:'Kind'}};
+export const reportingSorts={learners:{telegramUserId:'Telegram ID',botStartedAt:'Registration date (first start)',lastSeenAt:'Last seen',username:'Username'},payments:{createdAt:'Order creation',amountTiyin:'Amount (tiyin)',status:'Status'},notifications:{createdAt:'Created',kind:'Kind'}};
 export function ReportingDialog({mode,resource,query,onApply,onClose}:{mode:'Date range'|'Sort & paginate'|'Export report';resource:ReportingResource;query:string;onApply:(v:Record<string,string>)=>void;onClose:()=>void}){
  const current=new URLSearchParams(query);
  const [start,setStart]=useState(current.get('start')??''),[end,setEnd]=useState(current.get('end')??'');

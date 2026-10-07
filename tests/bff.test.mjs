@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import {proxyAdmin} from '../lib/admin-bff.mjs';
 const config={api:'http://127.0.0.1:8123',origin:'https://admin.leapeng.uz'};
 const session={admin:{id:1,username:'operator'},csrfToken:'a'.repeat(64)};
-const cookie='__Host-leap_admin='+'a'.repeat(43)+'; HttpOnly; Max-Age=28800; Path=/; SameSite=strict; Secure';
+const cookie='__Host-leap_admin='+'a'.repeat(43)+'; HttpOnly; Max-Age=31536000; Path=/; SameSite=strict; Secure';
 const login=(headers={},body=JSON.stringify({username:'operator',password:'disposable-password'}))=>new Request(config.origin+'/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json',Origin:config.origin,'X-Admin-CSRF':'login',...headers},body});
 const get=(path='overview',extra={})=>new Request(config.origin+'/api/admin/'+path,{headers:{cookie:'other=bad; '+cookie.split(';')[0],'oai-user-id':'root',...extra}});
+const post=(path,body,extra={})=>new Request(config.origin+'/api/admin/'+path,{method:'POST',headers:{cookie:cookie.split(';')[0],Origin:config.origin,'X-Admin-CSRF':'a'.repeat(64),'Content-Type':'application/json',...extra},body:JSON.stringify(body)});
 
 test('login matches backend input bounds, and oversized/500 responses reveal no upstream body',async()=>{
  const denied={error:{code:'admin_unauthorized',message:'Invalid credentials'}};
@@ -28,6 +29,10 @@ test('read-only allowlist validates DTOs and exact query, filters identity heade
  assert.equal(res.status,200);assert.deepEqual(await res.json(),directory);
  const filtered=await proxyAdmin(get('learners?limit=25&offset=0&audience=access'),'learners',config,async url=>{assert.equal(url,config.api+'/api/v1/admin/learners?limit=25&offset=0&audience=access');return Response.json(directory);});
  assert.equal(filtered.status,200);
+ const watched=await proxyAdmin(get('learners?limit=25&offset=0&audience=watched'),'learners',config,async url=>{assert.equal(url,config.api+'/api/v1/admin/learners?limit=25&offset=0&audience=watched');return Response.json(directory);});
+ assert.equal(watched.status,200);
+ const sorted=await proxyAdmin(get('learners?limit=25&offset=0&sort=botStartedAt&direction=desc'),'learners',config,async url=>{assert.equal(url,config.api+'/api/v1/admin/learners?limit=25&offset=0&sort=botStartedAt&direction=desc');return Response.json(directory);});
+ assert.equal(sorted.status,200);
  for(const query of ['?url=http://evil','?limit=101','?limit=1&limit=2','?offset=-1','?username=','?audience=everything'])assert.equal((await proxyAdmin(get('learners'+query),'learners',config)).status,422);
  for(const action of ['../session','http://evil','note'])assert.equal((await proxyAdmin(get(),action,config)).status,404);
  assert.equal((await proxyAdmin(login(),'overview',config)).status,405);
@@ -40,6 +45,17 @@ test('read-only allowlist validates DTOs and exact query, filters identity heade
  assert.equal((await proxyAdmin(get('session'),'session',config,async()=>Response.json(session))).status,200);
  const renewed=await proxyAdmin(get('session'),'session',config,async()=>Response.json(session,{headers:{'Set-Cookie':cookie}}));
  assert.equal(renewed.status,200);assert.equal(renewed.headers.get('set-cookie'),cookie);assert.deepEqual(await renewed.json(),session);
+});
+
+test('contact mark toggles are strict admin POSTs',async()=>{
+ const result=await proxyAdmin(post('contact-marks',{learnerId:'7',contacted:true}),'contact-marks',config,async(url,init)=>{
+  assert.equal(url,config.api+'/api/v1/admin/contact-marks');
+  assert.deepEqual(JSON.parse(init.body),{learnerId:'7',contacted:true});
+  return Response.json({learnerId:'7',contacted:true});
+ });
+ assert.equal(result.status,200);assert.deepEqual(await result.json(),{learnerId:'7',contacted:true});
+ assert.equal((await proxyAdmin(post('contact-marks',{learnerId:'7',contacted:true},{'X-Admin-CSRF':''}),'contact-marks',config)).status,403);
+ assert.equal((await proxyAdmin(post('contact-marks',{learnerId:'bad',contacted:true}),'contact-marks',config)).status,422);
 });
 
 test('rating directory includes only PRO learners and ranks their completions',async()=>{

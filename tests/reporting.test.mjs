@@ -11,5 +11,7 @@ test('reporting preserves server query and bounded export scope',async()=>{
   assert.equal((await proxyAdmin(get('export?resource='+resource+'&'+query),'export',config,async()=>Response.json(data))).status,200);
   assert.equal((await proxyAdmin(get('export?resource='+resource),'export',config,async()=>Response.json({...data,resource:'wrong'}))).status,502);
  }
+ const learnerStart='sort=botStartedAt&direction=desc&start=2026-01-01&end=2026-01-31';
+ assert.equal((await proxyAdmin(get('learners?'+learnerStart),'learners',config,async url=>{assert.ok(url.endsWith(learnerStart));return Response.json({items:[],total:0,limit:25,offset:0,hasMore:false});})).status,200);
  for(const query of ['resource=secrets','resource=learners&sort=kind','resource=payments&sort=username','resource=learners&start=2026-02-30','resource=notifications&read=seen'])assert.equal((await proxyAdmin(get('export?'+query),'export',config)).status,422);
 });

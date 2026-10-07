@@ -35,7 +35,7 @@ with tempfile.TemporaryDirectory(prefix='database-', dir=sys.argv[2]) as directo
     Base.metadata.create_all(engine, tables=[table for table in Base.metadata.sorted_tables if not table.name.startswith('admin_') and table.name not in {'learner_catalog_entitlements', 'learner_access_denials', 'reconciliation_cases'}])
     with engine.begin() as connection:
         with Operations.context(MigrationContext.configure(connection)):
-            for filename in ('0a12b34c56de_create_admin_identity.py', '1b23c45d67ef_admin_notes.py', '2c34d56e78fa_admin_content.py', '3d45e67f89ab_admin_business.py', '4e56f78a90bc_admin_access_denials.py'):
+            for filename in ('0a12b34c56de_create_admin_identity.py', '1b23c45d67ef_admin_notes.py', '2c34d56e78fa_admin_content.py', '3d45e67f89ab_admin_business.py', '4e56f78a90bc_admin_access_denials.py', 'c4d5e6f7a8b9_admin_learner_contacts.py'):
                 spec = importlib.util.spec_from_file_location('fixture_admin_revision', backend / 'alembic/versions' / filename)
                 revision = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(revision)
