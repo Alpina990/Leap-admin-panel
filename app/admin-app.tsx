@@ -48,7 +48,7 @@ import {NoteDialog} from "./note-dialog";
 import {money,type Orders,type Payment} from "./payments";
 import {PushdayNavigation,type PushdaySection} from "./pushday-navigation";
 import {SelfingoScreen} from "./selfingo-screen";
-import {formatAdminDateTime as formatDateTime, formatAdminDayMonthTime, formatAdminRegistered} from "@/lib/admin-date-time.mjs";
+import {formatAdminDateTime as formatDateTime, formatAdminRegistered, formatAdminRelativeTime} from "@/lib/admin-date-time.mjs";
 import {readState} from "@/lib/read-state.mjs";
 import workflowCards from "@/lib/pushday-workflows.json";
 import {Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle} from "@/components/ui/dialog";
@@ -747,7 +747,7 @@ export default function AdminApp({session}:{session:AdminSession}){
         <td className="pd-table-number">{paymentCount}</td>
         <td className="pd-money">{paidTotal}</td>
         <td><RegisteredStamp value={personValue.botStartedAt??personValue.createdAt}/></td>
-        <td><span className="pd-muted">{formatAdminDayMonthTime(personValue.lastSeenAt)}</span></td>
+        <td><span className="pd-muted" title={formatDateTime(personValue.lastSeenAt)}>{formatAdminRelativeTime(personValue.lastSeenAt)}</span></td>
         <td><button type="button" className={`pd-contact-check${contactMarked(personValue)?" on":""}`} aria-pressed={contactMarked(personValue)} disabled={Boolean(contactBusy[personValue.telegramUserId])} onClick={()=>void toggleContactMark(personValue)} aria-label={`${learnerName(personValue)} aloqa belgisi`}><Check size={13}/></button></td>
         <td><div className="pd-row-actions">{hasCatalogAccess?<button className="pd-row-action pro" title="Accessni o‘zgartirish" onClick={()=>openBusiness("Manage access",personValue.telegramUserId)}><BadgeCheck size={13}/>PRO</button>:<button className="pd-row-action fire" onClick={()=>openBusiness("Manage access",personValue.telegramUserId)}>PRO qilish</button>}</div></td>
         <td><button className="pd-text-button" onClick={()=>openLearner(personValue)}>Batafsil</button></td>
@@ -768,7 +768,7 @@ export default function AdminApp({session}:{session:AdminSession}){
         <td className="pd-table-number">{entry.startedLessons.toLocaleString("en-US")}</td>
         <td><ProgressBar value={progress} hideLabel/></td>
         <td><StatusPill tone={toneForProgress(progress)}>{progress>=70?"Yaxshi":progress>=30?"Davom etmoqda":"Yangi"}</StatusPill></td>
-        <td><span className="pd-muted">{formatAdminDayMonthTime(entry.learner.lastSeenAt)}</span></td>
+        <td><span className="pd-muted" title={formatDateTime(entry.learner.lastSeenAt)}>{formatAdminRelativeTime(entry.learner.lastSeenAt)}</span></td>
         <td><button className="pd-text-button" onClick={()=>openLearner(entry.learner)}>Batafsil</button></td>
       </tr>;
     });
