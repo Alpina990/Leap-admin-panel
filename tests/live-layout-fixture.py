@@ -3,6 +3,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
+from datetime import datetime, timezone
 
 # Drop inherited integration settings before importing backend configuration.
 for key in list(os.environ):
@@ -35,7 +36,7 @@ with tempfile.TemporaryDirectory(prefix='database-', dir=sys.argv[2]) as directo
     Base.metadata.create_all(engine, tables=[table for table in Base.metadata.sorted_tables if not table.name.startswith('admin_') and table.name not in {'learner_catalog_entitlements', 'learner_access_denials', 'reconciliation_cases'}])
     with engine.begin() as connection:
         with Operations.context(MigrationContext.configure(connection)):
-            for filename in ('0a12b34c56de_create_admin_identity.py', '1b23c45d67ef_admin_notes.py', '2c34d56e78fa_admin_content.py', '3d45e67f89ab_admin_business.py', '4e56f78a90bc_admin_access_denials.py', 'c4d5e6f7a8b9_admin_learner_contacts.py'):
+            for filename in ('0a12b34c56de_create_admin_identity.py', '1b23c45d67ef_admin_notes.py', '2c34d56e78fa_admin_content.py', '3d45e67f89ab_admin_business.py', '4e56f78a90bc_admin_access_denials.py', 'c4d5e6f7a8b9_admin_learner_contacts.py', '9f2a7c4d6e10_add_catalog_subscription_expiry.py'):
                 spec = importlib.util.spec_from_file_location('fixture_admin_revision', backend / 'alembic/versions' / filename)
                 revision = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(revision)
@@ -43,8 +44,8 @@ with tempfile.TemporaryDirectory(prefix='database-', dir=sys.argv[2]) as directo
     factory = sessionmaker(engine, expire_on_commit=False)
     with factory.begin() as db:
         create_admin(db, 'smoke_operator', 'disposable-test-only-password-92!').can_write_notes = True
-        db.add_all([Learner(id=n, username=f'fixture_{n}', first_name='Disposable') for n in range(1, 27)])
-        db.add(Learner(id=9007199254740993, username='Exact_Case', first_name='Large ID'))
+        db.add_all([Learner(id=n, username=f'fixture_{n}', first_name='Disposable', bot_started_at=datetime.now(timezone.utc)) for n in range(1, 27)])
+        db.add(Learner(id=9007199254740993, username='Exact_Case', first_name='Large ID', bot_started_at=datetime.now(timezone.utc)))
     with factory.begin() as db:
         db.add(Course(id='fixture-course', slug='fixture-course', title='Disposable course'))
         db.flush()
@@ -69,6 +70,20 @@ with tempfile.TemporaryDirectory(prefix='database-', dir=sys.argv[2]) as directo
     from leap_api.models import Lesson
     with factory.begin() as db:
         db.add(Lesson(id='fixture-lesson',unit_id='fixture-unit',slug='fixture-lesson',title='Disposable lesson',position=1,status='draft'))
+    if os.environ.get('UNIFIED_SALES_ONLY') == '1':
+        from leap_api.models import CrmSale, CrmSyncState
+        with factory.begin() as db:
+            now = datetime.now(timezone.utc)
+            db.add(PaymentOrder(id='fixture-app-sale', learner_id=1, section_id=None,
+                                product='catalog_lifetime', external_id='fixture-app-sale',
+                                amount_tiyin=20000, provider='payme', status='paid', paid_at=now))
+            db.add_all([
+                CrmSale(id='12345678-1234-1234-1234-123456789012', crm_lead_id='fixture-unmatched',
+                        learner_id=None, amount_tiyin=40000, paid_at=now, match_state='unmatched'),
+                CrmSale(id='12345678-1234-1234-1234-123456789013', crm_lead_id='fixture-matched',
+                        learner_id=1, amount_tiyin=30000, paid_at=now, match_state='matched'),
+                CrmSyncState(id=1, last_success_at=now, sales_created=2, unmatched=1),
+            ])
     app = create_app(settings=settings, engine=engine, session_factory=factory)
     uvicorn.run(app, host='127.0.0.1', port=int(sys.argv[3]) if len(sys.argv) > 3 else 8127, access_log=False, log_level='warning')
     engine.dispose()

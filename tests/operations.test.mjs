@@ -25,7 +25,8 @@ test('payment allowlist is bounded and permits actual order DTOs only',async()=>
  assert.equal(r.status,200);assert.deepEqual(await r.json(),data);
  for(const query of ['status=refunded','method=card','status=paid&status=pending','url=https://evil','limit=101','learnerId=9223372036854775808']) assert.equal((await proxyAdmin(get('payments?'+query),'payments',config)).status,422);
  assert.equal((await proxyAdmin(get('payment?orderId=missing'),'payment',config,async()=>Response.json({error:{code:'admin_not_found',message:'Not found'}},{status:404}))).status,404);
- assert.equal((await proxyAdmin(get('payments'),'payments',config,async()=>Response.json({...data,secret:'leak'}))).status,502);
+ const extra=await proxyAdmin(get('payments'),'payments',config,async()=>Response.json({...data,secret:'leak'}));
+ assert.equal(extra.status,200);assert.deepEqual(await extra.json(),data); // Project the allowlist; never forward additions.
 });
 
 test('catalog payment orders with no section are accepted',async()=>{

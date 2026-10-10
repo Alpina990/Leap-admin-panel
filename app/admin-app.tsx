@@ -50,6 +50,7 @@ import {PushdayNavigation,type PushdaySection} from "./pushday-navigation";
 import {SelfingoScreen} from "./selfingo-screen";
 import {formatAdminDateTime as formatDateTime, formatAdminRegistered, formatAdminRelativeTime} from "@/lib/admin-date-time.mjs";
 import {readState} from "@/lib/read-state.mjs";
+import {salesDetails,transactionIdentity,salesEligibility} from "@/lib/admin-sales.mjs";
 import workflowCards from "@/lib/pushday-workflows.json";
 import {Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle} from "@/components/ui/dialog";
 import {Sheet,SheetContent,SheetDescription,SheetHeader,SheetTitle} from "@/components/ui/sheet";
@@ -135,7 +136,7 @@ function formatUzs(tiyin?:string|null){
 }
 
 function providerLabel(value:string){
-  const labels:Record<string,string>={payme:"Payme",click:"Click",uzum:"Uzum",paylov:"Paylov"};
+  const labels:Record<string,string>={payme:"Payme",click:"Click",uzum:"Uzum",paylov:"Paylov",crm:"CRM"};
   return labels[value.toLowerCase()]??value;
 }
 
@@ -527,12 +528,12 @@ export default function AdminApp({session}:{session:AdminSession}){
   if(paymentStatus)ordersQuery.set("status",paymentStatus);
   if(paymentMethod)ordersQuery.set("method",paymentMethod);
   const orders=useRead<Orders>(section==="Commerce"&&commerceTab==="transactions"?"/api/admin/payments?"+ordersQuery:null,revision);
-  const transactionLearnerIds=(orders.data?.items??[]).map(item=>item.learnerId);
+  const transactionLearnerIds=[...new Set((orders.data?.items??[]).map(item=>item.learnerId).filter((id):id is string=>id!==null))];
   const transactionSummaries=useRead<PaymentSummaries>(section==="Commerce"&&commerceTab==="transactions"&&transactionLearnerIds.length?"/api/admin/learner-payments?"+new URLSearchParams({learnerIds:transactionLearnerIds.join(","),includeProfiles:"1"}):null,revision);
   const learnerByTelegramId=new Map([...people,...(transactionSummaries.data?.items??[]).flatMap(item=>item.learner?[item.learner]:[])].map(item=>[item.telegramUserId,item]));
   const orderPersonName=(order:Orders["items"][number])=>{
-    const person=learnerByTelegramId.get(order.learnerId);
-    return person?learnerName(person):`ID ${order.learnerId}`;
+    const person=order.learnerId?learnerByTelegramId.get(order.learnerId):undefined;
+    return person?learnerName(person):transactionIdentity(order).label;
   };
   const sortedOrders=[...(orders.data?.items??[])].sort((left,right)=>{
     let result=0;
@@ -903,12 +904,12 @@ export default function AdminApp({session}:{session:AdminSession}){
     if(orders.error&&!orders.data)return <tr><td colSpan={6}><ErrorState message={orders.error} onRetry={()=>setRevision(value=>value+1)}/></td></tr>;
     if(!orders.data?.items.length)return <tr><td colSpan={6}><EmptyState title="Buyurtma topilmadi" description="Filtrlarni o‘zgartirib qayta urinib ko‘ring."/></td></tr>;
     return sortedOrders.map(order=>{
-      const personValue=learnerByTelegramId.get(order.learnerId);
+      const personValue=order.learnerId?learnerByTelegramId.get(order.learnerId):undefined;
       return <tr key={order.id} data-order-id={order.id} className={order.id===activeOrder?"selected":""} onClick={()=>setOrderId(order.id)}>
       <td><span className="pd-id">{order.id.slice(0,18)}</span></td>
-      <td><button className="pd-person-link" onClick={event=>{event.stopPropagation();openLearnerById(order.learnerId);}}><strong>{personValue?learnerName(personValue):`ID ${order.learnerId}`}</strong><small>{personValue?.username?`@${personValue.username}`:order.learnerId}</small></button></td>
+      <td><button className="pd-person-link" disabled={!order.learnerId} onClick={event=>{event.stopPropagation();if(order.learnerId)openLearnerById(order.learnerId);}}><strong>{personValue?learnerName(personValue):transactionIdentity(order).label}</strong><small>{personValue?.username?`@${personValue.username}`:transactionIdentity(order).detail}</small></button></td>
       <td>{formatDateTime(order.createdAt)}</td>
-      <td>{order.method}</td>
+      <td>{providerLabel(order.method)}</td>
       <td><strong>{money(order)}</strong></td>
       <td><StatusPill tone={order.status==="paid"?"success":order.status==="cancelled"?"danger":"warning"}>{order.status}</StatusPill></td>
     </tr>;});
@@ -919,6 +920,8 @@ export default function AdminApp({session}:{session:AdminSession}){
     const methods=[...(summary.data?.paymentMethods??[])].sort((left,right)=>BigInt(right.revenueTiyin)>BigInt(left.revenueTiyin)?1:-1);
     return <Panel title="Daromad taqsimoti" subtitle="To‘lov provayderlari bo‘yicha ulush">
       <div className="pd-revenue-total"><span>Jami tushum</span><strong>{formatMoneyCompact(summary.data?.revenueTiyin)}</strong></div>
+      {summary.error&&<ErrorState message={summary.error} onRetry={()=>setRevision(value=>value+1)}/>}
+      {summary.loading&&!summary.data&&<div className="pd-loading">Tushum yuklanmoqda…</div>}
       <div className="pd-provider-list">
         {methods.map(method=>{
           const share=total>BigInt(0)?Number(BigInt(method.revenueTiyin)*BigInt(100)/total):0;
@@ -928,7 +931,7 @@ export default function AdminApp({session}:{session:AdminSession}){
             <small>{formatMoneyCompact(method.revenueTiyin)}</small>
           </div>;
         })}
-        {!methods.length&&<EmptyState title="Daromad yo‘q" description="Tanlangan davrda muvaffaqiyatli to‘lovlar topilmadi."/>}
+        {summary.data&&!methods.length&&<EmptyState title="Daromad yo‘q" description="Tanlangan davrda muvaffaqiyatli to‘lovlar topilmadi."/>}
       </div>
     </Panel>;
   }
@@ -947,9 +950,10 @@ export default function AdminApp({session}:{session:AdminSession}){
         <div className="pd-detail-stack">
           {revenueDistribution()}
           <Panel title="To‘lov tafsiloti" subtitle={activeOrder??"Buyurtma tanlanmagan"} className="pd-detail-panel">
+            <dl className="pd-facts" aria-label="Sotuv manbalari va CRM sync">{salesDetails(summary.data).map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
             {payment.error&&<ErrorState message={payment.error} onRetry={()=>setRevision(value=>value+1)}/>}
             {payment.loading&&!payment.data&&<div className="pd-loading">Tafsilot yuklanmoqda…</div>}
-            {payment.data&&<><div className="pd-detail-hero"><span>{payment.data.order.method}</span><strong>{money(payment.data.order)}</strong><StatusPill tone={payment.data.order.status==="paid"?"success":"warning"}>{payment.data.order.status}</StatusPill></div><dl className="pd-facts"><div><dt>Order ID</dt><dd>{payment.data.order.id}</dd></div><div><dt>Foydalanuvchi</dt><dd>{payment.data.order.learnerId}</dd></div><div><dt>Gateway</dt><dd>{payment.data.order.gateway}</dd></div><div><dt>Yaratilgan</dt><dd>{formatDateTime(payment.data.order.createdAt)}</dd></div><div><dt>To‘langan</dt><dd>{formatDateTime(payment.data.order.paidAt)}</dd></div><div><dt>Access</dt><dd>{payment.data.entitlement?.matchesPayment?"Mos":"Tekshirish kerak"}</dd></div></dl></>}
+            {payment.data&&<><div className="pd-detail-hero"><span>{payment.data.order.method}</span><strong>{money(payment.data.order)}</strong><StatusPill tone={payment.data.order.status==="paid"?"success":"warning"}>{payment.data.order.status}</StatusPill></div><dl className="pd-facts"><div><dt>Order ID</dt><dd>{payment.data.order.id}</dd></div><div><dt>Foydalanuvchi</dt><dd>{payment.data.order.learnerId??"Profil ulanmagan"}</dd></div><div><dt>Gateway</dt><dd>{payment.data.order.gateway}</dd></div><div><dt>Manba</dt><dd>{transactionIdentity(payment.data.order).detail}</dd></div><div><dt>Jami tushumda</dt><dd>{salesEligibility(payment.data.order)}</dd></div><div><dt>Yaratilgan</dt><dd>{formatDateTime(payment.data.order.createdAt)}</dd></div><div><dt>To‘langan</dt><dd>{formatDateTime(payment.data.order.paidAt)}</dd></div><div><dt>Access</dt><dd>{payment.data.order.learnerId?(payment.data.entitlement?.matchesPayment?"Mos":"Tekshirish kerak"):"Profil ulanmagan"}</dd></div></dl></>}
           </Panel>
         </div>
       </div>:learnerPanel(false)}
@@ -1002,7 +1006,7 @@ export default function AdminApp({session}:{session:AdminSession}){
     {priceOpen&&<PriceDialog current={catalogPrice.data} csrf={session.csrfToken} onSaved={()=>setRevision(value=>value+1)} onClose={()=>{setPriceOpen(false);setRevision(value=>value+1);}}/>}
     {business&&<BusinessDialog mode={business} learnerId={businessLearner??person?.telegramUserId} learnerName={businessLearner&&businessLearner!==person?.telegramUserId?businessLearner:person?learnerName(person):undefined} csrf={session.csrfToken} onClose={()=>setBusiness(null)} onSaved={()=>setRevision(value=>value+1)}/>}
     {reporting&&<ReportingDialog mode={reporting} resource={reportResource} query={reportQuery.toString()} onClose={()=>setReporting(null)} onApply={values=>{if(reporting==="Date range")setDateRange(Object.fromEntries(Object.entries(values).filter(([,value])=>value)));else setReportFilters(previous=>({...previous,[reportResource]:values}));setOffset(0);setOrderOffset(0);setNotificationOffset(0);setSelected(null);setOrderId(null);}}/>}
-    {paymentFilter&&<Dialog open onOpenChange={setPaymentFilter}><DialogBody title="To‘lov filtrlari" description="Buyurtmalarni holat va to‘lov usuli bo‘yicha filtrlang."><label className="pd-field"><span>Holat</span><select value={statusDraft} onChange={event=>setStatusDraft(event.target.value)}><option value="">Barcha holatlar</option><option value="paid">Paid</option><option value="pending">Pending</option><option value="cancelled">Cancelled</option></select></label><label className="pd-field"><span>Usul</span><select value={methodDraft} onChange={event=>setMethodDraft(event.target.value)}><option value="">Barcha usullar</option>{["payme","click","uzum","paylov"].map(method=><option key={method} value={method}>{method}</option>)}</select></label><div className="pd-dialog-actions"><button className="pd-button" onClick={()=>setPaymentFilter(false)}>Bekor qilish</button><button className="pd-button primary" onClick={()=>{setCommerceMetric(null);setPaymentStatus(statusDraft);setPaymentMethod(methodDraft);setOrderOffset(0);setOrderId(null);setPaymentFilter(false);}}>Qo‘llash</button></div></DialogBody></Dialog>}
+    {paymentFilter&&<Dialog open onOpenChange={setPaymentFilter}><DialogBody title="To‘lov filtrlari" description="Buyurtmalarni holat va to‘lov usuli bo‘yicha filtrlang."><label className="pd-field"><span>Holat</span><select value={statusDraft} onChange={event=>setStatusDraft(event.target.value)}><option value="">Barcha holatlar</option><option value="paid">Paid</option><option value="pending">Pending</option><option value="cancelled">Cancelled</option></select></label><label className="pd-field"><span>Usul</span><select value={methodDraft} onChange={event=>setMethodDraft(event.target.value)}><option value="">Barcha usullar</option>{["payme","click","uzum","paylov","tribute","crm"].map(method=><option key={method} value={method}>{method}</option>)}</select></label><div className="pd-dialog-actions"><button className="pd-button" onClick={()=>setPaymentFilter(false)}>Bekor qilish</button><button className="pd-button primary" onClick={()=>{setCommerceMetric(null);setPaymentStatus(statusDraft);setPaymentMethod(methodDraft);setOrderOffset(0);setOrderId(null);setPaymentFilter(false);}}>Qo‘llash</button></div></DialogBody></Dialog>}
     {notificationId&&<Dialog open onOpenChange={value=>{if(!value)setNotificationId(null);}}><DialogBody title={notification.data?.title??"Xabar tafsiloti"} description="Mini App inbox yozuvi. Bu oynada o‘qilgan holat o‘zgartirilmaydi.">{notification.loading?<div className="pd-loading">Yuklanmoqda…</div>:notification.data?<><p className="pd-message-body">{notification.data.body}</p><dl className="pd-facts"><div><dt>Foydalanuvchi</dt><dd>{notification.data.learnerId}</dd></div><div><dt>Yaratilgan</dt><dd>{formatDateTime(notification.data.createdAt)}</dd></div><div><dt>O‘qilgan</dt><dd>{formatDateTime(notification.data.readAt)}</dd></div></dl></>:<ErrorState message={notification.error??"Xabar topilmadi"} onRetry={()=>setRevision(value=>value+1)}/>}<div className="pd-dialog-actions"><button className="pd-button primary" onClick={()=>setNotificationId(null)}>Yopish</button></div></DialogBody></Dialog>}
     {noteTarget&&<NoteDialog key={noteTarget.telegramUserId} learnerId={noteTarget.telegramUserId} learnerName={learnerName(noteTarget)} csrf={session.csrfToken} onViewRecord={()=>{setSelected(noteTarget.telegramUserId);setProfileId(noteTarget.telegramUserId);setNoteTarget(null);setRevision(value=>value+1);}} onClose={()=>{setNoteTarget(null);setRevision(value=>value+1);}}/>}
     <Dialog open={workflow!==null} onOpenChange={value=>{if(!value)setWorkflow(null);}}><DialogBody title={workflow??"Workflow"} description={workflow?workflowCards[workflow].description:"Bu amal hozircha mavjud emas."}><p className="pd-feedback">Bu workflow hozircha read-only rejimda. Backend API ulanmaguncha o‘zgartirish yaratilmaydi.</p><div className="pd-dialog-actions"><button className="pd-button" onClick={()=>setWorkflow(null)}>Bekor qilish</button><button className="pd-button primary" disabled>Mavjud emas</button></div></DialogBody></Dialog>

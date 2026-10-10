@@ -44,6 +44,7 @@ try {
   await expect(page.locator('[data-learner-id]')).toHaveCount(5);
   await page.screenshot({path: `${out}/overview-desktop.png`, fullPage: true});
 
+  if(process.env.UNIFIED_SALES_ONLY!=='1'){
   await page.getByRole('button', {name: 'Search everything', exact: true}).click();
   await expect(page.getByRole('dialog', {name: 'Qidiruv', exact: true})).toBeVisible();
   await page.getByLabel('Username', {exact: true}).fill('Exact_Case');
@@ -156,8 +157,11 @@ try {
   await expect(page.getByRole('dialog').getByRole('button', {name: 'Content', exact: true})).toBeVisible();
   await page.getByRole('dialog').getByRole('button', {name: 'Content', exact: true}).click();
   await expect(page.locator('main')).toHaveAttribute('data-route', 'Content');
+  }
+  const {checkUnifiedSales}=await import('./unified-sales-browser.mjs');
+  await checkUnifiedSales(page,out);
   assert.deepEqual(errors, []);
-  console.log('PASS PushDay production runtime: six routes at desktop/mobile, real FastAPI + disposable SQLite, dialogs/search/navigation, no horizontal overflow or page errors.');
+  console.log(process.env.UNIFIED_SALES_ONLY==='1'?'PASS focused commerce production runtime: real authentication + summary, CRM browser fixtures, no page errors.':'PASS PushDay production runtime: six routes at desktop/mobile, real FastAPI + disposable SQLite, dialogs/search/navigation, no horizontal overflow or page errors.');
 } finally {
   writeFileSync(`${out}/results.json`, JSON.stringify({results, errors}, null, 2));
   await browser.close();
