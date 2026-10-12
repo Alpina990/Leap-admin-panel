@@ -49,7 +49,7 @@ test('commerce connects source facts and unknown-learner guards inside existing 
  assert.match(ui,/filter\(\(id\):id is string=>id!==null\)/);
  assert.match(ui,/disabled=\{!order.learnerId\}/);
  assert.match(ui,/summary.error/);
- assert.ok(ui.includes('["unknown","payme","hamkorbank_transfer","click","uzum","paylov","tribute"]'),'method selector offers unknown and actual providers, never CRM');
+ assert.ok(ui.includes('["unknown","payme","card_transfer","hamkorbank_transfer","click","uzum","paylov","tribute"]'),'method selector offers unknown and actual providers, never CRM');
  assert.match(ui,/summary.data\?\.revenueTiyin/);
  assert.doesNotMatch(ui,/BigInt\(summary.data.sales.crmRevenueTiyin\)/);
 });
@@ -59,6 +59,7 @@ test('commerce renders backend payment methods without interpreting CRM provenan
  assert.match(ui,/crm:"Noma’lum"/);
  assert.match(ui,/unknown:"Noma’lum"/);
  assert.match(ui,/hamkorbank_transfer:"Hamkorbank transfer"/);
+ assert.match(ui,/card_transfer:"Karta orqali"/);
  assert.match(ui,/\{providerLabel\(order.method\)\}/);
  assert.match(ui,/\{providerLabel\(method.method\)\}/);
  assert.match(ui,/\{providerLabel\(payment.data.order.method\)\}/);
@@ -78,7 +79,7 @@ test('canonical backend DTO supports nullable CRM external ID and explicit sales
 test('payment and export method filters forward new providers and legacy CRM, rejecting unlisted values',async()=>{
  const page={items:[],total:0,limit:25,offset:0,hasMore:false};
  const report={csv:'id,method\n',resource:'payments',scope:'current-page',rowCount:0,total:0,limit:25,offset:0};
- for(const method of ['unknown','hamkorbank_transfer','crm','payme']){
+ for(const method of ['unknown','hamkorbank_transfer','card_transfer','crm','payme']){
   for(const [action,data,route] of [['payments',page,'/payments'],['export',report,'/export']]){
    const urls=[];
    const response=await proxyAdmin(new Request(config.origin+'/api/admin/'+action+'?'+(action==='export'?'resource=payments&':'')+'method='+method,{headers:{cookie:'__Host-leap_admin='+'a'.repeat(43)}}),action,config,async url=>{

@@ -26,7 +26,7 @@ export async function checkUnifiedSales(page, out){
    assert.equal(detail.status(),200);assert.deepEqual((await detail.json()).order,row);
   }
  }
- const summary={...original,paidOrders:3,revenueTiyin:'50000',paymentMethods:[{method:'unknown',count:1,revenueTiyin:'30000'},{method:'payme',count:2,revenueTiyin:'20000'}],sales:{appPaidOrders:2,appRevenueTiyin:'20000',crmSales:1,crmRevenueTiyin:'30000',crmMirrored:1,crmMatched:0,crmUnmatched:1,totalPaidOrders:3,totalRevenueTiyin:'50000'},crmSync:{lastSuccessAt:'2026-10-09T01:00:00Z',lastError:null,lastRunSalesCreated:1,lastRunUnmatched:1}};
+ const summary={...original,paidOrders:3,revenueTiyin:'50000',paymentMethods:[{method:'unknown',count:1,revenueTiyin:'30000'},{method:'card_transfer',count:1,revenueTiyin:'10000'},{method:'payme',count:1,revenueTiyin:'10000'}],sales:{appPaidOrders:2,appRevenueTiyin:'20000',crmSales:1,crmRevenueTiyin:'30000',crmMirrored:1,crmMatched:0,crmUnmatched:1,totalPaidOrders:3,totalRevenueTiyin:'50000'},crmSync:{lastSuccessAt:'2026-10-09T01:00:00Z',lastError:null,lastRunSalesCreated:1,lastRunUnmatched:1}};
  const order={id:'crm:12345678-1234-1234-1234-123456789012',source:'crm',learnerId:null,sectionId:null,amountTiyin:'30000',currency:'UZS',gateway:'CRM',method:'crm',status:'paid',createdAt:'2026-10-09T01:00:00Z',paidAt:'2026-10-09T01:00:00Z',cancelledAt:null,externalId:'lead-1',gatewayOrderId:null,gatewayPaymentId:null,matchState:'unmatched'};
  let mode='loaded', method='crm';
  const requests=[];
@@ -43,6 +43,8 @@ export async function checkUnifiedSales(page, out){
   await expect(page.locator('.pd-metric-card').filter({hasText:'Jami tushum'})).toContainText('500 UZS');
   await expect(page.locator('[data-provider="unknown"]')).toContainText('Noma’lum');
   await expect(page.locator('[data-provider="unknown"]')).toContainText('60%');
+  await expect(page.locator('[data-provider="card_transfer"]')).toContainText('Karta orqali');
+  await expect(page.locator('[data-provider="card_transfer"]')).toContainText('20%');
   await expect(page.locator('[data-order-id] td').nth(3)).toHaveText('Noma’lum');
   await expect(page.locator('.pd-detail-hero span').first()).toHaveText('Noma’lum');
   await expect(page.locator('.pd-detail-panel .pd-facts').last()).toContainText('ManbaCRM');
@@ -56,9 +58,10 @@ export async function checkUnifiedSales(page, out){
   const methodSelector=page.getByRole('dialog',{name:'To‘lov filtrlari',exact:true}).getByRole('combobox').nth(1);
   await expect(methodSelector.locator('option[value="crm"]')).toHaveCount(0);
   await expect(methodSelector.locator('option[value="hamkorbank_transfer"]')).toHaveText('Hamkorbank transfer');
-  await methodSelector.selectOption('unknown');
+  await expect(methodSelector.locator('option[value="card_transfer"]')).toHaveText('Karta orqali');
+  await methodSelector.selectOption('card_transfer');
   await page.getByRole('button',{name:'Qo‘llash',exact:true}).click();
-  await expect.poll(()=>requests.some(url=>url.includes('method=unknown'))).toBe(true);
+  await expect.poll(()=>requests.some(url=>url.includes('method=card_transfer'))).toBe(true);
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'commerce overflow');
   await page.screenshot({path:`${out}/commerce-unified-${width}.png`,fullPage:true});
   method='unknown';
@@ -67,6 +70,10 @@ export async function checkUnifiedSales(page, out){
  await page.reload();
  await expect(page.locator('[data-order-id] td').nth(3)).toHaveText('Hamkorbank transfer');
  await expect(page.locator('.pd-detail-hero span').first()).toHaveText('Hamkorbank transfer');
+ method='card_transfer';
+ await page.reload();
+ await expect(page.locator('[data-order-id] td').nth(3)).toHaveText('Karta orqali');
+ await expect(page.locator('.pd-detail-hero span').first()).toHaveText('Karta orqali');
  method='payme';
  await page.reload();
  await expect(page.locator('[data-order-id] td').nth(3)).toHaveText('Payme');
