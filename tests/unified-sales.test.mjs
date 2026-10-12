@@ -49,9 +49,20 @@ test('commerce connects source facts and unknown-learner guards inside existing 
  assert.match(ui,/filter\(\(id\):id is string=>id!==null\)/);
  assert.match(ui,/disabled=\{!order.learnerId\}/);
  assert.match(ui,/summary.error/);
- assert.ok(ui.includes('["payme","click","uzum","paylov","tribute","crm"]'),'existing method selector exposes CRM and Tribute');
+ assert.ok(ui.includes('["unknown","payme","hamkorbank_transfer","click","uzum","paylov","tribute"]'),'method selector offers unknown and actual providers, never CRM');
  assert.match(ui,/summary.data\?\.revenueTiyin/);
  assert.doesNotMatch(ui,/BigInt\(summary.data.sales.crmRevenueTiyin\)/);
+});
+test('commerce renders backend payment methods without interpreting CRM provenance as a provider',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const ui=readFileSync(new URL('../app/admin-app.tsx',import.meta.url),'utf8');
+ assert.match(ui,/crm:"Noma’lum"/);
+ assert.match(ui,/unknown:"Noma’lum"/);
+ assert.match(ui,/hamkorbank_transfer:"Hamkorbank transfer"/);
+ assert.match(ui,/\{providerLabel\(order.method\)\}/);
+ assert.match(ui,/\{providerLabel\(method.method\)\}/);
+ assert.match(ui,/\{providerLabel\(payment.data.order.method\)\}/);
+ assert.match(ui,/\{transactionIdentity\(payment.data.order\).detail\}/);
 });
 test('canonical backend DTO supports nullable CRM external ID and explicit sales eligibility',async()=>{
  const row={...crmOrder,externalId:null,includedInSales:true};
@@ -63,6 +74,28 @@ test('canonical backend DTO supports nullable CRM external ID and explicit sales
  assert.deepEqual(await (await proxy('analytics-summary',metadata)).json(),metadata);
  assert.equal((await proxy('analytics-summary',{...metadata,crmSync:{...metadata.crmSync,status:'invented'}})).status,502);
  assert.equal((await proxy('payments',{items:[{...row,includedInSales:'yes'}],total:1,limit:25,offset:0,hasMore:false})).status,502);
+});
+test('payment and export method filters forward new providers and legacy CRM, rejecting unlisted values',async()=>{
+ const page={items:[],total:0,limit:25,offset:0,hasMore:false};
+ const report={csv:'id,method\n',resource:'payments',scope:'current-page',rowCount:0,total:0,limit:25,offset:0};
+ for(const method of ['unknown','hamkorbank_transfer','crm','payme']){
+  for(const [action,data,route] of [['payments',page,'/payments'],['export',report,'/export']]){
+   const urls=[];
+   const response=await proxyAdmin(new Request(config.origin+'/api/admin/'+action+'?'+(action==='export'?'resource=payments&':'')+'method='+method,{headers:{cookie:'__Host-leap_admin='+'a'.repeat(43)}}),action,config,async url=>{
+    urls.push(new URL(url));return Response.json(data);
+   });
+   assert.equal(response.status,200,`${action} method=${method}`);
+   assert.equal(urls.length,1);
+   assert.equal(urls[0].pathname,'/api/v1/admin'+route);
+   assert.equal(urls[0].searchParams.get('method'),method);
+  }
+ }
+ for(const [action,data] of [['payments',page],['export',report]]){
+  let called=false;
+  const response=await proxyAdmin(new Request(config.origin+'/api/admin/'+action+'?'+(action==='export'?'resource=payments&':'')+'method=unlisted_provider',{headers:{cookie:'__Host-leap_admin='+'a'.repeat(43)}}),action,config,async()=>{called=true;return Response.json(data);});
+  assert.equal(response.status,422);
+  assert.equal(called,false);
+ }
 });
 test('transaction eligibility and explicit sync status never imply missing data is successful',async()=>{
  const {salesEligibility,salesDetails}=await import('../lib/admin-sales.mjs');
