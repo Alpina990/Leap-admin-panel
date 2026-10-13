@@ -741,7 +741,7 @@ export default function AdminApp({session}:{session:AdminSession}){
       const paidTotal=payment?formatUzs(payment.paidTotalTiyin):paymentSummaries.loading?"…":"—";
       return <tr key={personValue.telegramUserId} data-learner-id={personValue.telegramUserId}>
         <td><span className="pd-id">{personValue.telegramUserId}</span></td>
-        <td><button className="pd-person" onClick={()=>openLearner(personValue)}><span>{learnerInitials(personValue)}</span><div><strong>{learnerName(personValue)}</strong><small>{personValue.username?`@${personValue.username}`:"Username yo‘q"}</small></div></button></td>
+        <td className="pd-cell-person"><button className="pd-person" title={personValue.username?`${learnerName(personValue)} · @${personValue.username}`:learnerName(personValue)} onClick={()=>openLearner(personValue)}><span>{learnerInitials(personValue)}</span><div><strong>{learnerName(personValue)}</strong><small>{personValue.username?`@${personValue.username}`:"Username yo‘q"}</small></div></button></td>
         <td><ProgressBar value={progress} hideLabel/></td>
         <td><StatusPill tone={toneForProgress(progress)}>{personValue.botStartedAt?"Yangi":progress>=70?"Yaxshi":progress>=30?"Davom etmoqda":"Yangi"}</StatusPill></td>
         <td><span className="pd-muted">{personValue.miniAppOpenedAt?"(app)":"—"}</span></td>
@@ -764,7 +764,7 @@ export default function AdminApp({session}:{session:AdminSession}){
       const progress=entry.completionRate===null?0:Math.round(entry.completionRate);
       return <tr key={entry.learner.telegramUserId} data-rating-learner-id={entry.learner.telegramUserId}>
         <td><div className="pd-cell-stack"><strong>#{entry.rank}</strong><small>{entry.rankPool?`${entry.rankPool} ishtirokchi`:"Hali shakllanmagan"}</small></div></td>
-        <td><button className="pd-person" onClick={()=>openLearner(entry.learner)}><span>{learnerInitials(entry.learner)}</span><div><strong>{learnerName(entry.learner)}</strong><small>{entry.learner.username?`@${entry.learner.username}`:entry.learner.telegramUserId}</small></div></button></td>
+        <td className="pd-cell-person"><button className="pd-person" title={entry.learner.username?`${learnerName(entry.learner)} · @${entry.learner.username}`:learnerName(entry.learner)} onClick={()=>openLearner(entry.learner)}><span>{learnerInitials(entry.learner)}</span><div><strong>{learnerName(entry.learner)}</strong><small>{entry.learner.username?`@${entry.learner.username}`:entry.learner.telegramUserId}</small></div></button></td>
         <td className="pd-table-number">{entry.completedLessons.toLocaleString("en-US")}</td>
         <td className="pd-table-number">{entry.startedLessons.toLocaleString("en-US")}</td>
         <td><ProgressBar value={progress} hideLabel/></td>

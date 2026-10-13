@@ -818,6 +818,17 @@ button.pd-metric-card:focus-visible {
   text-align: left;
 }
 
+/* Cap the user column so long names/usernames cannot widen the table and
+   force a horizontal scroll; overflow is handled by the ellipsis rules below. */
+.pd-cell-person {
+  width: 1px;
+}
+
+.pd-cell-person .pd-person > div {
+  min-width: 0;
+  max-width: 220px;
+}
+
 .pd-person-link {
   display: flex;
   min-width: 0;
