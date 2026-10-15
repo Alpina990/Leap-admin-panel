@@ -176,3 +176,17 @@ test('Selfingo management settings reflect the real coming-soon tutor surface', 
   assert.match(ui, /Savol-javob/);
   assert.match(ui, /Speaking/);
 });
+
+test('revenue withdrawals are written from a dialog and appear in the transaction ledger', () => {
+  const ui = read('app/admin-app.tsx');
+  const dialog = read('app/withdrawal-dialog.tsx');
+  assert.match(ui, /Yechish qo‘shish/);
+  assert.match(ui, /\/api\/admin\/withdrawals/);
+  assert.match(ui, /ledgerRows/);
+  assert.match(ui, /pd-withdrawal-row/);
+  assert.match(ui, /pd-money-out/);
+  assert.match(dialog, /\/api\/admin\/withdrawals/);
+  assert.match(dialog, /X-Admin-CSRF/);
+  assert.match(dialog, /crypto\.randomUUID/);
+  assert.match(dialog, /Daromad yechish/);
+});

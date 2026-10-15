@@ -45,8 +45,9 @@ import {BusinessDialog} from "./business-dialog";
 import {type LearnerAnalytics,type Summary} from "./analytics";
 import {ReportingDialog,type ReportingResource} from "./reporting-dialog";
 import {NoteDialog} from "./note-dialog";
-import {money,type Orders,type Payment} from "./payments";
+import {money,withdrawalMoney,withdrawalMoneyCompact,type Orders,type Payment,type Withdrawal,type Withdrawals} from "./payments";
 import {PushdayNavigation,type PushdaySection} from "./pushday-navigation";
+import {WithdrawalDialog} from "./withdrawal-dialog";
 import {SelfingoScreen} from "./selfingo-screen";
 import {formatAdminDateTime as formatDateTime, formatAdminRegistered, formatAdminRelativeTime} from "@/lib/admin-date-time.mjs";
 import {readState} from "@/lib/read-state.mjs";
@@ -70,6 +71,7 @@ type Metric={icon:LucideIcon;label:string;value:string;detail:string;tone?:"succ
 type SortDirection=1|-1;
 type SortState={key:string;direction:SortDirection};
 type TableColumn={key:string;label:string;icon?:LucideIcon;sortable?:boolean;right?:boolean};
+type LedgerRow={kind:"order";order:Orders["items"][number]}|{kind:"withdrawal";withdrawal:Withdrawal};
 
 const navRoutes:Section[]=["Overview","Learners","Ratings","Content","Commerce","AI","Messages"];
 const audienceLabels:Record<AudienceFilter,string>={all:"Barcha profillar",active:"Faol foydalanuvchilar",access:"PRO",attention:"E’tibor kerak",watched:"Darslikni ko‘rganlar"};
@@ -469,6 +471,7 @@ export default function AdminApp({session}:{session:AdminSession}){
   const [lessonId,setLessonId]=useState<string|null>(null);
   const [catalogOffset,setCatalogOffset]=useState(0);
   const [priceOpen,setPriceOpen]=useState(false);
+  const [withdrawalOpen,setWithdrawalOpen]=useState(false);
   const [reporting,setReporting]=useState<"Date range"|"Sort & paginate"|"Export report"|null>(null);
   const [reportFilters,setReportFilters]=useState<Record<string,Record<string,string>>>({});
   const [dateRange,setDateRange]=useState<Record<string,string>>({});
@@ -528,6 +531,7 @@ export default function AdminApp({session}:{session:AdminSession}){
   if(paymentStatus)ordersQuery.set("status",paymentStatus);
   if(paymentMethod)ordersQuery.set("method",paymentMethod);
   const orders=useRead<Orders>(section==="Commerce"&&commerceTab==="transactions"?"/api/admin/payments?"+ordersQuery:null,revision);
+  const withdrawals=useRead<Withdrawals>(section==="Commerce"&&commerceTab==="transactions"?"/api/admin/withdrawals?"+new URLSearchParams({limit:"100",offset:"0",...dateRange}):null,revision);
   const transactionLearnerIds=[...new Set((orders.data?.items??[]).map(item=>item.learnerId).filter((id):id is string=>id!==null))];
   const transactionSummaries=useRead<PaymentSummaries>(section==="Commerce"&&commerceTab==="transactions"&&transactionLearnerIds.length?"/api/admin/learner-payments?"+new URLSearchParams({learnerIds:transactionLearnerIds.join(","),includeProfiles:"1"}):null,revision);
   const learnerByTelegramId=new Map([...people,...(transactionSummaries.data?.items??[]).flatMap(item=>item.learner?[item.learner]:[])].map(item=>[item.telegramUserId,item]));
@@ -535,17 +539,25 @@ export default function AdminApp({session}:{session:AdminSession}){
     const person=order.learnerId?learnerByTelegramId.get(order.learnerId):undefined;
     return person?learnerName(person):transactionIdentity(order).label;
   };
-  const sortedOrders=[...(orders.data?.items??[])].sort((left,right)=>{
+  const ledgerId=(row:LedgerRow)=>row.kind==="order"?row.order.id:`withdrawal:${row.withdrawal.id}`;
+  const ledgerDate=(row:LedgerRow)=>row.kind==="order"?row.order.createdAt:row.withdrawal.createdAt;
+  const ledgerPerson=(row:LedgerRow)=>row.kind==="order"?orderPersonName(row.order):"Yechish";
+  const ledgerMethod=(row:LedgerRow)=>row.kind==="order"?row.order.method:"";
+  // Orders carry tiyin, withdrawals carry so'm. Compare both at tiyin scale and
+  // keep money-out negative, so the amount column orders one mixed ledger.
+  const ledgerAmount=(row:LedgerRow)=>(row.kind==="order"?BigInt(row.order.amountTiyin):-BigInt(row.withdrawal.amount)*BigInt(100)).toString();
+  const ledgerStatus=(row:LedgerRow)=>row.kind==="order"?row.order.status:"withdrawal";
+  const ledgerRows:LedgerRow[]=[...(orders.data?.items??[]).map(order=>({kind:"order" as const,order})),...(withdrawals.data?.items??[]).map(withdrawal=>({kind:"withdrawal" as const,withdrawal}))].sort((left,right)=>{
     let result=0;
     switch(orderSort.key){
-      case "id": result=compareText(left.id,right.id); break;
-      case "user": result=compareText(orderPersonName(left),orderPersonName(right)); break;
-      case "date": result=compareTimestamps(left.createdAt,right.createdAt); break;
-      case "method": result=compareText(left.method,right.method); break;
-      case "amount": result=compareBigInts(left.amountTiyin,right.amountTiyin); break;
-      case "status": result=compareText(left.status,right.status); break;
+      case "id": result=compareText(ledgerId(left),ledgerId(right)); break;
+      case "user": result=compareText(ledgerPerson(left),ledgerPerson(right)); break;
+      case "date": case "created_at": result=compareTimestamps(ledgerDate(left),ledgerDate(right)); break;
+      case "method": result=compareText(ledgerMethod(left),ledgerMethod(right)); break;
+      case "amount": result=compareBigInts(ledgerAmount(left),ledgerAmount(right)); break;
+      case "status": result=compareText(ledgerStatus(left),ledgerStatus(right)); break;
     }
-    return result*orderSort.direction||compareText(left.id,right.id);
+    return result*orderSort.direction||compareText(ledgerId(left),ledgerId(right));
   });
   const activeOrder=orders.data?.items.find(item=>item.id===orderId)?.id??orders.data?.items[0]?.id??null;
   const payment=useRead<Payment>(activeOrder?"/api/admin/payment?"+new URLSearchParams({orderId:activeOrder}):null,revision);
@@ -713,6 +725,7 @@ export default function AdminApp({session}:{session:AdminSession}){
     ];
     if(sectionValue==="Commerce")return [
       {icon:CircleDollarSign,label:"Jami tushum",value:formatMoneyCompact(summary.data?.revenueTiyin),detail:"Tanlangan davr",tone:"success" as const,filter:"commerce-revenue"},
+      {icon:ArrowDown,label:"Yechib olingan",value:withdrawals.data?withdrawalMoneyCompact(Number(withdrawals.data.withdrawnTotal)||0):"—",detail:"Tanlangan davrda",tone:"danger" as const},
       {icon:WalletCards,label:"To‘langan buyurtmalar",value:summary.data?.paidOrders.toLocaleString("en-US")??"—",detail:"Muvaffaqiyatli to‘lovlar",tone:"success" as const,filter:"commerce-paid"},
       {icon:TrendingUp,label:"O‘rtacha chek",value:summary.data?.paidOrders?formatMoneyCompact(String(BigInt(summary.data.revenueTiyin)/BigInt(summary.data.paidOrders))):"—",detail:"Bir buyurtma o‘rtachasi",tone:"success" as const,filter:"commerce-average"},
       {icon:Clock3,label:"Kutilayotgan",value:summary.data?.health?.paymentsPending.toLocaleString("en-US")??"—",detail:"Pending buyurtmalar",tone:"warning" as const,filter:"commerce-pending"},
@@ -900,10 +913,22 @@ export default function AdminApp({session}:{session:AdminSession}){
   }
 
   function transactionRows(){
-    if(orders.loading&&!orders.data)return <tr><td colSpan={6}><div className="pd-loading">Buyurtmalar yuklanmoqda…</div></td></tr>;
+    if(orders.loading&&!orders.data)return <tr><td colSpan={6}><div className="pd-loading">Tranzaksiyalar yuklanmoqda…</div></td></tr>;
     if(orders.error&&!orders.data)return <tr><td colSpan={6}><ErrorState message={orders.error} onRetry={()=>setRevision(value=>value+1)}/></td></tr>;
-    if(!orders.data?.items.length)return <tr><td colSpan={6}><EmptyState title="Buyurtma topilmadi" description="Filtrlarni o‘zgartirib qayta urinib ko‘ring."/></td></tr>;
-    return sortedOrders.map(order=>{
+    if(!ledgerRows.length)return <tr><td colSpan={6}><EmptyState title="Tranzaksiya topilmadi" description="Filtrlarni o‘zgartirib qayta urinib ko‘ring."/></td></tr>;
+    return ledgerRows.map(row=>{
+      if(row.kind==="withdrawal"){
+        const withdrawal=row.withdrawal;
+        return <tr key={ledgerId(row)} data-withdrawal-id={withdrawal.id} className="pd-withdrawal-row">
+          <td><span className="pd-id">Yechish</span></td>
+          <td><span className="pd-cell-stack"><strong>Yechish</strong><small>{withdrawal.note??withdrawal.actor}</small></span></td>
+          <td>{formatDateTime(withdrawal.createdAt)}</td>
+          <td><span className="pd-muted">—</span></td>
+          <td><strong className="pd-money-out">-{withdrawalMoney(withdrawal.amount)}</strong></td>
+          <td><StatusPill tone="danger">Yechish</StatusPill></td>
+        </tr>;
+      }
+      const order=row.order;
       const personValue=order.learnerId?learnerByTelegramId.get(order.learnerId):undefined;
       return <tr key={order.id} data-order-id={order.id} className={order.id===activeOrder?"selected":""} onClick={()=>setOrderId(order.id)}>
       <td><span className="pd-id">{order.id.slice(0,18)}</span></td>
@@ -938,12 +963,12 @@ export default function AdminApp({session}:{session:AdminSession}){
 
   function commerceScreen(){
     return <>
-      <PageHeader title="To‘lovlar" subtitle="Tushumlar, buyurtmalar va foydalanuvchi access holati" actions={<button className="pd-button" onClick={()=>setReporting("Export report")}><Download size={14}/>Eksport</button>}/>
+      <PageHeader title="To‘lovlar" subtitle="Tushumlar, yechishlar va tranzaksiyalar hisoboti" actions={<><button className="pd-button primary" onClick={()=>setWithdrawalOpen(true)}><Plus size={14}/>Yechish qo‘shish</button><button className="pd-button" onClick={()=>setReporting("Export report")}><Download size={14}/>Eksport</button></>}/>
       <PeriodBar value={dateRange} onChange={next=>{setDateRange(next);setOrderOffset(0);setSelected(null);setOrderId(null);}}/>
       {metrics("Commerce")}
       <div className="pd-tabs"><button className={commerceTab==="transactions"?"active":""} onClick={()=>setCommerceTab("transactions")}>Tranzaksiyalar</button><button className={commerceTab==="learners"?"active":""} onClick={()=>setCommerceTab("learners")}>O‘quvchilar & access</button></div>
       {commerceTab==="transactions"?<div className="pd-commerce-grid">
-        <Panel title="Oxirgi tranzaksiyalar" subtitle={`${orders.data?.total.toLocaleString("en-US")??"—"} ta buyurtma`} action={<button className="pd-button" onClick={openPaymentFilter}><Filter size={14}/>Filtr</button>}>
+        <Panel title="Tranzaksiyalar tarixi" subtitle={`${orders.data?.total.toLocaleString("en-US")??"—"} ta buyurtma${withdrawals.data?.total?` · ${withdrawals.data.total.toLocaleString("en-US")} ta yechish`:""}`} action={<button className="pd-button" onClick={openPaymentFilter}><Filter size={14}/>Filtr</button>}>
           <DataTable columns={paymentColumns} sortKey={orderSort.key} sortDirection={orderSort.direction} onSort={toggleOrderSort}>{transactionRows()}</DataTable>
           <Pager offset={orderOffset} limit={25} total={orders.data?.total??0} hasMore={orders.data?.hasMore??false} loading={orders.loading} onPrevious={()=>setOrderOffset(Math.max(0,orderOffset-25))} onNext={()=>setOrderOffset(orderOffset+25)}/>
         </Panel>
@@ -1004,6 +1029,7 @@ export default function AdminApp({session}:{session:AdminSession}){
     {contentMode&&<ContentDialog mode={contentMode} units={treeUnits} unitId={activeUnit??""} detail={contentDetail.data} csrf={session.csrfToken} canWrite={contentTree.data?.canWrite??false} onSaved={value=>{setUnitId(value.lesson.unitId);setLessonId(value.lesson.id);setRevision(current=>current+1);}} onClose={()=>{setContentMode(null);setRevision(current=>current+1);}}/>}
     {structureTarget&&<ContentStructureDialog target={structureTarget} courses={contentTree.data?.items.map(course=>({id:course.id,title:course.title}))??[]} units={treeUnits.map(unit=>({id:unit.id,title:unit.title,courseTitle:unit.courseTitle}))} csrf={session.csrfToken} canWrite={contentTree.data?.canWrite??false} onSaved={value=>{if(value.kind==="lesson")setLessonId(value.id);if(value.kind==="unit"){setUnitId(value.id);setLessonId(null);}setRevision(current=>current+1);}} onClose={()=>setStructureTarget(null)}/>}
     {priceOpen&&<PriceDialog current={catalogPrice.data} csrf={session.csrfToken} onSaved={()=>setRevision(value=>value+1)} onClose={()=>{setPriceOpen(false);setRevision(value=>value+1);}}/>}
+    {withdrawalOpen&&<WithdrawalDialog csrf={session.csrfToken} onSaved={()=>setRevision(value=>value+1)} onClose={()=>{setWithdrawalOpen(false);setRevision(value=>value+1);}}/>}
     {business&&<BusinessDialog mode={business} learnerId={businessLearner??person?.telegramUserId} learnerName={businessLearner&&businessLearner!==person?.telegramUserId?businessLearner:person?learnerName(person):undefined} csrf={session.csrfToken} onClose={()=>setBusiness(null)} onSaved={()=>setRevision(value=>value+1)}/>}
     {reporting&&<ReportingDialog mode={reporting} resource={reportResource} query={reportQuery.toString()} onClose={()=>setReporting(null)} onApply={values=>{if(reporting==="Date range")setDateRange(Object.fromEntries(Object.entries(values).filter(([,value])=>value)));else setReportFilters(previous=>({...previous,[reportResource]:values}));setOffset(0);setOrderOffset(0);setNotificationOffset(0);setSelected(null);setOrderId(null);}}/>}
     {paymentFilter&&<Dialog open onOpenChange={setPaymentFilter}><DialogBody title="To‘lov filtrlari" description="Buyurtmalarni holat va to‘lov usuli bo‘yicha filtrlang."><label className="pd-field"><span>Holat</span><select value={statusDraft} onChange={event=>setStatusDraft(event.target.value)}><option value="">Barcha holatlar</option><option value="paid">Paid</option><option value="pending">Pending</option><option value="cancelled">Cancelled</option></select></label><label className="pd-field"><span>Usul</span><select value={methodDraft} onChange={event=>setMethodDraft(event.target.value)}><option value="">Barcha usullar</option>{["unknown","payme","card_transfer","hamkorbank_transfer","click","uzum","paylov","tribute"].map(method=><option key={method} value={method}>{providerLabel(method)}</option>)}</select></label><div className="pd-dialog-actions"><button className="pd-button" onClick={()=>setPaymentFilter(false)}>Bekor qilish</button><button className="pd-button primary" onClick={()=>{setCommerceMetric(null);setPaymentStatus(statusDraft);setPaymentMethod(methodDraft);setOrderOffset(0);setOrderId(null);setPaymentFilter(false);}}>Qo‘llash</button></div></DialogBody></Dialog>}

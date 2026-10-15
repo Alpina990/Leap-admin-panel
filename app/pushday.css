@@ -923,6 +923,16 @@ button.pd-metric-card:focus-visible {
   font-weight: 650;
 }
 
+.pd-money-out {
+  color: var(--pd-danger);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pd-withdrawal-row > td {
+  background: var(--pd-danger-soft);
+}
+
 .pd-progress {
   width: 100%;
   min-width: 120px;
@@ -2675,6 +2685,10 @@ button.pd-metric-card:focus-visible {
   .pd-metric-card {
     min-height: 104px;
     padding: 14px;
+  }
+
+  .pd-metric-card strong {
+    white-space: normal;
   }
 
   .pd-tree-course-head {

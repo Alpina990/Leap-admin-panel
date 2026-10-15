@@ -35,3 +35,18 @@ test('catalog payment orders with no section are accepted',async()=>{
  const response=await proxyAdmin(get('payments?limit=25&offset=0'),'payments',config,async()=>Response.json(page));
  assert.equal(response.status,200);assert.deepEqual(await response.json(),page);
 });
+
+test('withdrawals validate money-out writes and paginate the ledger',async()=>{
+ const created={id:'12345678-1234-1234-1234-123456789012',entryType:'withdrawal',amount:123000,signedAmount:-123000,note:'Karta raqamiga',actor:'operator',createdAt:'2026-10-15T09:00:00+00:00'};
+ const page={items:[created],total:1,limit:25,offset:0,hasMore:false,withdrawnTotal:'123000'};
+ const body={amount:123000,note:'Karta raqamiga',requestId:created.id};
+ const request=new Request(config.origin+'/api/admin/withdrawals',{method:'POST',headers:{cookie:'__Host-leap_admin='+'a'.repeat(43),Origin:config.origin,'X-Admin-CSRF':'b'.repeat(64),'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const response=await proxyAdmin(request,'withdrawals',config,async(url,init)=>{assert.equal(url,config.api+'/api/v1/admin/withdrawals');assert.equal(init.method,'POST');assert.deepEqual(JSON.parse(init.body),body);return Response.json(created);});
+ assert.equal(response.status,200);assert.deepEqual(await response.json(),created);
+ const list=await proxyAdmin(get('withdrawals?limit=25&offset=0'),'withdrawals',config,async url=>{assert.equal(url,config.api+'/api/v1/admin/withdrawals?limit=25&offset=0');return Response.json(page);});
+ assert.equal(list.status,200);assert.deepEqual(await list.json(),page);
+ // Legacy rows echo the actor but never a learner or payment identity.
+ assert.equal((await proxyAdmin(get('withdrawals'),'withdrawals',config,async()=>Response.json({...page,items:[{...created,learnerId:'1'}]}))).status,502);
+ for(const query of ['method=payme','limit=101','limit=1&limit=2','offset=-1','start=2026-02-30'])assert.equal((await proxyAdmin(get('withdrawals?'+query),'withdrawals',config)).status,422);
+ for(const payload of [{...body,amount:0},{...body,amount:1.5},{...body,amount:1000000000001},{...body,note:'x'.repeat(256)},{...body,requestId:'nope'},{amount:100}])assert.equal((await proxyAdmin(new Request(config.origin+'/api/admin/withdrawals',{method:'POST',headers:{cookie:'__Host-leap_admin='+'a'.repeat(43),Origin:config.origin,'X-Admin-CSRF':'b'.repeat(64),'Content-Type':'application/json'},body:JSON.stringify(payload)}),'withdrawals',config)).status,422);
+});

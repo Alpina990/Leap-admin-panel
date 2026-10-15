@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {proxyAdmin} from '../lib/admin-bff.mjs';
 const config={api:'http://127.0.0.1:8125',origin:'https://localhost:3445'};
 const cookie='__Host-leap_admin='+'a'.repeat(43),requestId='12345678-1234-1234-1234-123456789012',reason='A documented learner support decision.';
-const permissions={canGrantCatalogAccess:true,canCloseReconciliation:true,canCreateIntervention:true};
+const permissions={canGrantCatalogAccess:true,canCloseReconciliation:true,canCreateIntervention:true,canWithdrawRevenue:true};
 const grant={learnerId:'123',scope:'whole_catalog',source:'admin_lifetime',reason,version:1,grantedAt:'2026-09-13T10:00:00Z',expiresAt:'2027-09-13T10:00:00Z',revokedAt:null,accessState:'lifetime',accessOverride:false,preservedSectionEntitlements:['paid-section']};
 function request(action,body,headers={}){return new Request(config.origin+'/api/admin/'+action,{method:body?'POST':'GET',headers:{cookie,...(body?{Origin:config.origin,'X-Admin-CSRF':'csrf','Content-Type':'application/json'}:{}),...headers},...(body?{body:JSON.stringify(body)}:{})});}
 test('business grant maps fixed upstream path, preserves request identity, and validates audited result',async()=>{
