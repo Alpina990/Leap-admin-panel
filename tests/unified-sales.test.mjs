@@ -32,7 +32,7 @@ test('CRM transactions support unknown learners and detail identity without forw
  for(const invalid of [{amountTiyin:'-1'},{learnerId:'not-an-id'},{gateway:'unsafe'},{source:'unknown'},{matchState:'invented'}])assert.equal((await proxy('payments',{...page,items:[{...crmOrder,...invalid}]})).status,502);
 });
 test('sales presentation uses combined totals without adding CRM twice and distinguishes missing sync',async()=>{
- const {salesDetails,transactionIdentity}=await import('../lib/admin-sales.mjs');
+ const {salesDetails,transactionIdentity,transactionMethodLabel}=await import('../lib/admin-sales.mjs');
  const facts=salesDetails(summary);
  assert.deepEqual(facts.slice(0,2),[['App sotuvlari','2 · 200.00 UZS'],['CRM sotuvlari','1 · 300.00 UZS']]);
  assert.ok(facts.some(([label,value])=>label==='CRM oxirgi sync'&&value==='2026-10-09 06:00'));
@@ -40,6 +40,9 @@ test('sales presentation uses combined totals without adding CRM twice and disti
  assert.ok(salesDetails({}).some(([,value])=>value==='Mavjud emas'));
  assert.deepEqual(transactionIdentity(crmOrder),{learnerId:null,label:'CRM · profil ulanmagan',detail:'CRM'});
  assert.equal(transactionIdentity({...crmOrder,learnerId:'42'}).label,'ID 42');
+ assert.equal(transactionMethodLabel({...crmOrder,source:'crm',gateway:'CRM',method:'unknown'}),'Karta orqali');
+ assert.equal(transactionMethodLabel({...crmOrder,source:'app',gateway:'WLCM',method:'payme'}),'Avto to‘lov');
+ assert.equal(transactionMethodLabel({...crmOrder,source:'app',gateway:'WLCM',method:'uzum'}),'Avto to‘lov');
 });
 test('commerce connects source facts and unknown-learner guards inside existing panels',async()=>{
  const {readFileSync}=await import('node:fs');
@@ -60,7 +63,7 @@ test('commerce renders backend payment methods without interpreting CRM provenan
  assert.match(ui,/unknown:"Noma’lum"/);
  assert.match(ui,/hamkorbank_transfer:"Hamkorbank transfer"/);
  assert.match(ui,/card_transfer:"Karta orqali"/);
- assert.match(ui,/\{providerLabel\(order.method\)\}/);
+ assert.match(ui,/\{transactionMethodLabel\(order\)\}/);
  assert.match(ui,/\{providerLabel\(method.method\)\}/);
  assert.match(ui,/\{providerLabel\(payment.data.order.method\)\}/);
  assert.match(ui,/\{transactionIdentity\(payment.data.order\).detail\}/);

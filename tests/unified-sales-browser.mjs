@@ -39,13 +39,13 @@ export async function checkUnifiedSales(page, out){
   await page.goto('/#commerce');
   await page.reload();
   await expect(page.locator('[data-order-id]')).toHaveCount(1);
-  await expect(page.locator('.pd-metric-card')).toHaveCount(4);
+  await expect(page.locator('.pd-metric-card')).toHaveCount(5);
   await expect(page.locator('.pd-metric-card').filter({hasText:'Jami tushum'})).toContainText('500 UZS');
   await expect(page.locator('[data-provider="unknown"]')).toContainText('Noma’lum');
   await expect(page.locator('[data-provider="unknown"]')).toContainText('60%');
   await expect(page.locator('[data-provider="card_transfer"]')).toContainText('Karta orqali');
   await expect(page.locator('[data-provider="card_transfer"]')).toContainText('20%');
-  await expect(page.locator('[data-order-id] td').nth(3)).toHaveText('Noma’lum');
+  await expect(page.locator('[data-order-id] td').nth(3)).toHaveText('Karta orqali');
   await expect(page.locator('.pd-detail-hero span').first()).toHaveText('Noma’lum');
   await expect(page.locator('.pd-detail-panel .pd-facts').last()).toContainText('ManbaCRM');
   const person=page.locator('[data-order-id] .pd-person-link');
@@ -68,7 +68,7 @@ export async function checkUnifiedSales(page, out){
  }
  method='hamkorbank_transfer';
  await page.reload();
- await expect(page.locator('[data-order-id] td').nth(3)).toHaveText('Hamkorbank transfer');
+ await expect(page.locator('[data-order-id] td').nth(3)).toHaveText('Karta orqali');
  await expect(page.locator('.pd-detail-hero span').first()).toHaveText('Hamkorbank transfer');
  method='card_transfer';
  await page.reload();
@@ -76,7 +76,7 @@ export async function checkUnifiedSales(page, out){
  await expect(page.locator('.pd-detail-hero span').first()).toHaveText('Karta orqali');
  method='payme';
  await page.reload();
- await expect(page.locator('[data-order-id] td').nth(3)).toHaveText('Payme');
+ await expect(page.locator('[data-order-id] td').nth(3)).toHaveText('Karta orqali');
  await expect(page.locator('.pd-detail-hero span').first()).toHaveText('Payme');
  assert(!requests.some(url=>url.includes('learnerIds=')||url.includes('learnerId=null')),'unmatched CRM must not query fake learner IDs');
  mode='sync-error';await page.reload();

@@ -51,7 +51,7 @@ import {WithdrawalDialog} from "./withdrawal-dialog";
 import {SelfingoScreen} from "./selfingo-screen";
 import {formatAdminDateTime as formatDateTime, formatAdminRegistered, formatAdminRelativeTime} from "@/lib/admin-date-time.mjs";
 import {readState} from "@/lib/read-state.mjs";
-import {salesDetails,transactionIdentity,salesEligibility} from "@/lib/admin-sales.mjs";
+import {salesDetails,transactionIdentity,transactionMethodLabel,salesEligibility} from "@/lib/admin-sales.mjs";
 import workflowCards from "@/lib/pushday-workflows.json";
 import {Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle} from "@/components/ui/dialog";
 import {Sheet,SheetContent,SheetDescription,SheetHeader,SheetTitle} from "@/components/ui/sheet";
@@ -934,7 +934,7 @@ export default function AdminApp({session}:{session:AdminSession}){
       <td><span className="pd-id">{order.id.slice(0,18)}</span></td>
       <td><button className="pd-person-link" disabled={!order.learnerId} onClick={event=>{event.stopPropagation();if(order.learnerId)openLearnerById(order.learnerId);}}><strong>{personValue?learnerName(personValue):transactionIdentity(order).label}</strong><small>{personValue?.username?`@${personValue.username}`:transactionIdentity(order).detail}</small></button></td>
       <td>{formatDateTime(order.createdAt)}</td>
-      <td>{providerLabel(order.method)}</td>
+      <td>{transactionMethodLabel(order)}</td>
       <td><strong>{money(order)}</strong></td>
       <td><StatusPill tone={order.status==="paid"?"success":order.status==="cancelled"?"danger":"warning"}>{order.status}</StatusPill></td>
     </tr>;});
