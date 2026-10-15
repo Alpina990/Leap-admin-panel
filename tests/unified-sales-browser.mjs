@@ -27,7 +27,7 @@ export async function checkUnifiedSales(page, out){
   }
  }
  const summary={...original,paidOrders:3,revenueTiyin:'50000',paymentMethods:[{method:'unknown',count:1,revenueTiyin:'30000'},{method:'card_transfer',count:1,revenueTiyin:'10000'},{method:'payme',count:1,revenueTiyin:'10000'}],sales:{appPaidOrders:2,appRevenueTiyin:'20000',crmSales:1,crmRevenueTiyin:'30000',crmMirrored:1,crmMatched:0,crmUnmatched:1,totalPaidOrders:3,totalRevenueTiyin:'50000'},crmSync:{lastSuccessAt:'2026-10-09T01:00:00Z',lastError:null,lastRunSalesCreated:1,lastRunUnmatched:1}};
- const order={id:'crm:12345678-1234-1234-1234-123456789012',source:'crm',learnerId:null,sectionId:null,amountTiyin:'30000',currency:'UZS',gateway:'CRM',method:'crm',status:'paid',createdAt:'2026-10-09T01:00:00Z',paidAt:'2026-10-09T01:00:00Z',cancelledAt:null,externalId:'lead-1',gatewayOrderId:null,gatewayPaymentId:null,matchState:'unmatched'};
+ const order={id:'crm:12345678-1234-1234-1234-123456789012',source:'crm',learnerId:null,customerName:'Shohinur',sectionId:null,amountTiyin:'30000',currency:'UZS',gateway:'CRM',method:'crm',status:'paid',createdAt:'2026-10-09T01:00:00Z',paidAt:'2026-10-09T01:00:00Z',cancelledAt:null,externalId:'lead-1',gatewayOrderId:null,gatewayPaymentId:null,matchState:'unmatched'};
  let mode='loaded', method='crm';
  const requests=[];
  page.on('request',request=>{if(request.url().includes('/api/admin/'))requests.push(request.url());});
@@ -49,7 +49,7 @@ export async function checkUnifiedSales(page, out){
   await expect(page.locator('.pd-detail-hero span').first()).toHaveText('Noma’lum');
   await expect(page.locator('.pd-detail-panel .pd-facts').last()).toContainText('ManbaCRM');
   const person=page.locator('[data-order-id] .pd-person-link');
-  await expect(person).toHaveText('CRM · profil ulanmaganCRM');
+  await expect(person).toHaveText('ShohinurCRM · profil ulanmagan');
   await expect(person).toBeDisabled();
   await expect(page.getByLabel('Sotuv manbalari va CRM sync')).toContainText('2 · 200.00 UZS');
   await expect(page.getByLabel('Sotuv manbalari va CRM sync')).toContainText('2026-10-09 06:00');

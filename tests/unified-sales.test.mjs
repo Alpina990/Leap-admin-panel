@@ -21,7 +21,7 @@ test('summary rolling additions are stripped, not forwarded, while known fields 
  const legacy={...summary};delete legacy.sales;delete legacy.crmSync;
  assert.equal((await proxy('analytics-summary',legacy)).status,200);
 });
-export const crmOrder={id:'crm:12345678-1234-1234-1234-123456789012',learnerId:null,sectionId:null,amountTiyin:'30000',currency:'UZS',gateway:'CRM',method:'crm',status:'paid',createdAt:'2026-10-09T01:00:00Z',paidAt:'2026-10-09T01:00:00Z',cancelledAt:null,externalId:'lead-1',gatewayOrderId:null,gatewayPaymentId:null,source:'crm',matchState:'unmatched'};
+export const crmOrder={id:'crm:12345678-1234-1234-1234-123456789012',learnerId:null,customerName:'Shohinur',sectionId:null,amountTiyin:'30000',currency:'UZS',gateway:'CRM',method:'crm',status:'paid',createdAt:'2026-10-09T01:00:00Z',paidAt:'2026-10-09T01:00:00Z',cancelledAt:null,externalId:'lead-1',gatewayOrderId:null,gatewayPaymentId:null,source:'crm',matchState:'unmatched'};
 test('CRM transactions support unknown learners and detail identity without forwarding additions',async()=>{
  const page={items:[crmOrder],total:1,limit:25,offset:0,hasMore:false};
  const response=await proxy('payments',{...page,items:[{...crmOrder,privatePayload:'redacted'}],futureVersion:2});
@@ -38,7 +38,8 @@ test('sales presentation uses combined totals without adding CRM twice and disti
  assert.ok(facts.some(([label,value])=>label==='CRM oxirgi sync'&&value==='2026-10-09 06:00'));
  assert.ok(salesDetails({...summary,crmSync:{...summary.crmSync,lastSuccessAt:null,lastError:'timeout'}}).some(([,value])=>value==='Sync xatosi · qayta tekshirish kerak'));
  assert.ok(salesDetails({}).some(([,value])=>value==='Mavjud emas'));
- assert.deepEqual(transactionIdentity(crmOrder),{learnerId:null,label:'CRM · profil ulanmagan',detail:'CRM'});
+ assert.deepEqual(transactionIdentity(crmOrder),{learnerId:null,label:'Shohinur',detail:'CRM · profil ulanmagan'});
+ assert.deepEqual(transactionIdentity({...crmOrder,customerName:null}),{learnerId:null,label:'CRM · profil ulanmagan',detail:'CRM'});
  assert.equal(transactionIdentity({...crmOrder,learnerId:'42'}).label,'ID 42');
  assert.equal(transactionMethodLabel({...crmOrder,source:'crm',gateway:'CRM',method:'unknown'}),'Karta orqali');
  assert.equal(transactionMethodLabel({...crmOrder,source:'app',gateway:'WLCM',method:'payme'}),'Avto to‘lov');
