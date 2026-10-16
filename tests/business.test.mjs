@@ -61,8 +61,18 @@ test('business grant rejects a future paid instant before contacting upstream',a
 test('manual transaction deletion uses a fixed UUID path and validates the audited result',async()=>{
  const body={requestId,transactionId:'20000000-0000-4000-8000-000000000001',baseVersion:1,reason,password:'current-password'};
  const result={transactionId:body.transactionId,deletedAt:'2026-10-15T10:00:00Z',version:2,accessUnchanged:true};
- const response=await proxyAdmin(request('business-delete-transaction',body),'business-delete-transaction',config,async(url,options)=>{assert.equal(url,config.api+'/api/v1/admin/business/manual-transactions/'+body.transactionId+'/delete');assert.deepEqual(JSON.parse(options.body),body);return Response.json(result);});
+ const response=await proxyAdmin(request('business-delete-transaction',body),'business-delete-transaction',config,async(url,options)=>{assert.equal(url,config.api+'/api/v1/admin/business/manual-transactions/'+body.transactionId+'/delete');const expected={...body};delete expected.transactionId;assert.deepEqual(JSON.parse(options.body),expected);return Response.json(result);});
  assert.equal(response.status,200);assert.deepEqual(await response.json(),result);
+});
+test('manual transaction deletion fails closed on mismatched audited result identity or version',async()=>{
+ const body={requestId,transactionId:'20000000-0000-4000-8000-000000000001',baseVersion:1,reason,password:'current-password'};
+ for(const result of [
+  {transactionId:'30000000-0000-4000-8000-000000000001',deletedAt:'2026-10-15T10:00:00Z',version:2,accessUnchanged:true},
+  {transactionId:body.transactionId,deletedAt:'2026-10-15T10:00:00Z',version:3,accessUnchanged:true},
+ ]){
+  const response=await proxyAdmin(request('business-delete-transaction',body),'business-delete-transaction',config,async()=>Response.json(result));
+  assert.equal(response.status,502);
+ }
 });
 test('business writes deny invalid input, path injection, missing CSRF and undocumented operations before fetch',async()=>{
  let fetched=0;const fetcher=async()=>{fetched++;return Response.json(grant);};
