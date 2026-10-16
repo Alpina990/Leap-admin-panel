@@ -31,6 +31,28 @@ test('CRM transactions support unknown learners and detail identity without forw
  assert.equal((await proxy('payment',detail,'?orderId=other')).status,502);
  for(const invalid of [{amountTiyin:'-1'},{learnerId:'not-an-id'},{gateway:'unsafe'},{source:'unknown'},{matchState:'invented'}])assert.equal((await proxy('payments',{...page,items:[{...crmOrder,...invalid}]})).status,502);
 });
+test('BFF preserves the verified CRM-recorded flag on canonical app orders',async()=>{
+ const appOrder={...crmOrder,id:'app-recorded',learnerId:'42',customerName:undefined,gateway:'WLCM',source:'app',externalId:'app-recorded',matchState:undefined,method:'payme',recordedInCrm:true};
+ const response=await proxy('payments',{items:[appOrder],total:1,limit:25,offset:0,hasMore:false});
+ assert.equal(response.status,200);
+ assert.equal((await response.json()).items[0].recordedInCrm,true);
+});
+test('BFF allows delete metadata only on complete identity-bound CRM manual rows',async()=>{
+ const uuid='12345678-1234-4234-8234-123456789012';
+ const manual={...crmOrder,id:'manual:'+uuid,manualTransactionId:uuid,manualTransactionVersion:1,canDelete:true,receiptAvailable:true};
+ assert.equal((await proxy('payments',{items:[manual],total:1,limit:25,offset:0,hasMore:false})).status,200);
+ const app={...manual,id:'app-recorded',learnerId:'42',gateway:'WLCM',source:'app',externalId:'app-recorded',method:'payme'};
+ const invalid=[
+  app,
+  {...manual,id:'crm:not-manual'},
+  {...manual,id:'manual:22345678-1234-4234-8234-123456789012'},
+  {...manual,manualTransactionVersion:undefined},
+  {...manual,manualTransactionId:undefined},
+  {...manual,canDelete:undefined},
+  {...crmOrder,canDelete:true},
+ ];
+ for(const row of invalid)assert.equal((await proxy('payments',{items:[row],total:1,limit:25,offset:0,hasMore:false})).status,502,row.id);
+});
 test('sales presentation uses combined totals without adding CRM twice and distinguishes missing sync',async()=>{
  const {salesDetails,transactionIdentity,transactionMethodLabel}=await import('../lib/admin-sales.mjs');
  const facts=salesDetails(summary);
@@ -44,6 +66,7 @@ test('sales presentation uses combined totals without adding CRM twice and disti
  assert.equal(transactionMethodLabel({...crmOrder,source:'crm',gateway:'CRM',method:'unknown'}),'Karta orqali');
  assert.equal(transactionMethodLabel({...crmOrder,source:'app',gateway:'WLCM',method:'payme'}),'Avto to‘lov');
  assert.equal(transactionMethodLabel({...crmOrder,source:'app',gateway:'WLCM',method:'uzum'}),'Avto to‘lov');
+ assert.equal(transactionMethodLabel({...crmOrder,source:'app',gateway:'WLCM',method:'payme',recordedInCrm:true}),'Crm orqali');
 });
 test('commerce connects source facts and unknown-learner guards inside existing panels',async()=>{
  const {readFileSync}=await import('node:fs');

@@ -47,7 +47,7 @@ try {
   if(process.env.UNIFIED_SALES_ONLY!=='1'){
   await page.getByRole('button', {name: 'Search everything', exact: true}).click();
   await expect(page.getByRole('dialog', {name: 'Qidiruv', exact: true})).toBeVisible();
-  await page.getByLabel('Username', {exact: true}).fill('Exact_Case');
+  await page.getByRole('textbox', {name: 'Qidiruv', exact: true}).fill('Exact_Case');
   await page.getByRole('button', {name: 'Qidirish', exact: true}).click();
   await expect(page.getByRole('dialog').getByText('@Exact_Case', {exact: true})).toBeVisible();
   await page.keyboard.press('Escape');
@@ -55,6 +55,15 @@ try {
   await page.getByRole('button', {name: 'Settings', exact: true}).click();
   await expect(page.getByRole('dialog', {name: 'Sozlamalar', exact: true})).toBeVisible();
   await page.keyboard.press('Escape');
+
+  await page.getByRole('button', {name: 'Foydalanuvchilar', exact: true}).click();
+  await page.getByRole('button', {name: 'PRO qilish', exact: true}).first().click();
+  const proDialog = page.getByRole('dialog', {name: 'PRO qilish', exact: true});
+  await expect(proDialog.getByLabel('Pul o‘tkazmasi miqdori', {exact: true})).toBeVisible();
+  await expect(proDialog.getByLabel('To‘lov provayderi', {exact: true})).toBeVisible();
+  await expect(proDialog.getByLabel('To‘lov sanasi va vaqti', {exact: true})).toBeVisible();
+  await expect(proDialog.getByLabel('To‘lov cheki (ixtiyoriy)', {exact: true})).toBeVisible();
+  await proDialog.getByRole('button', {name: 'Bekor qilish', exact: true}).click();
 
   await page.getByRole('button', {name: 'To‘lovlar', exact: true}).click();
   await expect(page.locator('main')).toHaveAttribute('data-route', 'Commerce');

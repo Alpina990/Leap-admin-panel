@@ -36,6 +36,49 @@ test('catalog payment orders with no section are accepted',async()=>{
  assert.equal(response.status,200);assert.deepEqual(await response.json(),page);
 });
 
+test('ordinary app payments accept explicit inert manual-operation metadata',async()=>{
+ const order={id:'727ac75f-f104-4740-b037-e2ef675c885b',learnerId:'1479914025',sectionId:null,amountTiyin:'100000',currency:'UZS',gateway:'WLCM',method:'payme',status:'paid',createdAt:'2026-09-23T15:00:00+00:00',paidAt:'2026-09-23T15:00:00+00:00',cancelledAt:null,externalId:'LE-727ac75f-f104-4740-b037-e2ef675c885b',gatewayOrderId:'wlcm-order-1',gatewayPaymentId:'wlcm-payment-1',source:'app',includedInSales:true,recordedInCrm:false,canDelete:false,manualTransactionId:null,manualTransactionVersion:null,receiptAvailable:false};
+ const page={items:[order],total:1,limit:25,offset:0,hasMore:false};
+ const response=await proxyAdmin(get('payments?limit=25&offset=0'),'payments',config,async()=>Response.json(page));
+ assert.equal(response.status,200);assert.deepEqual(await response.json(),page);
+});
+
+test('manual CRM transactions preserve safe deletion and receipt indicators',async()=>{
+ const order={id:'manual:20000000-0000-4000-8000-000000000001',learnerId:'1479914025',sectionId:null,amountTiyin:'88000000',currency:'UZS',gateway:'CRM',method:'card_transfer',status:'paid',createdAt:'2026-10-14T13:55:51Z',paidAt:'2026-10-14T13:55:51Z',cancelledAt:null,externalId:'beecrm-payment-29631',gatewayOrderId:null,gatewayPaymentId:null,source:'crm',canDelete:true,manualTransactionId:'20000000-0000-4000-8000-000000000001',manualTransactionVersion:1,receiptAvailable:true};
+ const page={items:[order],total:1,limit:25,offset:0,hasMore:false};
+ const response=await proxyAdmin(get('payments?limit=25&offset=0'),'payments',config,async()=>Response.json(page));
+ assert.equal(response.status,200);assert.deepEqual(await response.json(),page);
+});
+
+test('payment pages reject overlength non-manual order identities',async()=>{
+ const base={learnerId:'1479914025',sectionId:null,amountTiyin:'100000',currency:'UZS',method:'payme',status:'paid',createdAt:'2026-09-23T15:00:00+00:00',paidAt:'2026-09-23T15:00:00+00:00',cancelledAt:null,gatewayOrderId:null,gatewayPaymentId:null};
+ const app={...base,id:'x'.repeat(41),gateway:'WLCM',externalId:'external-app-order'};
+ const crm={...base,id:'x'.repeat(41),gateway:'CRM',externalId:null,source:'crm',matchState:'matched'};
+ const manualId='manual:20000000-0000-4000-8000-000000000001';
+ const disguisedApp={...app,id:manualId};
+ const disguisedCrm={...crm,id:manualId};
+ for(const order of [app,crm,disguisedApp,disguisedCrm]){
+  const page={items:[order],total:1,limit:25,offset:0,hasMore:false};
+  const response=await proxyAdmin(get('payments?limit=25&offset=0'),'payments',config,async()=>Response.json(page));
+  assert.equal(response.status,502,order.gateway);
+ }
+ const detail=await proxyAdmin(get('payment?orderId='+encodeURIComponent(manualId)),'payment',config,async()=>Response.json({order:disguisedCrm,entitlement:null}));
+ assert.equal(detail.status,502);
+});
+
+test('manual payment detail accepts its canonical identity and verifies the upstream echo',async()=>{
+ const orderId='manual:20000000-0000-4000-8000-000000000001';
+ const order={id:orderId,learnerId:'1479914025',sectionId:null,amountTiyin:'88000000',currency:'UZS',gateway:'CRM',method:'card_transfer',status:'paid',createdAt:'2026-10-14T13:55:51Z',paidAt:'2026-10-14T13:55:51Z',cancelledAt:null,externalId:'beecrm-payment-29631',gatewayOrderId:null,gatewayPaymentId:null,source:'crm',canDelete:true,manualTransactionId:'20000000-0000-4000-8000-000000000001',manualTransactionVersion:1,receiptAvailable:true};
+ let fetched=0;
+ const response=await proxyAdmin(get('payment?orderId='+encodeURIComponent(orderId)),'payment',config,async url=>{fetched++;assert.equal(url,config.api+'/api/v1/admin/payment?orderId='+encodeURIComponent(orderId));return Response.json({order,entitlement:null});});
+ assert.equal(response.status,200);assert.equal(fetched,1);assert.deepEqual(await response.json(),{order,entitlement:null});
+ assert.equal((await proxyAdmin(get('payment?orderId='+encodeURIComponent(orderId)),'payment',config,async()=>Response.json({order:{...order,id:'manual:30000000-0000-4000-8000-000000000001'},entitlement:null}))).status,502);
+ for(const invalid of ['x'.repeat(41),'manual:'+'x'.repeat(36),'manual:20000000-0000-4000-8000-000000000001/extra']){
+  let called=0;const rejected=await proxyAdmin(get('payment?orderId='+encodeURIComponent(invalid)),'payment',config,async()=>{called++;return Response.json({order,entitlement:null});});
+  assert.equal(rejected.status,422,invalid);assert.equal(called,0,invalid);
+ }
+});
+
 test('withdrawals validate money-out writes and paginate the ledger',async()=>{
  const created={id:'12345678-1234-1234-1234-123456789012',entryType:'withdrawal',amount:123000,signedAmount:-123000,note:'Karta raqamiga',actor:'operator',createdAt:'2026-10-15T09:00:00+00:00'};
  const page={items:[created],total:1,limit:25,offset:0,hasMore:false,withdrawnTotal:'123000'};

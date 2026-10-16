@@ -1,6 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {formatAdminDateTime, formatAdminDayMonthTime, formatAdminRegistered, formatAdminRelativeTime} from '../lib/admin-date-time.mjs';
+import {
+  formatAdminDateTime,
+  formatAdminDayMonthTime,
+  formatAdminRegistered,
+  formatAdminRelativeTime,
+  formatTashkentDateTimeInput,
+  parseTashkentDateTimeInput,
+} from '../lib/admin-date-time.mjs';
 
 test('admin timestamps are displayed in Tashkent time', () => {
   assert.equal(formatAdminDateTime('2026-01-01T00:00:00+00:00'), '2026-01-01 05:00');
@@ -32,4 +39,17 @@ test('empty values fall back to a dash', () => {
   assert.equal(formatAdminDayMonthTime(null), '—');
   assert.equal(formatAdminRelativeTime(null), '—');
   assert.deepEqual(formatAdminRegistered(null), {date: '—', time: ''});
+});
+
+test('CRM paid-at input always uses Asia/Tashkent wall time', () => {
+  assert.equal(
+    formatTashkentDateTimeInput('2026-10-14T13:55:51Z'),
+    '2026-10-14T18:55',
+  );
+  assert.equal(
+    parseTashkentDateTimeInput('2026-10-14T18:55'),
+    '2026-10-14T13:55:00.000Z',
+  );
+  assert.equal(parseTashkentDateTimeInput('2026-02-30T12:00'), null);
+  assert.equal(parseTashkentDateTimeInput('not-a-date'), null);
 });

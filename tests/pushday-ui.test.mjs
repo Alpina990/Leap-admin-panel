@@ -155,6 +155,65 @@ test('PRO access dialog mirrors the PushDay single-select confirmation flow', ()
   assert.match(read('app/pushday.css'), /\.pd-dialog\.pd-pro-dialog/);
 });
 
+test('PRO grant captures CRM payment amount, provider, paid time, reference and optional receipt', () => {
+  const dialog = read('app/business-dialog.tsx');
+  assert.match(dialog, /Pul o‘tkazmasi miqdori/);
+  assert.match(dialog, /To‘lov provayderi/);
+  assert.match(dialog, /To‘lov sanasi va vaqti/);
+  assert.match(dialog, /CRM to‘lov ID \(ixtiyoriy\)/);
+  assert.match(dialog, /To‘lov cheki \(ixtiyoriy\)/);
+  assert.match(dialog, /parseTashkentDateTimeInput/);
+  assert.match(dialog, /accept="application\/pdf,image\/jpeg,image\/png"/);
+  assert.match(dialog, /business-grant/);
+  assert.match(dialog, /amountTiyin/);
+  assert.match(dialog, /paidAt/);
+});
+
+test('PRO grant treats provider-only and paid-time-only edits as unsaved changes', () => {
+  const dialog = read('app/business-dialog.tsx');
+  assert.match(dialog, /provider!==initialProvider/);
+  assert.match(dialog, /paidAt!==initialPaidAt/);
+});
+
+test('PRO grant reads current time only in state initialization and revalidates at submit', () => {
+  const dialog = read('app/business-dialog.tsx');
+  const renderLogic = dialog.slice(0,dialog.indexOf('async function save'));
+  assert.doesNotMatch(renderLogic,/Date\.now\(|new Date\(/);
+  const submitLogic = dialog.slice(dialog.indexOf('async function save'));
+  assert.match(submitLogic,/Date\.now\(\)/);
+  assert.match(submitLogic,/parseTashkentDateTimeInput\(paidAt\)/);
+});
+
+test('PRO grant contains receipt conversion in the recoverable busy-state try/finally', () => {
+  const dialog = read('app/business-dialog.tsx');
+  const save = dialog.slice(dialog.indexOf('async function save'),dialog.indexOf('\n }\n const heading'));
+  assert.ok(save.indexOf('try{')<save.indexOf('receipt:await receiptPayload()'));
+  assert.ok(save.indexOf('receipt:await receiptPayload()')<save.indexOf('}catch'));
+  assert.match(save,/finally\{clearPassword\(\);setBusy\(false\);\}/);
+});
+
+test('transaction history exposes a red trash action backed by a guarded soft-delete dialog', () => {
+  const ui = read('app/admin-app.tsx');
+  const dialog = read('app/transaction-delete-dialog.tsx');
+  assert.match(ui, /label:"O‘chirish"/);
+  assert.match(ui, /Trash2/);
+  assert.match(ui, /TransactionDeleteDialog/);
+  assert.match(ui, /canDelete/);
+  assert.match(dialog, /business-delete-transaction/);
+  assert.match(dialog, /Joriy administrator paroli/);
+  assert.match(dialog, /passwordReady/);
+  assert.match(dialog, /PRO access o‘zgarmaydi/);
+  assert.match(dialog, /pd-delete-transaction/);
+  assert.match(read('app/pushday.css'), /\.pd-delete-action/);
+});
+
+test('transaction delete summary formats its timestamp in Asia/Tashkent', () => {
+  const dialog = read('app/transaction-delete-dialog.tsx');
+  assert.match(dialog,/import \{formatAdminDateTime\} from '@\/lib\/admin-date-time\.mjs'/);
+  assert.match(dialog,/formatAdminDateTime\(transaction\.paidAt\?\?transaction\.createdAt\)/);
+  assert.doesNotMatch(dialog,/<small>\{transaction\.paidAt\?\?transaction\.createdAt\}<\/small>/);
+});
+
 test('content uses a course-unit-lesson tree with add and edit actions but no delete', () => {
   const ui = read('app/admin-app.tsx');
   const dialog = read('app/content-structure-dialog.tsx');

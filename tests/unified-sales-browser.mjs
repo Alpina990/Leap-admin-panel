@@ -28,12 +28,23 @@ export async function checkUnifiedSales(page, out){
  }
  const summary={...original,paidOrders:3,revenueTiyin:'50000',paymentMethods:[{method:'unknown',count:1,revenueTiyin:'30000'},{method:'card_transfer',count:1,revenueTiyin:'10000'},{method:'payme',count:1,revenueTiyin:'10000'}],sales:{appPaidOrders:2,appRevenueTiyin:'20000',crmSales:1,crmRevenueTiyin:'30000',crmMirrored:1,crmMatched:0,crmUnmatched:1,totalPaidOrders:3,totalRevenueTiyin:'50000'},crmSync:{lastSuccessAt:'2026-10-09T01:00:00Z',lastError:null,lastRunSalesCreated:1,lastRunUnmatched:1}};
  const order={id:'crm:12345678-1234-1234-1234-123456789012',source:'crm',learnerId:null,customerName:'Shohinur',sectionId:null,amountTiyin:'30000',currency:'UZS',gateway:'CRM',method:'crm',status:'paid',createdAt:'2026-10-09T01:00:00Z',paidAt:'2026-10-09T01:00:00Z',cancelledAt:null,externalId:'lead-1',gatewayOrderId:null,gatewayPaymentId:null,matchState:'unmatched'};
- let mode='loaded', method='crm';
+ const recordedOrder={...order,id:'app-recorded-in-crm',source:'app',learnerId:'1',customerName:undefined,gateway:'WLCM',method:'payme',externalId:'app-recorded-in-crm',matchState:undefined,recordedInCrm:true};
+  const manualId='12345678-1234-4234-8234-123456789012';
+  const manualOrder={...order,id:`manual:${manualId}`,learnerId:'1',customerName:undefined,method:'card_transfer',externalId:'beecrm-payment-29631',canDelete:true,manualTransactionId:manualId,manualTransactionVersion:1,receiptAvailable:true};
+  let row=order;
+  let mode='loaded', method='crm';
+  let manualDeleted=false;
  const requests=[];
  page.on('request',request=>{if(request.url().includes('/api/admin/'))requests.push(request.url());});
  await page.route('**/api/admin/analytics-summary*',route=>route.fulfill({status:mode==='unavailable'?502:200,json:mode==='unavailable'?{error:{message:'Administrator service unavailable.'}}:mode==='legacy'?Object.fromEntries(Object.entries(summary).filter(([key])=>!['sales','crmSync'].includes(key))):mode==='sync-error'?{...summary,crmSync:{...summary.crmSync,lastSuccessAt:null,lastError:'private upstream diagnostic'}}:summary}));
- await page.route('**/api/admin/payments?*',route=>route.fulfill({json:{items:[{...order,method}],total:1,limit:25,offset:0,hasMore:false}}));
- await page.route('**/api/admin/payment?*',route=>route.fulfill({json:{order:{...order,method},entitlement:null}}));
+ await page.route('**/api/admin/payments?*',route=>route.fulfill({json:{items:manualDeleted?[]:[{...row,method}],total:manualDeleted?0:1,limit:25,offset:0,hasMore:false}}));
+ await page.route('**/api/admin/payment?*',route=>route.fulfill({json:{order:{...row,method},entitlement:null}}));
+ await page.route('**/api/admin/business-delete-transaction',async route=>{
+  const body=route.request().postDataJSON();
+  assert.equal(body.transactionId,manualId);assert.equal(body.baseVersion,1);assert.equal(body.password,'disposable-test-only-password-92!');assert(body.reason.length>=20);
+  manualDeleted=true;
+  await route.fulfill({json:{transactionId:manualId,deletedAt:'2026-10-16T00:00:00Z',version:2,accessUnchanged:true}});
+ });
  for(const width of [1440,430]){
   await page.setViewportSize({width,height:1000});
   await page.goto('/#commerce');
@@ -78,7 +89,22 @@ export async function checkUnifiedSales(page, out){
  await page.reload();
  await expect(page.locator('[data-order-id] td').nth(3)).toHaveText('Karta orqali');
  await expect(page.locator('.pd-detail-hero span').first()).toHaveText('Payme');
- assert(!requests.some(url=>url.includes('learnerIds=')||url.includes('learnerId=null')),'unmatched CRM must not query fake learner IDs');
+ assert(!requests.some(raw=>{const url=new URL(raw);return url.searchParams.get('learnerId')==='null'||(url.searchParams.get('learnerIds')??'').split(',').includes('null');}),'unmatched CRM must not query fake learner IDs');
+ row=recordedOrder;
+ await page.reload();
+ await expect(page.locator('[data-order-id] td').nth(3)).toHaveText('Crm orqali');
+ await expect(page.locator('.pd-detail-hero span').first()).toHaveText('Payme');
+ await expect(page.locator('[data-provider="unknown"]')).toContainText('Noma’lum');
+ await expect(page.locator('[data-provider="card_transfer"]')).toContainText('Karta orqali');
+ row=manualOrder;method='card_transfer';manualDeleted=false;mode='loaded';
+ await page.reload();
+ await page.getByRole('button',{name:/tranzaksiyasini o‘chirish$/}).click();
+ const deleteDialog=page.getByRole('dialog',{name:'Tranzaksiyani o‘chirish',exact:true});
+ await expect(deleteDialog).toContainText('PRO access o‘zgarmaydi');
+ await deleteDialog.getByLabel('O‘chirish sababi',{exact:true}).fill('Xato CRM tranzaksiyasi kiritilgan edi.');
+ await deleteDialog.getByLabel('Joriy administrator paroli',{exact:true}).fill('disposable-test-only-password-92!');
+ await deleteDialog.getByRole('button',{name:'Tranzaksiyani o‘chirish',exact:true}).click();
+ await expect(page.locator('[data-order-id]')).toHaveCount(0);
  mode='sync-error';await page.reload();
  await expect(page.getByLabel('Sotuv manbalari va CRM sync')).toContainText('Sync xatosi');
  await expect(page.locator('body')).not.toContainText('private upstream diagnostic');

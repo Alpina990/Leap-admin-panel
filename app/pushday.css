@@ -436,6 +436,48 @@ a:focus-visible {
   background: var(--pd-bg);
 }
 
+.pd-delete-action {
+  border-color: color-mix(in srgb, var(--pd-danger) 26%, var(--pd-border));
+  color: var(--pd-danger);
+  background: var(--pd-danger-soft);
+}
+
+.pd-delete-action:hover {
+  border-color: var(--pd-danger);
+  color: var(--pd-danger);
+  background: color-mix(in srgb, var(--pd-danger) 16%, transparent);
+}
+
+.pd-delete-transaction .pd-delete-summary {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--pd-border);
+  border-radius: 12px;
+  background: var(--pd-bg);
+}
+
+.pd-delete-summary span,
+.pd-delete-summary small {
+  color: var(--pd-muted);
+  font-size: 12px;
+}
+
+.pd-delete-warning {
+  border-color: color-mix(in srgb, var(--pd-danger) 24%, var(--pd-border));
+  background: var(--pd-danger-soft);
+}
+
+.pd-delete-confirm {
+  border-color: transparent;
+  background: var(--pd-danger);
+  color: #fff;
+}
+
+.pd-delete-confirm:hover {
+  filter: brightness(.92);
+}
+
 .pd-text-button {
   border: 0;
   background: transparent;
