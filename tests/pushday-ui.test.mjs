@@ -157,7 +157,7 @@ test('commerce finance disclosure expands above a full-width transaction history
   assert.ok(ui.indexOf('pd-commerce-finance') < ui.indexOf('pd-transaction-history'));
   assert.match(css, /\.pd-commerce-finance-layout/);
   assert.match(css, /\.pd-finance-collapse\s*\{[^}]*width:\s*clamp\([^}]*margin:\s*10px auto 0/s);
-  assert.match(css, /\.pd-transaction-history \.pd-table-wrap\s*\{[^}]*overflow-x:\s*visible/s);
+  assert.match(css, /\.pd-transaction-history \.pd-table-wrap\s*\{[^}]*overflow:\s*visible/s);
   assert.match(css, /\.pd-transaction-history \.pd-table\s*\{[^}]*min-width:\s*0/s);
 });
 

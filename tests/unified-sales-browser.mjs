@@ -47,7 +47,7 @@ export async function checkUnifiedSales(page, out){
   manualDeleted=true;
   await route.fulfill({json:{transactionId:manualId,deletedAt:'2026-10-16T00:00:00Z',version:2,accessUnchanged:true}});
  });
- for(const width of [1440,430]){
+ for(const width of [1440,1280,430]){
   await page.setViewportSize({width,height:1000});
   await page.goto('/#commerce');
   await page.reload();
@@ -98,7 +98,10 @@ export async function checkUnifiedSales(page, out){
   await methodSelector.selectOption('card_transfer');
   await page.getByRole('button',{name:'Qo‘llash',exact:true}).click();
   await expect.poll(()=>requests.some(url=>url.includes('method=card_transfer'))).toBe(true);
-  if(width===1440)assert(await page.locator('.pd-transaction-history .pd-table-wrap').evaluate(node=>node.scrollWidth<=node.clientWidth),'desktop transaction history must fit without horizontal scrolling');
+  if(width>=1200){
+   const tableFit=await page.locator('.pd-transaction-history .pd-table-wrap').evaluate(node=>({clientWidth:node.clientWidth,scrollWidth:node.scrollWidth,tableWidth:node.querySelector('table')?.getBoundingClientRect().width,overflow:getComputedStyle(node).overflow}));
+   assert(tableFit.tableWidth<=tableFit.clientWidth+1&&tableFit.overflow==='visible',`desktop transaction history must fit without horizontal scrolling: ${JSON.stringify(tableFit)}`);
+  }
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'commerce overflow');
   await page.screenshot({path:`${out}/commerce-unified-${width}.png`,fullPage:true});
   await collapseFinance.click();

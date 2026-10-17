@@ -1897,7 +1897,7 @@ button.pd-metric-card:focus-visible {
 }
 
 .pd-transaction-history .pd-table-wrap {
-  overflow-x: visible;
+  overflow: visible;
 }
 
 .pd-transaction-history .pd-table {
