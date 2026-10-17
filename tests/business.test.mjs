@@ -6,11 +6,14 @@ const cookie='__Host-leap_admin='+'a'.repeat(43),requestId='12345678-1234-1234-1
 const permissions={canGrantCatalogAccess:true,canCloseReconciliation:true,canCreateIntervention:true,canWithdrawRevenue:true};
 const grant={learnerId:'123',scope:'whole_catalog',source:'admin_lifetime',reason,version:1,grantedAt:'2026-09-13T10:00:00Z',expiresAt:'2027-09-13T10:00:00Z',revokedAt:null,accessState:'lifetime',accessOverride:false,preservedSectionEntitlements:['paid-section']};
 function request(action,body,headers={}){return new Request(config.origin+'/api/admin/'+action,{method:body?'POST':'GET',headers:{cookie,...(body?{Origin:config.origin,'X-Admin-CSRF':'csrf','Content-Type':'application/json'}:{}),...headers},...(body?{body:JSON.stringify(body)}:{})});}
-test('business grant refuses legacy access-only writes without transaction metadata',async()=>{
+test('business grant without transaction metadata routes to the audited access-only endpoint',async()=>{
  const body={requestId,learnerId:'123',baseVersion:0,reason};
- let fetched=0;
- const response=await proxyAdmin(request('business-grant',body),'business-grant',config,async()=>{fetched++;return Response.json(grant);});
- assert.equal(response.status,422);assert.equal(fetched,0);
+ const response=await proxyAdmin(request('business-grant',body),'business-grant',config,async(url,options)=>{
+  assert.equal(url,config.api+'/api/v1/admin/business/catalog-grants');
+  assert.deepEqual(JSON.parse(options.body),body);
+  return Response.json(grant);
+ });
+ assert.equal(response.status,200);assert.deepEqual(await response.json(),grant);
 });
 test('business grant records CRM transaction metadata and optional receipt before granting access',async()=>{
  const body={requestId,learnerId:'123',baseVersion:0,reason,amountTiyin:'88000000',provider:'card_transfer',paidAt:'2026-10-14T13:55:51Z',crmReference:'beecrm-payment-29631',receipt:{filename:'receipt.pdf',contentType:'application/pdf',base64:'JVBERi0xLjcKJSVFT0Y='}};

@@ -196,6 +196,14 @@ test('PRO grant treats provider-only and paid-time-only edits as unsaved changes
   assert.match(dialog, /paidAt!==initialPaidAt/);
 });
 
+test('PRO grant offers a transactionless provider and hides every transaction field for it', () => {
+  const dialog = read('app/business-dialog.tsx');
+  assert.match(dialog, /<option value="no_transaction">Tranzaksiyasiz<\/option>/);
+  assert.match(dialog, /const noTransaction=provider==='no_transaction'/);
+  assert.match(dialog, /\{!noTransaction&&<><label className="pd-field">Pul o‘tkazmasi miqdori/);
+  assert.match(dialog, /noTransaction\?\{learnerId,baseVersion:state!\.accessVersion,reason:accessReason\}/);
+});
+
 test('PRO grant reads current time only in state initialization and revalidates at submit', () => {
   const dialog = read('app/business-dialog.tsx');
   const renderLogic = dialog.slice(0,dialog.indexOf('async function save'));
