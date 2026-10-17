@@ -34,9 +34,11 @@ export async function checkUnifiedSales(page, out){
   let row=order;
   let mode='loaded', method='crm';
   let manualDeleted=false;
+  let withdrawalMode='loaded';
  const requests=[];
  page.on('request',request=>{if(request.url().includes('/api/admin/'))requests.push(request.url());});
- await page.route('**/api/admin/analytics-summary*',route=>route.fulfill({status:mode==='unavailable'?502:200,json:mode==='unavailable'?{error:{message:'Administrator service unavailable.'}}:mode==='legacy'?Object.fromEntries(Object.entries(summary).filter(([key])=>!['sales','crmSync'].includes(key))):mode==='sync-error'?{...summary,crmSync:{...summary.crmSync,lastSuccessAt:null,lastError:'private upstream diagnostic'}}:summary}));
+ await page.route('**/api/admin/analytics-summary*',route=>{const filtered=new URL(route.request().url()).searchParams.has('start');const value=filtered?{...summary,revenueTiyin:'20000'}:summary;return route.fulfill({status:mode==='unavailable'?502:200,json:mode==='unavailable'?{error:{message:'Administrator service unavailable.'}}:mode==='legacy'?Object.fromEntries(Object.entries(value).filter(([key])=>!['sales','crmSync'].includes(key))):mode==='sync-error'?{...value,crmSync:{...value.crmSync,lastSuccessAt:null,lastError:'private upstream diagnostic'}}:value});});
+ await page.route('**/api/admin/withdrawals?*',route=>{const filtered=new URL(route.request().url()).searchParams.has('start');return route.fulfill({status:withdrawalMode==='unavailable'?502:200,json:withdrawalMode==='unavailable'?{error:{message:'Yechishlar service unavailable.'}}:{items:[],total:0,limit:100,offset:0,hasMore:false,withdrawnTotal:filtered?'50':'100'}});});
  await page.route('**/api/admin/payments?*',route=>route.fulfill({json:{items:manualDeleted?[]:[{...row,method}],total:manualDeleted?0:1,limit:25,offset:0,hasMore:false}}));
  await page.route('**/api/admin/payment?*',route=>route.fulfill({json:{order:{...row,method},entitlement:null}}));
  await page.route('**/api/admin/business-delete-transaction',async route=>{
@@ -50,13 +52,36 @@ export async function checkUnifiedSales(page, out){
   await page.goto('/#commerce');
   await page.reload();
   await expect(page.locator('[data-order-id]')).toHaveCount(1);
+  const financeToggle=page.getByRole('button',{name:'Moliya',exact:true});
+  await expect(financeToggle).toHaveAttribute('aria-expanded','false');
+  await financeToggle.click();
+  await expect(page.getByRole('region',{name:'Moliya',exact:true})).toBeVisible();
+  const financeRegion=page.getByRole('region',{name:'Moliya',exact:true});
+  const collapseFinance=financeRegion.getByRole('button',{name:'Moliyani yig‘ish',exact:true});
+  await expect(collapseFinance.locator('.lucide-chevron-up')).toHaveCount(1);
+  const [financeBox,financeContentBox,collapseBox]=await Promise.all([financeRegion.boundingBox(),financeRegion.locator(':scope > .pd-panel').boundingBox(),collapseFinance.boundingBox()]);
+  assert(financeBox&&financeContentBox&&collapseBox,'expanded finance and collapse control must have layout boxes');
+  assert(Math.abs((collapseBox.x+collapseBox.width/2)-(financeBox.x+financeBox.width/2))<=2,'collapse control must be centered below finance');
+  assert(collapseBox.y>=financeContentBox.y+financeContentBox.height,'collapse control must sit below the expanded finance box');
   await expect(page.locator('.pd-metric-card')).toHaveCount(5);
   await expect(page.locator('.pd-metric-card').filter({hasText:'Jami tushum'})).toContainText('500 UZS');
+  await expect(page.locator('.pd-metric-card').filter({hasText:'Balance'})).toContainText('400 UZS');
+  if(width===1440){
+   await page.getByRole('button',{name:'O‘quvchilar & access',exact:true}).click();
+   await expect(page.locator('.pd-metric-card').filter({hasText:'Balance'})).toContainText('400 UZS');
+   await page.getByRole('button',{name:'Tranzaksiyalarga qaytish',exact:true}).click();
+  }
   await expect(page.locator('[data-provider="unknown"]')).toContainText('Noma’lum');
   await expect(page.locator('[data-provider="unknown"]')).toContainText('60%');
   await expect(page.locator('[data-provider="card_transfer"]')).toContainText('Karta orqali');
   await expect(page.locator('[data-provider="card_transfer"]')).toContainText('20%');
   await expect(page.locator('[data-order-id] td').nth(3)).toHaveText('Karta orqali');
+  if(width===1440){
+   await page.getByLabel('Tezkor davr',{exact:true}).selectOption('30');
+   await expect(page.locator('.pd-metric-card').filter({hasText:'Jami tushum'})).toContainText('200 UZS');
+   await expect(page.locator('.pd-metric-card').filter({hasText:'Balance'})).toContainText('400 UZS');
+   await page.getByLabel('Tezkor davr',{exact:true}).selectOption('all');
+  }
   await expect(page.locator('.pd-detail-hero span').first()).toHaveText('Noma’lum');
   await expect(page.locator('.pd-detail-panel .pd-facts').last()).toContainText('ManbaCRM');
   const person=page.locator('[data-order-id] .pd-person-link');
@@ -73,8 +98,13 @@ export async function checkUnifiedSales(page, out){
   await methodSelector.selectOption('card_transfer');
   await page.getByRole('button',{name:'Qo‘llash',exact:true}).click();
   await expect.poll(()=>requests.some(url=>url.includes('method=card_transfer'))).toBe(true);
+  if(width===1440)assert(await page.locator('.pd-transaction-history .pd-table-wrap').evaluate(node=>node.scrollWidth<=node.clientWidth),'desktop transaction history must fit without horizontal scrolling');
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'commerce overflow');
   await page.screenshot({path:`${out}/commerce-unified-${width}.png`,fullPage:true});
+  await collapseFinance.click();
+  await expect(financeToggle).toHaveAttribute('aria-expanded','false');
+  await expect(financeToggle.locator('.lucide-chevron-down')).toHaveCount(1);
+  await page.screenshot({path:`${out}/commerce-collapsed-${width}.png`,fullPage:true});
   method='unknown';
  }
  method='hamkorbank_transfer';
@@ -92,6 +122,7 @@ export async function checkUnifiedSales(page, out){
  assert(!requests.some(raw=>{const url=new URL(raw);return url.searchParams.get('learnerId')==='null'||(url.searchParams.get('learnerIds')??'').split(',').includes('null');}),'unmatched CRM must not query fake learner IDs');
  row=recordedOrder;
  await page.reload();
+ await page.getByRole('button',{name:'Moliya',exact:true}).click();
  await expect(page.locator('[data-order-id] td').nth(3)).toHaveText('Crm orqali');
  await expect(page.locator('.pd-detail-hero span').first()).toHaveText('Payme');
  await expect(page.locator('[data-provider="unknown"]')).toContainText('Noma’lum');
@@ -110,9 +141,13 @@ export async function checkUnifiedSales(page, out){
  await expect(page.locator('body')).not.toContainText('private upstream diagnostic');
  mode='legacy';await page.reload();
  await expect(page.getByLabel('Sotuv manbalari va CRM sync')).toContainText('Mavjud emas');
+ withdrawalMode='unavailable';mode='loaded';await page.reload();
+ await expect(page.locator('body')).toContainText('Yechishlar service unavailable.');
+ withdrawalMode='loaded';
  mode='unavailable';await page.reload();
  await expect(page.locator('body')).toContainText('Administrator service unavailable.');
  await expect(page.locator('body')).not.toContainText('Daromad yo‘q');
+ await page.getByRole('button',{name:'Moliya',exact:true}).click();
  await expect(page.locator('.pd-metric-card').filter({hasText:'Jami tushum'})).toContainText('—');
  console.log('PASS unified sales browser fixtures: unknown/legacy CRM, Payme, Hamkorbank transfer, source provenance, combined totals, sync failure, 1440/430px');
 }

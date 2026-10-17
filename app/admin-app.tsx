@@ -14,6 +14,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   CircleDollarSign,
   Clock3,
   Download,
@@ -54,6 +55,7 @@ import {SelfingoScreen} from "./selfingo-screen";
 import {formatAdminDateTime as formatDateTime, formatAdminRegistered, formatAdminRelativeTime} from "@/lib/admin-date-time.mjs";
 import {readState} from "@/lib/read-state.mjs";
 import {salesDetails,transactionIdentity,transactionMethodLabel,salesEligibility} from "@/lib/admin-sales.mjs";
+import {availableBalanceTiyin} from "@/lib/admin-finance.mjs";
 import workflowCards from "@/lib/pushday-workflows.json";
 import {Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle} from "@/components/ui/dialog";
 import {Sheet,SheetContent,SheetDescription,SheetHeader,SheetTitle} from "@/components/ui/sheet";
@@ -483,6 +485,7 @@ export default function AdminApp({session}:{session:AdminSession}){
   const [notificationOffset,setNotificationOffset]=useState(0);
   const [notificationId,setNotificationId]=useState<string|null>(null);
   const [commerceTab,setCommerceTab]=useState<"learners"|"transactions">("transactions");
+  const [financeOpen,setFinanceOpen]=useState(false);
   const [orderOffset,setOrderOffset]=useState(0);
   const [orderSort,setOrderSort]=useState<SortState>({key:"created_at",direction:-1});
   const [orderId,setOrderId]=useState<string|null>(null);
@@ -506,6 +509,8 @@ export default function AdminApp({session}:{session:AdminSession}){
 
   const overview=useRead<AdminOverview>("/api/admin/overview",revision);
   const summary=useRead<Summary>("/api/admin/analytics-summary?"+new URLSearchParams(dateRange),revision);
+  const hasDateFilter=Object.keys(dateRange).length>0;
+  const allTimeFinanceSummary=useRead<Summary>(section==="Commerce"&&hasDateFilter?"/api/admin/analytics-summary":null,revision);
   const learnerServerSort={sort:learnerServerSortKeys[learnerSort.key]??defaultLearnerSort.sort,direction:learnerSort.direction===1?"asc":"desc"};
   const query=new URLSearchParams({limit:"25",offset:String(offset),audience,...dateRange,...learnerServerSort,...reportFilters.learners});
   if(username)query.set("username",username);
@@ -535,7 +540,10 @@ export default function AdminApp({session}:{session:AdminSession}){
   if(paymentStatus)ordersQuery.set("status",paymentStatus);
   if(paymentMethod)ordersQuery.set("method",paymentMethod);
   const orders=useRead<Orders>(section==="Commerce"&&commerceTab==="transactions"?"/api/admin/payments?"+ordersQuery:null,revision);
-  const withdrawals=useRead<Withdrawals>(section==="Commerce"&&commerceTab==="transactions"?"/api/admin/withdrawals?"+new URLSearchParams({limit:"100",offset:"0",...dateRange}):null,revision);
+  const withdrawals=useRead<Withdrawals>(section==="Commerce"?"/api/admin/withdrawals?"+new URLSearchParams({limit:"100",offset:"0",...dateRange}):null,revision);
+  const allTimeFinanceWithdrawals=useRead<Withdrawals>(section==="Commerce"&&hasDateFilter?"/api/admin/withdrawals?"+new URLSearchParams({limit:"1",offset:"0"}):null,revision);
+  const currentBalanceSummary=hasDateFilter?allTimeFinanceSummary:summary;
+  const currentBalanceWithdrawals=hasDateFilter?allTimeFinanceWithdrawals:withdrawals;
   const transactionLearnerIds=[...new Set((orders.data?.items??[]).map(item=>item.learnerId).filter((id):id is string=>id!==null))];
   const transactionSummaries=useRead<PaymentSummaries>(section==="Commerce"&&commerceTab==="transactions"&&transactionLearnerIds.length?"/api/admin/learner-payments?"+new URLSearchParams({learnerIds:transactionLearnerIds.join(","),includeProfiles:"1"}):null,revision);
   const learnerByTelegramId=new Map([...people,...(transactionSummaries.data?.items??[]).flatMap(item=>item.learner?[item.learner]:[])].map(item=>[item.telegramUserId,item]));
@@ -730,8 +738,8 @@ export default function AdminApp({session}:{session:AdminSession}){
     if(sectionValue==="Commerce")return [
       {icon:CircleDollarSign,label:"Jami tushum",value:formatMoneyCompact(summary.data?.revenueTiyin),detail:"Tanlangan davr",tone:"success" as const,filter:"commerce-revenue"},
       {icon:ArrowDown,label:"Yechib olingan",value:withdrawals.data?withdrawalMoneyCompact(Number(withdrawals.data.withdrawnTotal)||0):"—",detail:"Tanlangan davrda",tone:"danger" as const},
+      {icon:WalletCards,label:"Balance",value:currentBalanceSummary.data&&currentBalanceWithdrawals.data?formatMoneyCompact(availableBalanceTiyin(currentBalanceSummary.data.revenueTiyin,currentBalanceWithdrawals.data.withdrawnTotal)):"—",detail:"Hozir mavjud mablag‘",tone:"success" as const},
       {icon:WalletCards,label:"To‘langan buyurtmalar",value:summary.data?.paidOrders.toLocaleString("en-US")??"—",detail:"Muvaffaqiyatli to‘lovlar",tone:"success" as const,filter:"commerce-paid"},
-      {icon:TrendingUp,label:"O‘rtacha chek",value:summary.data?.paidOrders?formatMoneyCompact(String(BigInt(summary.data.revenueTiyin)/BigInt(summary.data.paidOrders))):"—",detail:"Bir buyurtma o‘rtachasi",tone:"success" as const,filter:"commerce-average"},
       {icon:Clock3,label:"Kutilayotgan",value:summary.data?.health?.paymentsPending.toLocaleString("en-US")??"—",detail:"Pending buyurtmalar",tone:"warning" as const,filter:"commerce-pending"},
     ];
     return [
@@ -967,27 +975,40 @@ export default function AdminApp({session}:{session:AdminSession}){
     </Panel>;
   }
 
+  function financeMetrics(){
+    return <div className="pd-finance-metrics">
+      {withdrawals.error&&<ErrorState message={withdrawals.error} onRetry={()=>setRevision(value=>value+1)}/>}
+      {withdrawals.loading&&!withdrawals.data&&<div className="pd-loading">Yechishlar yuklanmoqda…</div>}
+      {hasDateFilter&&(allTimeFinanceSummary.error||allTimeFinanceWithdrawals.error)&&<ErrorState message={allTimeFinanceSummary.error??allTimeFinanceWithdrawals.error??"Joriy balansni yuklab bo‘lmadi."} onRetry={()=>setRevision(value=>value+1)}/>}
+      {hasDateFilter&&(allTimeFinanceSummary.loading||allTimeFinanceWithdrawals.loading)&&(!allTimeFinanceSummary.data||!allTimeFinanceWithdrawals.data)&&<div className="pd-loading">Joriy balans yuklanmoqda…</div>}
+      {metricsFor("Commerce").map(metric=><div className="pd-finance-metric" key={metric.label}>
+      <MetricCard {...metric} onClick={metric.filter?()=>changeMetricFilter("Commerce",metric.filter!):undefined} active={metricIsActive("Commerce",metric.filter)}/>
+    </div>)}</div>;
+  }
+
   function commerceScreen(){
     return <>
       <PageHeader title="To‘lovlar" subtitle="Tushumlar, yechishlar va tranzaksiyalar hisoboti" actions={<><button className="pd-button primary" onClick={()=>setWithdrawalOpen(true)}><Plus size={14}/>Yechish qo‘shish</button><button className="pd-button" onClick={()=>setReporting("Export report")}><Download size={14}/>Eksport</button></>}/>
       <PeriodBar value={dateRange} onChange={next=>{setDateRange(next);setOrderOffset(0);setSelected(null);setOrderId(null);}}/>
-      {metrics("Commerce")}
-      <div className="pd-tabs"><button className={commerceTab==="transactions"?"active":""} onClick={()=>setCommerceTab("transactions")}>Tranzaksiyalar</button><button className={commerceTab==="learners"?"active":""} onClick={()=>setCommerceTab("learners")}>O‘quvchilar & access</button></div>
-      {commerceTab==="transactions"?<div className="pd-commerce-grid">
-        <Panel title="Tranzaksiyalar tarixi" subtitle={`${orders.data?.total.toLocaleString("en-US")??"—"} ta buyurtma${withdrawals.data?.total?` · ${withdrawals.data.total.toLocaleString("en-US")} ta yechish`:""}`} action={<button className="pd-button" onClick={openPaymentFilter}><Filter size={14}/>Filtr</button>}>
+      {!financeOpen?<><button type="button" className="pd-finance-toggle" aria-expanded={financeOpen} aria-controls="pd-commerce-finance" aria-busy={withdrawals.loading} onClick={()=>setFinanceOpen(true)}><span>Moliya</span><ChevronDown size={18}/></button>{summary.error&&<ErrorState message={summary.error} onRetry={()=>setRevision(value=>value+1)}/>} {withdrawals.error&&<ErrorState message={withdrawals.error} onRetry={()=>setRevision(value=>value+1)}/>}</>:<section id="pd-commerce-finance" className="pd-commerce-finance-layout" aria-label="Moliya">
+        {financeMetrics()}
+        {revenueDistribution()}
+        <button type="button" className="pd-finance-collapse" aria-label="Moliyani yig‘ish" onClick={()=>setFinanceOpen(false)}><ChevronUp size={20}/></button>
+      </section>}
+      {commerceTab==="transactions"?<>
+        <Panel title="Tranzaksiyalar tarixi" subtitle={`${orders.data?.total.toLocaleString("en-US")??"—"} ta buyurtma${withdrawals.data?.total?` · ${withdrawals.data.total.toLocaleString("en-US")} ta yechish`:""}`} className="pd-transaction-history" action={<><button className="pd-button" onClick={()=>setCommerceTab("learners")}>O‘quvchilar &amp; access</button><button className="pd-button" onClick={openPaymentFilter}><Filter size={14}/>Filtr</button></>}>
+          {withdrawals.error&&<ErrorState message={withdrawals.error} onRetry={()=>setRevision(value=>value+1)}/>}
+          {withdrawals.loading&&!withdrawals.data&&<div className="pd-loading">Yechishlar tarixi yuklanmoqda…</div>}
           <DataTable columns={paymentColumns} sortKey={orderSort.key} sortDirection={orderSort.direction} onSort={toggleOrderSort}>{transactionRows()}</DataTable>
           <Pager offset={orderOffset} limit={25} total={orders.data?.total??0} hasMore={orders.data?.hasMore??false} loading={orders.loading} onPrevious={()=>setOrderOffset(Math.max(0,orderOffset-25))} onNext={()=>setOrderOffset(orderOffset+25)}/>
         </Panel>
-        <div className="pd-detail-stack">
-          {revenueDistribution()}
-          <Panel title="To‘lov tafsiloti" subtitle={activeOrder??"Buyurtma tanlanmagan"} className="pd-detail-panel">
+        <Panel title="To‘lov tafsiloti" subtitle={activeOrder??"Buyurtma tanlanmagan"} className="pd-detail-panel pd-commerce-detail-panel">
             <dl className="pd-facts" aria-label="Sotuv manbalari va CRM sync">{salesDetails(summary.data).map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
             {payment.error&&<ErrorState message={payment.error} onRetry={()=>setRevision(value=>value+1)}/>}
             {payment.loading&&!payment.data&&<div className="pd-loading">Tafsilot yuklanmoqda…</div>}
             {payment.data&&<><div className="pd-detail-hero"><span>{providerLabel(payment.data.order.method)}</span><strong>{money(payment.data.order)}</strong><StatusPill tone={payment.data.order.status==="paid"?"success":"warning"}>{payment.data.order.status}</StatusPill></div><dl className="pd-facts"><div><dt>Order ID</dt><dd>{payment.data.order.id}</dd></div><div><dt>Foydalanuvchi</dt><dd>{payment.data.order.learnerId??"Profil ulanmagan"}</dd></div><div><dt>Gateway</dt><dd>{payment.data.order.gateway}</dd></div><div><dt>Manba</dt><dd>{transactionIdentity(payment.data.order).detail}</dd></div><div><dt>Jami tushumda</dt><dd>{salesEligibility(payment.data.order)}</dd></div><div><dt>Yaratilgan</dt><dd>{formatDateTime(payment.data.order.createdAt)}</dd></div><div><dt>To‘langan</dt><dd>{formatDateTime(payment.data.order.paidAt)}</dd></div><div><dt>Access</dt><dd>{payment.data.order.learnerId?(payment.data.entitlement?.matchesPayment?"Mos":"Tekshirish kerak"):"Profil ulanmagan"}</dd></div></dl></>}
-          </Panel>
-        </div>
-      </div>:learnerPanel(false)}
+        </Panel>
+      </>:<><div className="pd-commerce-back"><button className="pd-button" onClick={()=>setCommerceTab("transactions")}><ChevronLeft size={14}/>Tranzaksiyalarga qaytish</button></div>{learnerPanel(false)}</>}
     </>;
   }
 

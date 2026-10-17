@@ -1829,6 +1829,113 @@ button.pd-metric-card:focus-visible {
 }
 
 /* Commerce and messages */
+.pd-finance-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 16px;
+  border: 1px solid var(--pd-border);
+  border-radius: 14px;
+  background: var(--pd-surface);
+  color: var(--pd-text);
+  font-size: 13px;
+  font-weight: 750;
+  box-shadow: var(--pd-shadow);
+}
+
+.pd-finance-toggle:hover {
+  border-color: color-mix(in srgb, var(--pd-primary) 38%, var(--pd-border));
+  color: var(--pd-primary);
+}
+
+.pd-commerce-finance-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.28fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.pd-finance-metrics {
+  display: grid;
+  gap: 10px;
+}
+
+.pd-finance-metric {
+  position: relative;
+  min-width: 0;
+}
+
+.pd-finance-metric .pd-metric-card {
+  min-height: 78px;
+  padding: 13px 16px;
+}
+
+.pd-finance-collapse {
+  grid-column: 1 / -1;
+  display: grid;
+  place-items: center;
+  width: clamp(180px, 20%, 300px);
+  height: 34px;
+  margin: 10px auto 0;
+  padding: 0;
+  border: 2px solid var(--pd-primary);
+  border-radius: 999px;
+  background: var(--pd-surface);
+  color: var(--pd-primary);
+  cursor: pointer;
+}
+
+.pd-finance-collapse:hover {
+  background: var(--pd-success-soft);
+}
+
+.pd-commerce-finance-layout > .pd-panel {
+  height: 100%;
+}
+
+.pd-transaction-history .pd-table-wrap {
+  overflow-x: visible;
+}
+
+.pd-transaction-history .pd-table {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.pd-transaction-history .pd-table th:nth-child(1) { width: 17%; }
+.pd-transaction-history .pd-table th:nth-child(2) { width: 24%; }
+.pd-transaction-history .pd-table th:nth-child(3) { width: 17%; }
+.pd-transaction-history .pd-table th:nth-child(4) { width: 13%; }
+.pd-transaction-history .pd-table th:nth-child(5) { width: 14%; }
+.pd-transaction-history .pd-table th:nth-child(6) { width: 10%; }
+.pd-transaction-history .pd-table th:nth-child(7) { width: 5%; }
+
+.pd-transaction-history .pd-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pd-transaction-history .pd-person-link,
+.pd-transaction-history .pd-cell-stack,
+.pd-transaction-history .pd-id {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pd-commerce-detail-panel {
+  width: 100%;
+}
+
+.pd-commerce-back {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .pd-tabs {
   display: inline-flex;
   align-items: center;
@@ -2678,6 +2785,10 @@ button.pd-metric-card:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .pd-commerce-finance-layout {
+    grid-template-columns: 1fr;
+  }
+
   .pd-catalog-panel,
   .pd-editor-panel,
   .pd-detail-panel {
@@ -2778,6 +2889,14 @@ button.pd-metric-card:focus-visible {
 
   .pd-table {
     min-width: 1220px;
+  }
+
+  .pd-transaction-history .pd-table-wrap {
+    overflow-x: auto;
+  }
+
+  .pd-transaction-history .pd-table {
+    min-width: 760px;
   }
 
   .pd-dialog {

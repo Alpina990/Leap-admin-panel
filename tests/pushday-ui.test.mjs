@@ -140,6 +140,27 @@ test('commerce reuses the period bar, provider distribution and the shared learn
   assert.match(css, /\.pd-topbar\s*\{[^}]*z-index:\s*40/s);
 });
 
+test('commerce finance disclosure expands above a full-width transaction history', () => {
+  const ui = read('app/admin-app.tsx');
+  const css = read('app/pushday.css');
+  assert.match(ui, /const \[financeOpen,setFinanceOpen\]=useState\(false\)/);
+  assert.match(ui, /aria-expanded=\{financeOpen\}/);
+  assert.match(ui, /aria-controls="pd-commerce-finance"/);
+  assert.match(ui, /id="pd-commerce-finance"/);
+  assert.match(ui, /availableBalanceTiyin/);
+  assert.match(ui, /label:"Balance"/);
+  assert.match(ui, /ChevronUp/);
+  assert.match(ui, /\{revenueDistribution\(\)\}\s*<button type="button" className="pd-finance-collapse"/);
+  assert.match(ui, /withdrawals\.error&&<ErrorState/);
+  assert.match(ui, /withdrawals\.loading&&!withdrawals\.data/);
+  assert.match(ui, /className="pd-transaction-history"/);
+  assert.ok(ui.indexOf('pd-commerce-finance') < ui.indexOf('pd-transaction-history'));
+  assert.match(css, /\.pd-commerce-finance-layout/);
+  assert.match(css, /\.pd-finance-collapse\s*\{[^}]*width:\s*clamp\([^}]*margin:\s*10px auto 0/s);
+  assert.match(css, /\.pd-transaction-history \.pd-table-wrap\s*\{[^}]*overflow-x:\s*visible/s);
+  assert.match(css, /\.pd-transaction-history \.pd-table\s*\{[^}]*min-width:\s*0/s);
+});
+
 test('PRO access dialog mirrors the PushDay single-select confirmation flow', () => {
   const dialog = read('app/business-dialog.tsx');
   assert.match(dialog, /PRO qilish/);
