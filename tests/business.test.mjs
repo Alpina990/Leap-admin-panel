@@ -67,6 +67,18 @@ test('manual transaction deletion uses a fixed UUID path and validates the audit
  const response=await proxyAdmin(request('business-delete-transaction',body),'business-delete-transaction',config,async(url,options)=>{assert.equal(url,config.api+'/api/v1/admin/business/manual-transactions/'+body.transactionId+'/delete');const expected={...body};delete expected.transactionId;assert.deepEqual(JSON.parse(options.body),expected);return Response.json(result);});
  assert.equal(response.status,200);assert.deepEqual(await response.json(),result);
 });
+test('ledger deletion forwards the order or CRM id and validates the audited result',async()=>{
+ const uuid='30000000-0000-4000-8000-000000000001';
+ for(const [id,fact] of [[uuid,'app:'+uuid],['crm:'+uuid,'crm:'+uuid]]){
+  const body={requestId,transactionId:id,reason,password:'current-password'};
+  const result={transactionId:fact,deletedAt:'2026-10-15T10:00:00Z',accessUnchanged:true};
+  const response=await proxyAdmin(request('business-delete-ledger',body),'business-delete-ledger',config,async(url,options)=>{assert.equal(url,config.api+'/api/v1/admin/business/ledger-transactions/delete');assert.deepEqual(JSON.parse(options.body),body);return Response.json(result);});
+  assert.equal(response.status,200);assert.deepEqual(await response.json(),result);
+ }
+ const body={requestId,transactionId:uuid,reason,password:'current-password'};
+ const mismatch=await proxyAdmin(request('business-delete-ledger',body),'business-delete-ledger',config,async()=>Response.json({transactionId:'app:30000000-0000-4000-8000-000000000002',deletedAt:'2026-10-15T10:00:00Z',accessUnchanged:true}));
+ assert.equal(mismatch.status,502);
+});
 test('manual transaction deletion fails closed on mismatched audited result identity or version',async()=>{
  const body={requestId,transactionId:'20000000-0000-4000-8000-000000000001',baseVersion:1,reason,password:'current-password'};
  for(const result of [

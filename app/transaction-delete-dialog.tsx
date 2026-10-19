@@ -9,20 +9,21 @@ export function TransactionDeleteDialog({transaction,withdrawal,csrf,onClose,onD
  const passwordInput=useRef<HTMLInputElement|null>(null);
  const request=useRef<{fingerprint:string;id:string}|null>(null);
  const isWithdrawal=!!withdrawal;
- const transactionId=withdrawal?.id??transaction?.manualTransactionId;
+ const isLedger=!!transaction&&!transaction.manualTransactionId;
+ const transactionId=withdrawal?.id??(isLedger?transaction?.id:transaction?.manualTransactionId);
  const baseVersion=withdrawal?.version??transaction?.manualTransactionVersion;
- const valid=!!transactionId&&!!baseVersion&&reason.trim().length>=20&&reason.length<=1000&&passwordReady;
+ const valid=!!transactionId&&(isLedger||!!baseVersion)&&reason.trim().length>=20&&reason.length<=1000&&passwordReady;
  function clearPassword(){if(passwordInput.current)passwordInput.current.value='';setPasswordReady(false);}
  async function remove(){
-  if(!valid||busy||!transactionId||!baseVersion)return;
+  if(!valid||busy||!transactionId||(!isLedger&&!baseVersion))return;
   setBusy(true);setError('');setConflict(false);
-  const stable=isWithdrawal?{withdrawalId:transactionId,baseVersion,reason:reason.trim()}:{transactionId,baseVersion,reason:reason.trim()};
+  const stable=isLedger?{transactionId,reason:reason.trim()}:isWithdrawal?{withdrawalId:transactionId,baseVersion,reason:reason.trim()}:{transactionId,baseVersion,reason:reason.trim()};
   const fingerprint=JSON.stringify(stable);
   if(request.current?.fingerprint!==fingerprint)request.current={fingerprint,id:crypto.randomUUID()};
   const payload=JSON.stringify({...stable,requestId:request.current.id,password:passwordInput.current?.value??''});
   clearPassword();
   try{
-   const response=await fetch(isWithdrawal?'/api/admin/business-delete-withdrawal':'/api/admin/business-delete-transaction',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','X-Admin-CSRF':csrf},body:payload,signal:AbortSignal.timeout(12000)});
+   const response=await fetch(isLedger?'/api/admin/business-delete-ledger':isWithdrawal?'/api/admin/business-delete-withdrawal':'/api/admin/business-delete-transaction',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','X-Admin-CSRF':csrf},body:payload,signal:AbortSignal.timeout(12000)});
    const result=await response.json();
    if(response.status===401){if(result.error?.code==='admin_reauthentication_failed'){setError('Joriy administrator paroli noto‘g‘ri. Qayta kiriting.');return;}window.location.replace('/login');return;}
    if(response.status===409){setConflict(true);return;}
@@ -33,7 +34,7 @@ export function TransactionDeleteDialog({transaction,withdrawal,csrf,onClose,onD
  }
  return <Dialog open onOpenChange={value=>{if(!value&&!busy){clearPassword();onClose();}}}>
   <DialogContent className="pd-dialog pd-delete-transaction" showCloseButton={false}>
-   <DialogHeader><DialogTitle>{isWithdrawal?'Yechishni o‘chirish':'Tranzaksiyani o‘chirish'}</DialogTitle><DialogDescription>{isWithdrawal?'Bu amal xato kiritilgan yechish yozuviga tegishli.':'Bu amal faqat administrator qo‘lda kiritgan CRM tranzaksiyasiga tegishli.'}</DialogDescription></DialogHeader>
+   <DialogHeader><DialogTitle>{isWithdrawal?'Yechishni o‘chirish':'Tranzaksiyani o‘chirish'}</DialogTitle><DialogDescription>{isWithdrawal?'Bu amal xato kiritilgan yechish yozuviga tegishli.':isLedger?'Bu amal ilova buyurtmasi yoki CRM sotuviga tegishli.':'Bu amal faqat administrator qo‘lda kiritgan CRM tranzaksiyasiga tegishli.'}</DialogDescription></DialogHeader>
    <div className="pd-delete-summary">{withdrawal?<><span>Yechish</span><strong>-{withdrawalMoney(withdrawal.amount)}</strong><small>{formatAdminDateTime(withdrawal.createdAt)}</small></>:transaction&&<><span>{transaction.id}</span><strong>{money(transaction)}</strong><small>{formatAdminDateTime(transaction.paidAt??transaction.createdAt)}</small></>}</div>
    <p className="pd-feedback pd-delete-warning">{isWithdrawal?<><strong>Balans qayta hisoblanadi.</strong> Yechish tarixdan yashiriladi va balansga qaytariladi; audit yozuvi saqlanadi.</>:<><strong>PRO access o‘zgarmaydi.</strong> Faqat xato tranzaksiya to‘lov tarixidan yashiriladi; audit yozuvi va chek saqlanadi.</>}</p>
    {conflict?<p role="alert">Tranzaksiya boshqa administrator tomonidan o‘zgartirilgan. Jadvalni yangilang va qayta tekshiring.</p>:<>

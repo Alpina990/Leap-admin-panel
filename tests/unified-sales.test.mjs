@@ -49,9 +49,10 @@ test('BFF allows delete metadata only on complete identity-bound CRM manual rows
   {...manual,manualTransactionVersion:undefined},
   {...manual,manualTransactionId:undefined},
   {...manual,canDelete:undefined},
-  {...crmOrder,canDelete:true},
  ];
  for(const row of invalid)assert.equal((await proxy('payments',{items:[row],total:1,limit:25,offset:0,hasMore:false})).status,502,row.id);
+ // Provider-paid orders and synced CRM sales are deletable through the ledger endpoint.
+ assert.equal((await proxy('payments',{items:[{...crmOrder,canDelete:true}],total:1,limit:25,offset:0,hasMore:false})).status,200);
 });
 test('sales presentation uses combined totals without adding CRM twice and distinguishes missing sync',async()=>{
  const {salesDetails,transactionIdentity,transactionMethodLabel}=await import('../lib/admin-sales.mjs');

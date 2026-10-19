@@ -951,7 +951,7 @@ export default function AdminApp({session}:{session:AdminSession}){
       <td>{transactionMethodLabel(order)}</td>
       <td><strong>{money(order)}</strong></td>
       <td><StatusPill tone={order.status==="paid"?"success":order.status==="cancelled"?"danger":"warning"}>{order.status}</StatusPill></td>
-      <td>{order.canDelete&&order.manualTransactionId&&order.manualTransactionVersion?<button className="pd-icon-button pd-delete-action" aria-label={`${order.id} tranzaksiyasini o‘chirish`} title="Xato tranzaksiyani o‘chirish" onClick={event=>{event.stopPropagation();setDeleteTransaction(order);}}><Trash2 size={15}/></button>:<span className="pd-muted">—</span>}</td>
+      <td>{order.canDelete?<button className="pd-icon-button pd-delete-action" aria-label={`${order.id} tranzaksiyasini o‘chirish`} title="Xato tranzaksiyani o‘chirish" onClick={event=>{event.stopPropagation();setDeleteTransaction(order);}}><Trash2 size={15}/></button>:<span className="pd-muted">—</span>}</td>
     </tr>;});
   }
 
