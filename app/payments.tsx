@@ -2,7 +2,7 @@ export type Order={id:string;learnerId:string|null;customerName?:string|null;sou
 export type Orders={items:Order[];total:number;limit:number;offset:number;hasMore:boolean};
 export type Payment={order:Order;entitlement:{source:string;grantedAt:string;expiresAt:string|null;revokedAt:string|null;matchesPayment:boolean}|null};
 export function money(order:Order){const amount=BigInt(order.amountTiyin);return `${(amount/BigInt(100)).toLocaleString('en-US')}.${String(amount%BigInt(100)).padStart(2,'0')} ${order.currency}`;}
-export type Withdrawal={id:string;entryType:"withdrawal";amount:number;signedAmount:number;note:string|null;actor:string;createdAt:string};
+export type Withdrawal={id:string;entryType:"withdrawal";amount:number;signedAmount:number;note:string|null;actor:string;version:number;createdAt:string};
 export type Withdrawals={items:Withdrawal[];total:number;limit:number;offset:number;hasMore:boolean;withdrawnTotal:string};
 export function withdrawalMoney(amount:number){return `${amount.toLocaleString('en-US')} so‘m`;}
 export function withdrawalMoneyCompact(amount:number){

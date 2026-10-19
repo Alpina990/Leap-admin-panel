@@ -128,3 +128,11 @@ test('revocation forwards only its strict secret-bearing DTO and verifies denial
  for(const password of ['', 'x'.repeat(257), {}, null]){const response=await proxyAdmin(request('business-revoke',{...body,password}),'business-revoke',config,()=>{throw Error('must not fetch');});assert.equal(response.status,422);assert.ok(!(await response.text()).includes('fixture-secret'));}
  for(const headers of [{'X-Admin-CSRF':''},{Origin:'https://evil.example'},{cookie:''}])assert.ok([401,403].includes((await proxyAdmin(request('business-revoke',body,headers),'business-revoke',config,()=>{throw Error('must not fetch');})).status));
 });
+test('withdrawal deletion uses a fixed UUID path and fails closed on mismatched identity',async()=>{
+ const body={requestId,withdrawalId:'20000000-0000-4000-8000-000000000002',baseVersion:1,reason,password:'current-password'};
+ const result={withdrawalId:body.withdrawalId,deletedAt:'2026-10-15T10:00:00Z',version:2};
+ const response=await proxyAdmin(request('business-delete-withdrawal',body),'business-delete-withdrawal',config,async(url,options)=>{assert.equal(url,config.api+'/api/v1/admin/withdrawals/'+body.withdrawalId+'/delete');const expected={...body};delete expected.withdrawalId;assert.deepEqual(JSON.parse(options.body),expected);return Response.json(result);});
+ assert.equal(response.status,200);assert.deepEqual(await response.json(),result);
+ const bad=await proxyAdmin(request('business-delete-withdrawal',body),'business-delete-withdrawal',config,async()=>Response.json({...result,version:5}));
+ assert.notEqual(bad.status,200);
+});

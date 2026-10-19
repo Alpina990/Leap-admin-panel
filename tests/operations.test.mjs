@@ -80,7 +80,7 @@ test('manual payment detail accepts its canonical identity and verifies the upst
 });
 
 test('withdrawals validate money-out writes and paginate the ledger',async()=>{
- const created={id:'12345678-1234-1234-1234-123456789012',entryType:'withdrawal',amount:123000,signedAmount:-123000,note:'Karta raqamiga',actor:'operator',createdAt:'2026-10-15T09:00:00+00:00'};
+ const created={id:'12345678-1234-1234-1234-123456789012',entryType:'withdrawal',amount:123000,signedAmount:-123000,note:'Karta raqamiga',actor:'operator',version:1,createdAt:'2026-10-15T09:00:00+00:00'};
  const page={items:[created],total:1,limit:25,offset:0,hasMore:false,withdrawnTotal:'123000'};
  const body={amount:123000,note:'Karta raqamiga',requestId:created.id};
  const request=new Request(config.origin+'/api/admin/withdrawals',{method:'POST',headers:{cookie:'__Host-leap_admin='+'a'.repeat(43),Origin:config.origin,'X-Admin-CSRF':'b'.repeat(64),'Content-Type':'application/json'},body:JSON.stringify(body)});

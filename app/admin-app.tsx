@@ -490,6 +490,7 @@ export default function AdminApp({session}:{session:AdminSession}){
   const [orderSort,setOrderSort]=useState<SortState>({key:"created_at",direction:-1});
   const [orderId,setOrderId]=useState<string|null>(null);
   const [deleteTransaction,setDeleteTransaction]=useState<Orders["items"][number]|null>(null);
+  const [deleteWithdrawal,setDeleteWithdrawal]=useState<Withdrawal|null>(null);
   const [paymentStatus,setPaymentStatus]=useState("");
   const [paymentMethod,setPaymentMethod]=useState("");
   const [paymentFilter,setPaymentFilter]=useState(false);
@@ -938,7 +939,7 @@ export default function AdminApp({session}:{session:AdminSession}){
           <td><span className="pd-muted">—</span></td>
           <td><strong className="pd-money-out">-{withdrawalMoney(withdrawal.amount)}</strong></td>
           <td><StatusPill tone="danger">Yechish</StatusPill></td>
-          <td><span className="pd-muted">—</span></td>
+          <td><button className="pd-icon-button pd-delete-action" aria-label="Yechishni o‘chirish" title="Xato yechishni o‘chirish" onClick={event=>{event.stopPropagation();setDeleteWithdrawal(withdrawal);}}><Trash2 size={15}/></button></td>
         </tr>;
       }
       const order=row.order;
@@ -1058,6 +1059,7 @@ export default function AdminApp({session}:{session:AdminSession}){
     {priceOpen&&<PriceDialog current={catalogPrice.data} csrf={session.csrfToken} onSaved={()=>setRevision(value=>value+1)} onClose={()=>{setPriceOpen(false);setRevision(value=>value+1);}}/>}
     {withdrawalOpen&&<WithdrawalDialog csrf={session.csrfToken} onSaved={()=>setRevision(value=>value+1)} onClose={()=>{setWithdrawalOpen(false);setRevision(value=>value+1);}}/>}
     {business&&<BusinessDialog mode={business} learnerId={businessLearner??person?.telegramUserId} learnerName={businessLearner&&businessLearner!==person?.telegramUserId?businessLearner:person?learnerName(person):undefined} csrf={session.csrfToken} onClose={()=>setBusiness(null)} onSaved={()=>setRevision(value=>value+1)}/>}
+    {deleteWithdrawal&&<TransactionDeleteDialog withdrawal={deleteWithdrawal} csrf={session.csrfToken} onClose={()=>setDeleteWithdrawal(null)} onDeleted={()=>setRevision(value=>value+1)}/>}
     {deleteTransaction&&<TransactionDeleteDialog transaction={deleteTransaction} csrf={session.csrfToken} onClose={()=>setDeleteTransaction(null)} onDeleted={()=>{setOrderId(null);setRevision(value=>value+1);}}/>}
     {reporting&&<ReportingDialog mode={reporting} resource={reportResource} query={reportQuery.toString()} onClose={()=>setReporting(null)} onApply={values=>{if(reporting==="Date range")setDateRange(Object.fromEntries(Object.entries(values).filter(([,value])=>value)));else setReportFilters(previous=>({...previous,[reportResource]:values}));setOffset(0);setOrderOffset(0);setNotificationOffset(0);setSelected(null);setOrderId(null);}}/>}
     {paymentFilter&&<Dialog open onOpenChange={setPaymentFilter}><DialogBody title="To‘lov filtrlari" description="Buyurtmalarni holat va to‘lov usuli bo‘yicha filtrlang."><label className="pd-field"><span>Holat</span><select value={statusDraft} onChange={event=>setStatusDraft(event.target.value)}><option value="">Barcha holatlar</option><option value="paid">Paid</option><option value="pending">Pending</option><option value="cancelled">Cancelled</option></select></label><label className="pd-field"><span>Usul</span><select value={methodDraft} onChange={event=>setMethodDraft(event.target.value)}><option value="">Barcha usullar</option>{["unknown","payme","card_transfer","hamkorbank_transfer","click","uzum","paylov","tribute"].map(method=><option key={method} value={method}>{providerLabel(method)}</option>)}</select></label><div className="pd-dialog-actions"><button className="pd-button" onClick={()=>setPaymentFilter(false)}>Bekor qilish</button><button className="pd-button primary" onClick={()=>{setCommerceMetric(null);setPaymentStatus(statusDraft);setPaymentMethod(methodDraft);setOrderOffset(0);setOrderId(null);setPaymentFilter(false);}}>Qo‘llash</button></div></DialogBody></Dialog>}
