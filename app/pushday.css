@@ -1927,6 +1927,16 @@ button.pd-metric-card:focus-visible {
   white-space: nowrap;
 }
 
+.pd-fee-note {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--pd-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .pd-commerce-detail-panel {
   width: 100%;
 }

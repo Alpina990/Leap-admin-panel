@@ -48,7 +48,7 @@ import {TransactionDeleteDialog} from "./transaction-delete-dialog";
 import {type LearnerAnalytics,type Summary} from "./analytics";
 import {ReportingDialog,type ReportingResource} from "./reporting-dialog";
 import {NoteDialog} from "./note-dialog";
-import {money,withdrawalMoney,withdrawalMoneyCompact,type Orders,type Payment,type Withdrawal,type Withdrawals} from "./payments";
+import {money,feeSummary,withdrawalMoney,withdrawalMoneyCompact,type Orders,type Payment,type Withdrawal,type Withdrawals} from "./payments";
 import {PushdayNavigation,type PushdaySection} from "./pushday-navigation";
 import {WithdrawalDialog} from "./withdrawal-dialog";
 import {SelfingoScreen} from "./selfingo-screen";
@@ -949,7 +949,7 @@ export default function AdminApp({session}:{session:AdminSession}){
       <td><button className="pd-person-link" disabled={!order.learnerId} onClick={event=>{event.stopPropagation();if(order.learnerId)openLearnerById(order.learnerId);}}><strong>{personValue?learnerName(personValue):transactionIdentity(order).label}</strong><small>{personValue?.username?`@${personValue.username}`:transactionIdentity(order).detail}</small></button></td>
       <td>{formatDateTime(order.createdAt)}</td>
       <td>{transactionMethodLabel(order)}</td>
-      <td><strong>{money(order)}</strong></td>
+      <td><strong>{money(order)}</strong>{(()=>{const fee=feeSummary(order);return fee?<small className="pd-fee-note" title={`Summa ${fee.gross} · komissiya ${fee.pct}% (−${fee.fee})`}>−{fee.fee} ({fee.pct}%)</small>:null;})()}</td>
       <td><StatusPill tone={order.status==="paid"?"success":order.status==="cancelled"?"danger":"warning"}>{order.status}</StatusPill></td>
       <td>{order.canDelete?<button className="pd-icon-button pd-delete-action" aria-label={`${order.id} tranzaksiyasini o‘chirish`} title="Xato tranzaksiyani o‘chirish" onClick={event=>{event.stopPropagation();setDeleteTransaction(order);}}><Trash2 size={15}/></button>:<span className="pd-muted">—</span>}</td>
     </tr>;});
@@ -1007,7 +1007,7 @@ export default function AdminApp({session}:{session:AdminSession}){
             <dl className="pd-facts" aria-label="Sotuv manbalari va CRM sync">{salesDetails(summary.data).map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
             {payment.error&&<ErrorState message={payment.error} onRetry={()=>setRevision(value=>value+1)}/>}
             {payment.loading&&!payment.data&&<div className="pd-loading">Tafsilot yuklanmoqda…</div>}
-            {payment.data&&<><div className="pd-detail-hero"><span>{providerLabel(payment.data.order.method)}</span><strong>{money(payment.data.order)}</strong><StatusPill tone={payment.data.order.status==="paid"?"success":"warning"}>{payment.data.order.status}</StatusPill></div><dl className="pd-facts"><div><dt>Order ID</dt><dd>{payment.data.order.id}</dd></div><div><dt>Foydalanuvchi</dt><dd>{payment.data.order.learnerId??"Profil ulanmagan"}</dd></div><div><dt>Gateway</dt><dd>{payment.data.order.gateway}</dd></div><div><dt>Manba</dt><dd>{transactionIdentity(payment.data.order).detail}</dd></div><div><dt>Jami tushumda</dt><dd>{salesEligibility(payment.data.order)}</dd></div><div><dt>Yaratilgan</dt><dd>{formatDateTime(payment.data.order.createdAt)}</dd></div><div><dt>To‘langan</dt><dd>{formatDateTime(payment.data.order.paidAt)}</dd></div><div><dt>Access</dt><dd>{payment.data.order.learnerId?(payment.data.entitlement?.matchesPayment?"Mos":"Tekshirish kerak"):"Profil ulanmagan"}</dd></div></dl></>}
+            {payment.data&&<><div className="pd-detail-hero"><span>{providerLabel(payment.data.order.method)}{payment.data.order.providerName?` · ${payment.data.order.providerName}`:""}</span><strong>{money(payment.data.order)}</strong><StatusPill tone={payment.data.order.status==="paid"?"success":"warning"}>{payment.data.order.status}</StatusPill></div><dl className="pd-facts"><div><dt>Order ID</dt><dd>{payment.data.order.id}</dd></div><div><dt>Foydalanuvchi</dt><dd>{payment.data.order.learnerId??"Profil ulanmagan"}</dd></div><div><dt>Gateway</dt><dd>{payment.data.order.gateway}</dd></div><div><dt>Manba</dt><dd>{transactionIdentity(payment.data.order).detail}</dd></div><div><dt>Jami tushumda</dt><dd>{salesEligibility(payment.data.order)}</dd></div><div><dt>Yaratilgan</dt><dd>{formatDateTime(payment.data.order.createdAt)}</dd></div><div><dt>To‘langan</dt><dd>{formatDateTime(payment.data.order.paidAt)}</dd></div><div><dt>Access</dt><dd>{payment.data.order.learnerId?(payment.data.entitlement?.matchesPayment?"Mos":"Tekshirish kerak"):"Profil ulanmagan"}</dd></div></dl></>}
         </Panel>
       </>:<><div className="pd-commerce-back"><button className="pd-button" onClick={()=>setCommerceTab("transactions")}><ChevronLeft size={14}/>Tranzaksiyalarga qaytish</button></div>{learnerPanel(false)}</>}
     </>;
