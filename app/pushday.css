@@ -1905,13 +1905,14 @@ button.pd-metric-card:focus-visible {
   table-layout: fixed;
 }
 
-.pd-transaction-history .pd-table th:nth-child(1) { width: 17%; }
-.pd-transaction-history .pd-table th:nth-child(2) { width: 24%; }
-.pd-transaction-history .pd-table th:nth-child(3) { width: 17%; }
-.pd-transaction-history .pd-table th:nth-child(4) { width: 13%; }
-.pd-transaction-history .pd-table th:nth-child(5) { width: 14%; }
-.pd-transaction-history .pd-table th:nth-child(6) { width: 10%; }
-.pd-transaction-history .pd-table th:nth-child(7) { width: 5%; }
+.pd-transaction-history .pd-table th:nth-child(1) { width: 15%; }
+.pd-transaction-history .pd-table th:nth-child(2) { width: 20%; }
+.pd-transaction-history .pd-table th:nth-child(3) { width: 14%; }
+.pd-transaction-history .pd-table th:nth-child(4) { width: 12%; }
+.pd-transaction-history .pd-table th:nth-child(5) { width: 13%; }
+.pd-transaction-history .pd-table th:nth-child(6) { width: 9%; }
+.pd-transaction-history .pd-table th:nth-child(7) { width: 9%; }
+.pd-transaction-history .pd-table th:nth-child(8) { width: 8%; }
 
 .pd-transaction-history .pd-table td {
   overflow: hidden;

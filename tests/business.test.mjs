@@ -148,3 +148,16 @@ test('withdrawal deletion uses a fixed UUID path and fails closed on mismatched 
  const bad=await proxyAdmin(request('business-delete-withdrawal',body),'business-delete-withdrawal',config,async()=>Response.json({...result,version:5}));
  assert.notEqual(bad.status,200);
 });
+test('ledger edit forwards fee fields and validates the audited result',async()=>{
+ const uuid='30000000-0000-4000-8000-000000000001';
+ const body={requestId,transactionId:'manual:'+uuid,baseVersion:1,reason,password:'current-password',amountTiyin:'10000000',provider:'other',providerName:'Partner Pay',feePercent:'2.5',paidAt:'2026-10-14T13:55:51Z'};
+ const result={transactionId:body.transactionId,grossTiyin:'10000000',amountTiyin:'9750000',feeTiyin:'250000',feeBps:250,method:'other',providerName:'Partner Pay',paidAt:'2026-10-14T13:55:51+00:00',version:2,accessUnchanged:true};
+ const ok=await proxyAdmin(request('business-edit-ledger',body),'business-edit-ledger',config,async(url,options)=>{assert.equal(url,config.api+'/api/v1/admin/business/ledger-transactions/edit');assert.deepEqual(JSON.parse(options.body),body);return Response.json(result);});
+ assert.equal(ok.status,200);
+ const wrong=await proxyAdmin(request('business-edit-ledger',body),'business-edit-ledger',config,async()=>Response.json({...result,feeTiyin:'1'}));
+ assert.equal(wrong.status,502);
+ for(const bad of [{providerName:null},{provider:'payme'},{feePercent:'2.555'},{baseVersion:null}]){
+  let called=0;const response=await proxyAdmin(request('business-edit-ledger',{...body,...bad}),'business-edit-ledger',config,async()=>{called++;return Response.json(result);});
+  assert.equal(response.status,422);assert.equal(called,0);
+ }
+});
