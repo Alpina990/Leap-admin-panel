@@ -134,9 +134,7 @@ function formatMoney(tiyin?:string|null){
 function formatMoneyCompact(tiyin?:string|null){
   if(tiyin===undefined||tiyin===null)return "—";
   const sums=BigInt(tiyin)/BigInt(100);
-  if(sums>=BigInt(1_000_000))return `${(Number(sums)/1_000_000).toFixed(1).replace(/\.0$/,"")}M UZS`;
-  if(sums>=BigInt(1_000))return `${(Number(sums)/1_000).toFixed(1).replace(/\.0$/,"")}K UZS`;
-  return `${sums.toLocaleString("en-US")} UZS`;
+  return `${sums.toLocaleString("en-US").replace(/,/g," ")} UZS`;
 }
 
 function formatUzs(tiyin?:string|null){

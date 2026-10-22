@@ -7,7 +7,5 @@ export type Withdrawal={id:string;entryType:"withdrawal";amount:number;signedAmo
 export type Withdrawals={items:Withdrawal[];total:number;limit:number;offset:number;hasMore:boolean;withdrawnTotal:string};
 export function withdrawalMoney(amount:number){return `${amount.toLocaleString('en-US')} so‘m`;}
 export function withdrawalMoneyCompact(amount:number){
-  if(amount>=1_000_000)return `${(amount/1_000_000).toFixed(1).replace(/\.0$/,"")}M so‘m`;
-  if(amount>=1_000)return `${(amount/1_000).toFixed(1).replace(/\.0$/,"")}K so‘m`;
-  return `${amount.toLocaleString('en-US')} so‘m`;
+  return `${amount.toLocaleString('en-US').replace(/,/g," ")} so‘m`;
 }
