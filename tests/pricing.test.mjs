@@ -9,7 +9,7 @@ const post=data=>new Request(config.origin+'/api/admin/content-price',{method:'P
 test('catalog price reads and writes are narrowly validated and audited upstream',async()=>{
  const read=await proxyAdmin(get(),'content-price',config,async()=>Response.json(price));
  assert.equal(read.status,200);assert.deepEqual(await read.json(),price);
- const body={action:'price',requestId:'12345678-1234-1234-1234-123456789012',baseVersion:0,amountUzs:990000};
+ const body={action:'price',requestId:'12345678-1234-1234-1234-123456789012',baseVersion:0,amountUzs:990000,password:'current-password'};
  const write=await proxyAdmin(post(body),'content-price',config,async(url,init)=>{assert.equal(url,config.api+'/api/v1/admin/content-price');assert.equal(init.headers.get('origin'),config.origin);assert.equal(init.headers.get('x-admin-csrf'),'b'.repeat(64));assert.deepEqual(JSON.parse(init.body),body);return Response.json({...price,amountUzs:990000,version:1});});
  assert.equal(write.status,200);assert.equal((await write.json()).amountUzs,990000);
  assert.equal((await proxyAdmin(post({...body,amountUzs:0}),'content-price',config)).status,422);

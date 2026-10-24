@@ -201,7 +201,7 @@ test('PRO grant offers a transactionless provider and hides every transaction fi
   assert.match(dialog, /<option value="no_transaction">Tranzaksiyasiz<\/option>/);
   assert.match(dialog, /const noTransaction=provider==='no_transaction'/);
   assert.match(dialog, /\{!noTransaction&&<><label className="pd-field">Pul o‘tkazmasi miqdori/);
-  assert.match(dialog, /noTransaction\?\{learnerId,baseVersion:state!\.accessVersion,reason:accessReason\}/);
+  assert.match(dialog, /revoking\|\|noTransaction\?\{learnerId,baseVersion:state!\.accessVersion\}/);
 });
 
 test('PRO grant reads current time only in state initialization and revalidates at submit', () => {
@@ -218,7 +218,7 @@ test('PRO grant contains receipt conversion in the recoverable busy-state try/fi
   const save = dialog.slice(dialog.indexOf('async function save'),dialog.indexOf('\n }\n const heading'));
   assert.ok(save.indexOf('try{')<save.indexOf('receipt:await receiptPayload()'));
   assert.ok(save.indexOf('receipt:await receiptPayload()')<save.indexOf('}catch'));
-  assert.match(save,/finally\{clearPassword\(\);setBusy\(false\);\}/);
+  assert.match(save,/finally\{setBusy\(false\);\}/);
 });
 
 test('transaction history exposes a red trash action backed by a guarded soft-delete dialog', () => {
@@ -229,8 +229,8 @@ test('transaction history exposes a red trash action backed by a guarded soft-de
   assert.match(ui, /TransactionDeleteDialog/);
   assert.match(ui, /canDelete/);
   assert.match(dialog, /business-delete-transaction/);
-  assert.match(dialog, /Joriy administrator paroli/);
-  assert.match(dialog, /passwordReady/);
+  assert.doesNotMatch(dialog, /Joriy administrator paroli/);
+  assert.doesNotMatch(dialog, /passwordReady/);
   assert.match(dialog, /PRO access o‘zgarmaydi/);
   assert.match(dialog, /pd-delete-transaction/);
   assert.match(read('app/pushday.css'), /\.pd-delete-action/);
@@ -246,11 +246,8 @@ test('transaction delete summary formats its timestamp in Asia/Tashkent', () => 
 test('content uses a course-unit-lesson tree with add and edit actions but no delete', () => {
   const ui = read('app/admin-app.tsx');
   const dialog = read('app/content-structure-dialog.tsx');
-  assert.match(ui, /content-tree/);
-  assert.match(ui, /Kontent daraxti/);
-  assert.match(ui, /Kurs qo‘shish/);
-  assert.match(ui, /Unit qo‘shish/);
-  assert.match(ui, /Dars qo‘shish/);
+  // Content screen is retired from the admin panel; only the dialog contract remains.
+  assert.doesNotMatch(ui, /Kontent daraxti/);
   assert.match(dialog, /content-structure-write/);
   assert.doesNotMatch(dialog, /delete|o‘chirish|Trash2/i);
 });

@@ -34,6 +34,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --pd-bg: #0f172a;
   --pd-surface: rgba(30, 41, 59, 0.9);
   --pd-raised: rgba(15, 23, 42, 0.98);
@@ -2915,4 +2916,52 @@ button.pd-metric-card:focus-visible {
     max-width: calc(100vw - 24px) !important;
     padding: 18px !important;
   }
+}
+
+.pd-table tbody tr.pd-clickable-row {
+  cursor: pointer;
+}
+
+/* Native dropdown lists ignore the transparent select background; give options solid theme colours. */
+select option {
+  background: var(--pd-bg);
+  color: var(--pd-text);
+}
+
+.pd-period-error {
+  color: var(--pd-danger);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.pd-period-picker {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pd-muted);
+  cursor: pointer;
+}
+
+.pd-period-picker:hover,
+.pd-period-picker:focus-visible {
+  background: var(--pd-success-soft);
+  color: var(--pd-primary);
+}
+
+/* The native date input only hosts the browser picker; it anchors under the icon. */
+.pd-period-native {
+  position: absolute;
+  right: 4px;
+  bottom: 0;
+  width: 28px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
 }

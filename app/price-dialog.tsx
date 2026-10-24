@@ -1,37 +1,41 @@
 "use client";
 import {useRef,useState} from 'react';
-import {Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle} from '@/components/ui/dialog';
 
 export type CatalogPrice={product:'catalog_lifetime';amountUzs:number;currency:'UZS';version:number;updatedAt:string|null;updatedBy:string|null;canWrite:boolean};
 
-export function PriceDialog({current,csrf,onSaved,onClose}:{current?:CatalogPrice;csrf:string;onSaved:(value:CatalogPrice)=>void;onClose:()=>void}){
- const [amount,setAmount]=useState(String(current?.amountUzs??''));
- const [busy,setBusy]=useState(false),[error,setError]=useState(''),[saved,setSaved]=useState(false),[conflict,setConflict]=useState(false);
+export function PricePanel({current,csrf,onSaved}:{current?:CatalogPrice;csrf:string;onSaved:(value:CatalogPrice)=>void}){
+ const [amount,setAmount]=useState('');
+ const [busy,setBusy]=useState(false),[error,setError]=useState(''),[passwordReady,setPasswordReady]=useState(false);
+ const passwordInput=useRef<HTMLInputElement|null>(null);
  const request=useRef<{fingerprint:string;id:string}|null>(null);
- const parsed=Number(amount);
- const valid=Number.isSafeInteger(parsed)&&parsed>0&&parsed<=100000000;
+ const parsed=Number(amount.replace(/[\s,_]/g,''));
+ const valid=Number.isSafeInteger(parsed)&&parsed>0&&parsed<=100000000&&parsed!==current?.amountUzs&&passwordReady;
+ function clearPassword(){if(passwordInput.current)passwordInput.current.value='';setPasswordReady(false);}
  async function save(){
-  if(!current||!valid)return;
+  if(!current||!valid||busy)return;
   setBusy(true);setError('');
-  const body={action:'price',requestId:'',baseVersion:current.version,amountUzs:parsed};
-  const fingerprint=JSON.stringify({...body,requestId:undefined});
+  const stable={action:'price',baseVersion:current.version,amountUzs:parsed};
+  const fingerprint=JSON.stringify(stable);
   if(request.current?.fingerprint!==fingerprint)request.current={fingerprint,id:crypto.randomUUID()};
-  body.requestId=request.current.id;
+  const payload=JSON.stringify({...stable,requestId:request.current.id,password:passwordInput.current?.value??''});
+  clearPassword();
   try{
-   const response=await fetch('/api/admin/content-price',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-Admin-CSRF':csrf},body:JSON.stringify(body),signal:AbortSignal.timeout(12000)});
-   if(response.status===401){window.location.replace('/login');return;}
+   const response=await fetch('/api/admin/content-price',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','X-Admin-CSRF':csrf},body:payload,signal:AbortSignal.timeout(12000)});
    const data=await response.json();
-   if(response.status===409){setConflict(true);return;}
-   if(!response.ok)throw new Error(data.error?.message??'Price update failed.');
-   onSaved(data);setSaved(true);
-  }catch(e){setError(e instanceof Error?e.message:'Price update failed.');}
-  finally{setBusy(false);}
+   if(response.status===401){if(data.error?.code==='admin_reauthentication_failed'){setError('Joriy administrator paroli noto‘g‘ri. Qayta kiriting.');return;}window.location.replace('/login');return;}
+   if(response.status===409){setError('Narx boshqa administrator tomonidan o‘zgartirilgan. Yangilangan narxni tekshirib, qayta urinib ko‘ring.');onSaved(current);return;}
+   if(!response.ok){setError(response.status===429?'Juda ko‘p urinish bo‘ldi. Besh daqiqadan keyin qayta urinib ko‘ring.':response.status===403?'Narxni o‘zgartirish uchun ruxsat yo‘q.':'Saqlab bo‘lmadi. Qayta urinib ko‘ring.');return;}
+   setAmount('');onSaved(data);
+  }catch{setError('Natijani tasdiqlab bo‘lmadi. Shu ma’lumotlar bilan xavfsiz qayta urinib ko‘ring.');}
+  finally{clearPassword();setBusy(false);}
  }
- const display=saved?'Price updated':conflict?'Price changed elsewhere':'Course price';
- return <Dialog open onOpenChange={v=>{if(!v&&!busy)onClose();}}><DialogContent className="pd-dialog" showCloseButton={false}><DialogHeader><DialogTitle>{display}</DialogTitle><DialogDescription>{saved?'The Mini App will read this price automatically.':conflict?'Another administrator changed the price. Close this dialog, reload, and retry.':'One-year course access price in UZS. Changes are version checked and audited.'}</DialogDescription></DialogHeader>
-  {saved||conflict?null:<><div className="pd-field">Current price<div>{current?`${current.amountUzs.toLocaleString('en-US')} UZS`:'Unavailable'}</div></div><label className="pd-field">New price (UZS)<input aria-label="New course price" type="number" min={1} max={100000000} step={1000} value={amount} disabled={busy} onChange={e=>setAmount(e.target.value)}/></label></>}
-  {error&&<p role="alert">{error}</p>}
-  {!current?.canWrite&&!saved&&!conflict&&<p>Content writing permission required.</p>}
-  <div className="pd-dialog-actions">{saved||conflict?<button className="pd-button primary" onClick={onClose}>Return to content</button>:<><button disabled={busy} onClick={onClose}>Cancel</button><button className="pd-button primary" disabled={busy||!current?.canWrite||!valid} onClick={()=>void save()}>{busy?'Saving…':'Save price'}</button></>}</div>
- </DialogContent></Dialog>;
+ return <div className="pd-price-panel">
+  <div className="pd-detail-hero"><span>Yillik kurs narxi</span><strong>{current?`${current.amountUzs.toLocaleString('en-US')} UZS`:'—'}</strong></div>
+  {current&&!current.canWrite?<p className="pd-feedback">Narxni o‘zgartirish uchun ruxsat yo‘q.</p>:<>
+   <label className="pd-field">Yangi narx (UZS)<input aria-label="Yangi kurs narxi" inputMode="numeric" placeholder={current?String(current.amountUzs):''} value={amount} disabled={busy||!current} onChange={event=>{setAmount(event.target.value.replace(/[^\d\s,_]/g,''));}}/></label>
+   <label className="pd-field">Joriy administrator paroli<input ref={passwordInput} aria-label="Joriy administrator paroli" type="password" autoComplete="current-password" maxLength={256} disabled={busy||!current} onChange={event=>{setPasswordReady(event.target.value.length>0&&event.target.value.length<=256);setError('');}}/></label>
+   {error&&<p role="alert">{error}</p>}
+   <div className="pd-dialog-actions"><button className="pd-button primary" disabled={!valid||busy} onClick={()=>void save()}>{busy?'Saqlanmoqda…':'Narxni saqlash'}</button></div>
+  </>}
+ </div>;
 }

@@ -2,12 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {proxyAdmin} from '../lib/admin-bff.mjs';
 const config={api:'http://127.0.0.1:8125',origin:'https://localhost:3445'};
-const cookie='__Host-leap_admin='+'a'.repeat(43),requestId='12345678-1234-1234-1234-123456789012',reason='A documented learner support decision.';
+const cookie='__Host-leap_admin='+'a'.repeat(43),requestId='12345678-1234-1234-1234-123456789012',reason='';
 const permissions={canGrantCatalogAccess:true,canCloseReconciliation:true,canCreateIntervention:true,canWithdrawRevenue:true};
 const grant={learnerId:'123',scope:'whole_catalog',source:'admin_lifetime',reason,version:1,grantedAt:'2026-09-13T10:00:00Z',expiresAt:'2027-09-13T10:00:00Z',revokedAt:null,accessState:'lifetime',accessOverride:false,preservedSectionEntitlements:['paid-section']};
 function request(action,body,headers={}){return new Request(config.origin+'/api/admin/'+action,{method:body?'POST':'GET',headers:{cookie,...(body?{Origin:config.origin,'X-Admin-CSRF':'csrf','Content-Type':'application/json'}:{}),...headers},...(body?{body:JSON.stringify(body)}:{})});}
 test('business grant without transaction metadata routes to the audited access-only endpoint',async()=>{
- const body={requestId,learnerId:'123',baseVersion:0,reason};
+ const body={requestId,learnerId:'123',baseVersion:0};
  const response=await proxyAdmin(request('business-grant',body),'business-grant',config,async(url,options)=>{
   assert.equal(url,config.api+'/api/v1/admin/business/catalog-grants');
   assert.deepEqual(JSON.parse(options.body),body);
@@ -16,7 +16,7 @@ test('business grant without transaction metadata routes to the audited access-o
  assert.equal(response.status,200);assert.deepEqual(await response.json(),grant);
 });
 test('business grant records CRM transaction metadata and optional receipt before granting access',async()=>{
- const body={requestId,learnerId:'123',baseVersion:0,reason,amountTiyin:'88000000',provider:'card_transfer',paidAt:'2026-10-14T13:55:51Z',crmReference:'beecrm-payment-29631',receipt:{filename:'receipt.pdf',contentType:'application/pdf',base64:'JVBERi0xLjcKJSVFT0Y='}};
+ const body={requestId,learnerId:'123',baseVersion:0,amountTiyin:'88000000',provider:'card_transfer',paidAt:'2026-10-14T13:55:51Z',crmReference:'beecrm-payment-29631',receipt:{filename:'receipt.pdf',contentType:'application/pdf',base64:'JVBERi0xLjcKJSVFT0Y='}};
  const result={transaction:{id:'20000000-0000-4000-8000-000000000001',learnerId:'123',amountTiyin:'88000000',currency:'UZS',providerName:null,grossTiyin:'88000000',feeTiyin:'0',feeBps:0,method:'card_transfer',paidAt:body.paidAt,crmReference:body.crmReference,receiptAvailable:true,receiptFilename:'receipt.pdf',receiptContentType:'application/pdf',receiptSha256:'d5db70fbccdd8ccc6a553604b79a09cd33083b401340d546efa08a52142c972e',version:1,deletedAt:null},catalogGrant:{learnerId:'123',scope:'whole_catalog',source:'admin_crm',reason,version:1,grantedAt:body.paidAt,expiresAt:'2027-10-14T13:55:51Z',revokedAt:null},accessState:'lifetime',accessOverride:false};
  const response=await proxyAdmin(request('business-grant',body),'business-grant',config,async(url,options)=>{assert.equal(url,config.api+'/api/v1/admin/business/catalog-sales');assert.deepEqual(JSON.parse(options.body),body);return Response.json(result);});
  assert.equal(response.status,200);assert.deepEqual(await response.json(),result);
@@ -26,7 +26,7 @@ test('business grant records CRM transaction metadata and optional receipt befor
  }
 });
 test('business grant decodes receipt bytes, enforces 2 MiB, and matches declared file type magic',async()=>{
- const base={requestId,learnerId:'123',baseVersion:0,reason,amountTiyin:'88000000',provider:'card_transfer',paidAt:'2026-10-14T13:55:51Z',crmReference:null};
+ const base={requestId,learnerId:'123',baseVersion:0,amountTiyin:'88000000',provider:'card_transfer',paidAt:'2026-10-14T13:55:51Z',crmReference:null};
  const valid=[
   ['application/pdf',Buffer.from('%PDF-1.7\n').toString('base64')],
   ['image/jpeg',Buffer.from([0xff,0xd8,0xff,0xe0,0x00]).toString('base64')],
@@ -43,7 +43,7 @@ test('business grant decodes receipt bytes, enforces 2 MiB, and matches declared
  for(const receipt of invalid){let called=0;const response=await proxyAdmin(request('business-grant',{...base,receipt}),'business-grant',config,async()=>{called++;return Response.json({});});assert.equal(response.status,422,receipt.contentType);assert.equal(called,0);}
 });
 test('business grant binds audited transaction instant, receipt presence, initial version and active state',async()=>{
- const body={requestId,learnerId:'123',baseVersion:0,reason,amountTiyin:'88000000',provider:'card_transfer',paidAt:'2026-10-14T13:55:51Z',crmReference:null,receipt:null};
+ const body={requestId,learnerId:'123',baseVersion:0,amountTiyin:'88000000',provider:'card_transfer',paidAt:'2026-10-14T13:55:51Z',crmReference:null,receipt:null};
  const transaction={id:'20000000-0000-4000-8000-000000000001',learnerId:'123',amountTiyin:body.amountTiyin,currency:'UZS',providerName:null,grossTiyin:body.amountTiyin,feeTiyin:'0',feeBps:0,method:body.provider,paidAt:'2026-10-14T18:55:51+05:00',crmReference:null,receiptAvailable:false,receiptFilename:null,receiptContentType:null,receiptSha256:null,version:1,deletedAt:null};
  const result={transaction,catalogGrant:{learnerId:'123',scope:'whole_catalog',source:'admin_crm',reason,version:1,grantedAt:body.paidAt,expiresAt:'2027-10-14T13:55:51Z',revokedAt:null},accessState:'lifetime',accessOverride:false};
  assert.equal((await proxyAdmin(request('business-grant',body),'business-grant',config,async()=>Response.json(result))).status,200);
@@ -51,18 +51,18 @@ test('business grant binds audited transaction instant, receipt presence, initia
  for(const wrong of [{source:'admin_lifetime'},{grantedAt:'2026-10-14T13:55:52Z'},{expiresAt:null},{expiresAt:'2027-10-14T13:55:52Z'}])assert.equal((await proxyAdmin(request('business-grant',body),'business-grant',config,async()=>Response.json({...result,catalogGrant:{...result.catalogGrant,...wrong}}))).status,502,JSON.stringify(wrong));
 });
 test('business grant validates leap-day annual expiry using the backend calendar clamp',async()=>{
- const body={requestId,learnerId:'123',baseVersion:0,reason,amountTiyin:'88000000',provider:'card_transfer',paidAt:'2024-02-29T13:55:51Z',crmReference:null,receipt:null};
+ const body={requestId,learnerId:'123',baseVersion:0,amountTiyin:'88000000',provider:'card_transfer',paidAt:'2024-02-29T13:55:51Z',crmReference:null,receipt:null};
  const result={transaction:{id:'20000000-0000-4000-8000-000000000001',learnerId:'123',amountTiyin:body.amountTiyin,currency:'UZS',providerName:null,grossTiyin:body.amountTiyin,feeTiyin:'0',feeBps:0,method:body.provider,paidAt:body.paidAt,crmReference:null,receiptAvailable:false,receiptFilename:null,receiptContentType:null,receiptSha256:null,version:1,deletedAt:null},catalogGrant:{learnerId:'123',scope:'whole_catalog',source:'admin_crm',reason,version:1,grantedAt:body.paidAt,expiresAt:'2025-02-28T13:55:51Z',revokedAt:null},accessState:'lifetime',accessOverride:false};
  assert.equal((await proxyAdmin(request('business-grant',body),'business-grant',config,async()=>Response.json(result))).status,200);
  assert.equal((await proxyAdmin(request('business-grant',body),'business-grant',config,async()=>Response.json({...result,catalogGrant:{...result.catalogGrant,expiresAt:'2025-03-01T13:55:51Z'}}))).status,502);
 });
 test('business grant rejects a future paid instant before contacting upstream',async()=>{
- const body={requestId,learnerId:'123',baseVersion:0,reason,amountTiyin:'88000000',provider:'card_transfer',paidAt:'2999-10-14T13:55:51Z',crmReference:null,receipt:null};
+ const body={requestId,learnerId:'123',baseVersion:0,amountTiyin:'88000000',provider:'card_transfer',paidAt:'2999-10-14T13:55:51Z',crmReference:null,receipt:null};
  let called=0;const response=await proxyAdmin(request('business-grant',body),'business-grant',config,async()=>{called++;return Response.json({});});
  assert.equal(response.status,422);assert.equal(called,0);
 });
 test('manual transaction deletion uses a fixed UUID path and validates the audited result',async()=>{
- const body={requestId,transactionId:'20000000-0000-4000-8000-000000000001',baseVersion:1,reason,password:'current-password'};
+ const body={requestId,transactionId:'20000000-0000-4000-8000-000000000001',baseVersion:1};
  const result={transactionId:body.transactionId,deletedAt:'2026-10-15T10:00:00Z',version:2,accessUnchanged:true};
  const response=await proxyAdmin(request('business-delete-transaction',body),'business-delete-transaction',config,async(url,options)=>{assert.equal(url,config.api+'/api/v1/admin/business/manual-transactions/'+body.transactionId+'/delete');const expected={...body};delete expected.transactionId;assert.deepEqual(JSON.parse(options.body),expected);return Response.json(result);});
  assert.equal(response.status,200);assert.deepEqual(await response.json(),result);
@@ -70,17 +70,17 @@ test('manual transaction deletion uses a fixed UUID path and validates the audit
 test('ledger deletion forwards the order or CRM id and validates the audited result',async()=>{
  const uuid='30000000-0000-4000-8000-000000000001';
  for(const [id,fact] of [[uuid,'app:'+uuid],['crm:'+uuid,'crm:'+uuid]]){
-  const body={requestId,transactionId:id,reason,password:'current-password'};
+  const body={requestId,transactionId:id};
   const result={transactionId:fact,deletedAt:'2026-10-15T10:00:00Z',accessUnchanged:true};
   const response=await proxyAdmin(request('business-delete-ledger',body),'business-delete-ledger',config,async(url,options)=>{assert.equal(url,config.api+'/api/v1/admin/business/ledger-transactions/delete');assert.deepEqual(JSON.parse(options.body),body);return Response.json(result);});
   assert.equal(response.status,200);assert.deepEqual(await response.json(),result);
  }
- const body={requestId,transactionId:uuid,reason,password:'current-password'};
+ const body={requestId,transactionId:uuid};
  const mismatch=await proxyAdmin(request('business-delete-ledger',body),'business-delete-ledger',config,async()=>Response.json({transactionId:'app:30000000-0000-4000-8000-000000000002',deletedAt:'2026-10-15T10:00:00Z',accessUnchanged:true}));
  assert.equal(mismatch.status,502);
 });
 test('manual transaction deletion fails closed on mismatched audited result identity or version',async()=>{
- const body={requestId,transactionId:'20000000-0000-4000-8000-000000000001',baseVersion:1,reason,password:'current-password'};
+ const body={requestId,transactionId:'20000000-0000-4000-8000-000000000001',baseVersion:1};
  for(const result of [
   {transactionId:'30000000-0000-4000-8000-000000000001',deletedAt:'2026-10-15T10:00:00Z',version:2,accessUnchanged:true},
   {transactionId:body.transactionId,deletedAt:'2026-10-15T10:00:00Z',version:3,accessUnchanged:true},
@@ -91,9 +91,9 @@ test('manual transaction deletion fails closed on mismatched audited result iden
 });
 test('business writes deny invalid input, path injection, missing CSRF and undocumented operations before fetch',async()=>{
  let fetched=0;const fetcher=async()=>{fetched++;return Response.json(grant);};
- const valid={requestId,learnerId:'123',baseVersion:0,reason};
- for(const body of [{...valid,scope:'section'},{...valid,reason:'short'},{...valid,learnerId:'9223372036854775808'},{...valid,baseVersion:-1},{...valid,requestId:'bad'}])assert.equal((await proxyAdmin(request('business-grant',body),'business-grant',config,fetcher)).status,422);
- assert.equal((await proxyAdmin(request('business-close',{requestId,caseId:'../logout',baseVersion:0,note:reason}),'business-close',config,fetcher)).status,422);
+ const valid={requestId,learnerId:'123',baseVersion:0};
+ for(const body of [{...valid,scope:'section'},{...valid,learnerId:'9223372036854775808'},{...valid,baseVersion:-1},{...valid,requestId:'bad'}])assert.equal((await proxyAdmin(request('business-grant',body),'business-grant',config,fetcher)).status,422);
+ assert.equal((await proxyAdmin(request('business-close',{requestId,caseId:'../logout',baseVersion:0}),'business-close',config,fetcher)).status,422);
  assert.equal((await proxyAdmin(request('business-grant',valid,{'X-Admin-CSRF':''}),'business-grant',config,fetcher)).status,403);
  assert.equal((await proxyAdmin(request('business-refund',valid),'business-refund',config,fetcher)).status,404);assert.equal(fetched,0);
 });
@@ -109,39 +109,44 @@ test('learner state and paginated cases reject mismatched identity and page resp
  assert.equal((await proxyAdmin(request('business-cases?offset=25'),'business-cases',config,async()=>Response.json(page))).status,502);
 });
 test('case closure and intervention enforce semantic response identity and propagate permission/conflict',async()=>{
- const closure={requestId,caseId:'case-1',baseVersion:0,note:reason};
- const item={id:'case-1',learnerId:'123',orderId:null,status:'closed',issue:'Discrepancy',closureNote:reason,version:1,createdAt:grant.grantedAt,closedAt:grant.grantedAt};
+ const closure={requestId,caseId:'case-1',baseVersion:0};
+ const item={id:'case-1',learnerId:'123',orderId:null,status:'closed',issue:'Discrepancy',closureNote:'',version:1,createdAt:grant.grantedAt,closedAt:grant.grantedAt};
  assert.equal((await proxyAdmin(request('business-close',closure),'business-close',config,async url=>{assert.equal(url,config.api+'/api/v1/admin/business/reconciliation-cases/case-1/close');return Response.json(item);})).status,200);
- const body={requestId,learnerId:'123',baseVersion:0,reason,taskTitle:'Review learner',dueAt:null};
- const result={note:{id:requestId,learnerId:'123',actor:'admin',note:'Intervention: '+reason},task:{id:requestId,learnerId:'123',title:body.taskTitle,status:'open',reason,dueAt:null,version:1}};
+ const body={requestId,learnerId:'123',baseVersion:0,taskTitle:'Review learner',dueAt:null};
+ const result={note:{id:requestId,learnerId:'123',actor:'admin',note:'Intervention: '},task:{id:requestId,learnerId:'123',title:body.taskTitle,status:'open',reason,dueAt:null,version:1}};
  assert.equal((await proxyAdmin(request('business-intervention',body),'business-intervention',config,async()=>Response.json(result))).status,200);
  assert.equal((await proxyAdmin(request('business-intervention',body),'business-intervention',config,async()=>Response.json({...result,task:{...result.task,learnerId:'999'}}))).status,502);
  for(const [status,code] of [[403,'admin_forbidden'],[409,'admin_conflict']]){const response=await proxyAdmin(request('business-close',closure),'business-close',config,async()=>Response.json({error:{code,message:'Internal detail'}},{status}));assert.equal(response.status,status);assert.equal((await response.json()).error.code,code);}
 });
 
-test('revocation errors sanitize reauthentication without turning it into session loss',async()=>{
- const body={requestId,learnerId:'123',baseVersion:0,reason,password:'fixture-secret-only'};
- for(const [status,code] of [[401,'admin_reauthentication_failed'],[401,'admin_unauthorized'],[403,'admin_forbidden'],[409,'admin_conflict'],[422,'admin_validation'],[429,'admin_rate_limited'],[500,'admin_internal_error']]){
- const response=await proxyAdmin(request('business-revoke',body),'business-revoke',config,async()=>Response.json({error:{code,message:body.password}},{status}));
- assert.equal(response.status,status===500?502:status);const data=await response.json();if(status!==500)assert.equal(data.error.code,code);assert.ok(!JSON.stringify(data).includes(body.password));}
+test('revocation errors are sanitized without turning it into session loss',async()=>{
+ const body={requestId,learnerId:'123',baseVersion:0};
+ for(const [status,code] of [[401,'admin_unauthorized'],[403,'admin_forbidden'],[409,'admin_conflict'],[422,'admin_validation'],[429,'admin_rate_limited'],[500,'admin_internal_error']]){
+ const response=await proxyAdmin(request('business-revoke',body),'business-revoke',config,async()=>Response.json({error:{code,message:'fixture-secret-only'}},{status}));
+ assert.equal(response.status,status===500?502:status);const data=await response.json();if(status!==500)assert.equal(data.error.code,code);assert.ok(!JSON.stringify(data).includes('fixture-secret-only'));}
 });
-test('transaction deletion sanitizes reauthentication failure without turning it into session loss',async()=>{
- const body={requestId,transactionId:'20000000-0000-4000-8000-000000000001',baseVersion:1,reason,password:'fixture-secret-only'};
- const response=await proxyAdmin(request('business-delete-transaction',body),'business-delete-transaction',config,async()=>Response.json({error:{code:'admin_reauthentication_failed',message:body.password}},{status:401}));
- assert.equal(response.status,401);const data=await response.json();assert.equal(data.error.code,'admin_reauthentication_failed');assert.ok(!JSON.stringify(data).includes(body.password));
+test('business actions reject password and reason keys (strict DTO)',async()=>{
+ for(const [action,body] of [['business-revoke',{requestId,learnerId:'123',baseVersion:0}],['business-delete-transaction',{requestId,transactionId:'20000000-0000-4000-8000-000000000001',baseVersion:1}]])for(const extra of [{password:'fixture-secret-only'},{reason:'A documented decision.'}])assert.equal((await proxyAdmin(request(action,{...body,...extra}),action,config,()=>{throw Error('must not fetch');})).status,422);
 });
 test('revocation forwards only its strict secret-bearing DTO and verifies denial identity',async()=>{
- const body={requestId,learnerId:'123',baseVersion:0,reason,password:'fixture-secret-only'};
+ const body={requestId,learnerId:'123',baseVersion:0};
  const catalog={...grant};delete catalog.preservedSectionEntitlements;
  const denial={...catalog,revokedAt:grant.grantedAt,accessState:'no_access',accessOverride:true};
  const response=await proxyAdmin(request('business-revoke',body),'business-revoke',config,async(url,options)=>{assert.equal(url,config.api+'/api/v1/admin/business/catalog-revocations');assert.deepEqual(JSON.parse(options.body),body);assert.equal(options.headers.get('Cookie'),cookie);assert.equal(options.headers.get('Origin'),config.origin);return Response.json(denial);});
  assert.equal(response.status,200);assert.deepEqual(await response.json(),denial);
- for(const wrong of [{learnerId:'999'},{version:2},{reason:'Other'},{accessOverride:false},{accessState:'lifetime'},{revokedAt:null},{password:body.password}])assert.equal((await proxyAdmin(request('business-revoke',body),'business-revoke',config,async()=>Response.json({...denial,...wrong}))).status,502);
- for(const password of ['', 'x'.repeat(257), {}, null]){const response=await proxyAdmin(request('business-revoke',{...body,password}),'business-revoke',config,()=>{throw Error('must not fetch');});assert.equal(response.status,422);assert.ok(!(await response.text()).includes('fixture-secret'));}
+ for(const wrong of [{learnerId:'999'},{version:2},{reason:'Other'},{accessOverride:false},{accessState:'lifetime'},{revokedAt:null},{password:'x'}])assert.equal((await proxyAdmin(request('business-revoke',body),'business-revoke',config,async()=>Response.json({...denial,...wrong}))).status,502);
  for(const headers of [{'X-Admin-CSRF':''},{Origin:'https://evil.example'},{cookie:''}])assert.ok([401,403].includes((await proxyAdmin(request('business-revoke',body,headers),'business-revoke',config,()=>{throw Error('must not fetch');})).status));
 });
+test('withdrawal edit uses a fixed UUID path and fails closed on mismatched identity',async()=>{
+ const body={requestId,withdrawalId:'20000000-0000-4000-8000-000000000002',baseVersion:1,amount:50000,note:'Naqd'};
+ const result={id:body.withdrawalId,entryType:'withdrawal',amount:50000,signedAmount:-50000,note:'Naqd',actor:'admin',version:2,createdAt:'2026-10-15T10:00:00Z'};
+ const response=await proxyAdmin(request('business-edit-withdrawal',body),'business-edit-withdrawal',config,async(url,options)=>{assert.equal(url,config.api+'/api/v1/admin/withdrawals/'+body.withdrawalId+'/edit');const expected={...body};delete expected.withdrawalId;assert.deepEqual(JSON.parse(options.body),expected);return Response.json(result);});
+ assert.equal(response.status,200);assert.deepEqual(await response.json(),result);
+ const bad=await proxyAdmin(request('business-edit-withdrawal',body),'business-edit-withdrawal',config,async()=>Response.json({...result,amount:1,signedAmount:-1}));
+ assert.notEqual(bad.status,200);
+});
 test('withdrawal deletion uses a fixed UUID path and fails closed on mismatched identity',async()=>{
- const body={requestId,withdrawalId:'20000000-0000-4000-8000-000000000002',baseVersion:1,reason,password:'current-password'};
+ const body={requestId,withdrawalId:'20000000-0000-4000-8000-000000000002',baseVersion:1};
  const result={withdrawalId:body.withdrawalId,deletedAt:'2026-10-15T10:00:00Z',version:2};
  const response=await proxyAdmin(request('business-delete-withdrawal',body),'business-delete-withdrawal',config,async(url,options)=>{assert.equal(url,config.api+'/api/v1/admin/withdrawals/'+body.withdrawalId+'/delete');const expected={...body};delete expected.withdrawalId;assert.deepEqual(JSON.parse(options.body),expected);return Response.json(result);});
  assert.equal(response.status,200);assert.deepEqual(await response.json(),result);
@@ -150,7 +155,7 @@ test('withdrawal deletion uses a fixed UUID path and fails closed on mismatched 
 });
 test('ledger edit forwards fee fields and validates the audited result',async()=>{
  const uuid='30000000-0000-4000-8000-000000000001';
- const body={requestId,transactionId:'manual:'+uuid,baseVersion:1,reason,password:'current-password',amountTiyin:'10000000',provider:'other',providerName:'Partner Pay',feePercent:'2.5',paidAt:'2026-10-14T13:55:51Z'};
+ const body={requestId,transactionId:'manual:'+uuid,baseVersion:1,amountTiyin:'10000000',provider:'other',providerName:'Partner Pay',feePercent:'2.5',paidAt:'2026-10-14T13:55:51Z'};
  const result={transactionId:body.transactionId,grossTiyin:'10000000',amountTiyin:'9750000',feeTiyin:'250000',feeBps:250,method:'other',providerName:'Partner Pay',paidAt:'2026-10-14T13:55:51+00:00',version:2,accessUnchanged:true};
  const ok=await proxyAdmin(request('business-edit-ledger',body),'business-edit-ledger',config,async(url,options)=>{assert.equal(url,config.api+'/api/v1/admin/business/ledger-transactions/edit');assert.deepEqual(JSON.parse(options.body),body);return Response.json(result);});
  assert.equal(ok.status,200);

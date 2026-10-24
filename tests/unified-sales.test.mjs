@@ -72,7 +72,6 @@ test('sales presentation uses combined totals without adding CRM twice and disti
 test('commerce connects source facts and unknown-learner guards inside existing panels',async()=>{
  const {readFileSync}=await import('node:fs');
  const ui=readFileSync(new URL('../app/admin-app.tsx',import.meta.url),'utf8');
- assert.match(ui,/salesDetails\(summary.data\)/);
  assert.match(ui,/transactionIdentity\(order\)/);
  assert.match(ui,/filter\(\(id\):id is string=>id!==null\)/);
  assert.match(ui,/disabled=\{!order.learnerId\}/);
@@ -90,8 +89,6 @@ test('commerce renders backend payment methods without interpreting CRM provenan
  assert.match(ui,/card_transfer:"Karta orqali"/);
  assert.match(ui,/\{transactionMethodLabel\(order\)\}/);
  assert.match(ui,/\{providerLabel\(method.method\)\}/);
- assert.match(ui,/\{providerLabel\(payment.data.order.method\)\}/);
- assert.match(ui,/\{transactionIdentity\(payment.data.order\).detail\}/);
 });
 test('canonical backend DTO supports nullable CRM external ID and explicit sales eligibility',async()=>{
  const row={...crmOrder,externalId:null,includedInSales:true};
