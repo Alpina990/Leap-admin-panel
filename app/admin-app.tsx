@@ -52,7 +52,7 @@ import {WithdrawalDialog} from "./withdrawal-dialog";
 import {WithdrawalEditDialog} from "./withdrawal-edit-dialog";
 import {formatAdminDateTime as formatDateTime, formatAdminRegistered, formatAdminRelativeTime} from "@/lib/admin-date-time.mjs";
 import {readState} from "@/lib/read-state.mjs";
-import {transactionIdentity,transactionMethodLabel} from "@/lib/admin-sales.mjs";
+import {transactionIdentity,transactionMethodLabel,transactionProviderLabel} from "@/lib/admin-sales.mjs";
 import {availableBalanceTiyin} from "@/lib/admin-finance.mjs";
 import workflowCards from "@/lib/pushday-workflows.json";
 import {Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle} from "@/components/ui/dialog";
@@ -305,7 +305,7 @@ function LearnerDetailDrawer({open,learnerId,learner,analytics,payments,loading,
           </dl>
           {order?<div className="pd-drawer-summary pd-drawer-order">
             <article><span><CircleDollarSign size={16}/></span><div><small>To‘lov summasi</small><strong>{money(order)}</strong>{(()=>{const fee=feeSummary(order);return fee?<small>Jami {fee.gross} · komissiya {fee.pct}%</small>:null;})()}</div></article>
-            <article><span><WalletCards size={16}/></span><div><small>Provayder</small><strong>{order.providerName??transactionMethodLabel(order)}</strong><small>{formatDateTime(order.paidAt??order.createdAt)}</small></div></article>
+            <article><span><WalletCards size={16}/></span><div><small>Provayder</small><strong>{transactionProviderLabel(order)}</strong><small>{formatDateTime(order.paidAt??order.createdAt)}</small></div></article>
           </div>:null}
           <div className="pd-drawer-summary">
             <article><span><CalendarDays size={16}/></span><div><small>Oxirgi to‘lov</small><strong>{payments?.lastPaidAt?formatDateTime(payments.lastPaidAt):loading?"…":"—"}</strong></div></article>

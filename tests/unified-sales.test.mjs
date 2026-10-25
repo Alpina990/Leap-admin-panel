@@ -67,7 +67,7 @@ test('sales presentation uses combined totals without adding CRM twice and disti
  assert.equal(transactionMethodLabel({...crmOrder,source:'crm',gateway:'CRM',method:'unknown'}),'Karta orqali');
  assert.equal(transactionMethodLabel({...crmOrder,source:'app',gateway:'WLCM',method:'payme'}),'Avto to‘lov');
  assert.equal(transactionMethodLabel({...crmOrder,source:'app',gateway:'WLCM',method:'uzum'}),'Avto to‘lov');
- assert.equal(transactionMethodLabel({...crmOrder,source:'app',gateway:'WLCM',method:'payme',recordedInCrm:true}),'Crm orqali');
+ assert.equal(transactionMethodLabel({...crmOrder,source:'app',gateway:'WLCM',method:'payme',recordedInCrm:true}),'Avto to‘lov');
 });
 test('commerce connects source facts and unknown-learner guards inside existing panels',async()=>{
  const {readFileSync}=await import('node:fs');

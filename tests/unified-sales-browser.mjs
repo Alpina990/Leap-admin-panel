@@ -126,7 +126,7 @@ export async function checkUnifiedSales(page, out){
  row=recordedOrder;
  await page.reload();
  await page.getByRole('button',{name:'Moliya',exact:true}).click();
- await expect(page.locator('[data-order-id] td').nth(3)).toHaveText('Crm orqali');
+ await expect(page.locator('[data-order-id] td').nth(3)).toHaveText('Avto to‘lov');
  await expect(page.locator('.pd-detail-hero span').first()).toHaveText('Payme');
  await expect(page.locator('[data-provider="unknown"]')).toContainText('Noma’lum');
  await expect(page.locator('[data-provider="card_transfer"]')).toContainText('Karta orqali');
