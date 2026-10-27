@@ -879,7 +879,17 @@ export default function AdminApp({session}:{session:AdminSession}){
 
   function revenueDistribution(){
     const total=BigInt(summary.data?.revenueTiyin??"0");
-    const methods=[...(summary.data?.paymentMethods??[])].sort((left,right)=>BigInt(right.revenueTiyin)>BigInt(left.revenueTiyin)?1:-1);
+    const grouped=new Map<string,{method:string;count:number;revenueTiyin:bigint}>();
+    for(const item of summary.data?.paymentMethods??[]){
+      const raw=item.method.trim();
+      const label=/^uzum\b/i.test(raw)?"Uzum":providerLabel(raw);
+      const key=label.trim().toLowerCase();
+      const entry=grouped.get(key)??{method:item.method.trim(),count:0,revenueTiyin:BigInt(0)};
+      entry.count+=item.count;
+      entry.revenueTiyin+=BigInt(item.revenueTiyin);
+      grouped.set(key,entry);
+    }
+    const methods=[...grouped.values()].map(item=>({...item,revenueTiyin:item.revenueTiyin.toString()})).sort((left,right)=>BigInt(right.revenueTiyin)>BigInt(left.revenueTiyin)?1:-1);
     return <Panel title="Daromad taqsimoti" subtitle="To‘lov provayderlari bo‘yicha ulush">
       <div className="pd-revenue-total"><span>Jami tushum</span><strong>{formatMoneyCompact(summary.data?.revenueTiyin)}</strong></div>
       {summary.error&&<ErrorState message={summary.error} onRetry={()=>setRevision(value=>value+1)}/>}
