@@ -110,6 +110,7 @@ const paymentColumns:TableColumn[]=[
   {key:"method",label:"Usul",sortable:true},
   {key:"amount",label:"Summa",sortable:true,right:true},
   {key:"status",label:"Holat",sortable:true},
+  {key:"withdraw",label:"Yechish",right:true},
   {key:"edit",label:"Tahrirlash",right:true},
   {key:"delete",label:"O‘chirish",right:true}
 ];
@@ -461,6 +462,7 @@ export default function AdminApp({session}:{session:AdminSession}){
   const [contactMarks,setContactMarks]=useState<Record<string,boolean>>({});
   const [contactBusy,setContactBusy]=useState<Record<string,boolean>>({});
   const [contactError,setContactError]=useState("");
+  const [withdrawBusy,setWithdrawBusy]=useState<Record<string,boolean>>({}),[withdrawError,setWithdrawError]=useState("");
   const [contentMetric,setContentMetric]=useState<MetricFilter|null>(null);
   const [commerceMetric,setCommerceMetric]=useState<MetricFilter|null>(null);
   const [messagesMetric,setMessagesMetric]=useState<MetricFilter|null>(null);
@@ -557,6 +559,7 @@ export default function AdminApp({session}:{session:AdminSession}){
     const person=order.learnerId?learnerByTelegramId.get(order.learnerId):undefined;
     return person?learnerName(person):transactionIdentity(order).label;
   };
+  const ledgerSourceName=(sourceId:string)=>{const source=(orders.data?.items??[]).find(item=>item.id===sourceId);return source?orderPersonName(source):"tranzaksiya";};
   const ledgerId=(row:LedgerRow)=>row.kind==="order"?row.order.id:`withdrawal:${row.withdrawal.id}`;
   const ledgerDate=(row:LedgerRow)=>row.kind==="order"?row.order.createdAt:row.withdrawal.createdAt;
   const ledgerPerson=(row:LedgerRow)=>row.kind==="order"?orderPersonName(row.order):"Yechish";
@@ -683,6 +686,33 @@ export default function AdminApp({session}:{session:AdminSession}){
     return filter===messagesMetric;
   }
   function clearSearch(){setDraft("");setUsername("");setAudience("all");setOffset(0);setSelected(null);setRevision(value=>value+1);}
+  const canWithdrawOrder=(order:Orders["items"][number])=>order.status==="paid"&&order.includedInSales!==false&&BigInt(order.amountTiyin)%BigInt(100)===BigInt(0);
+  async function withdrawTransaction(order:Orders["items"][number]){
+    if(withdrawBusy[order.id]||(!order.withdrawalId&&!canWithdrawOrder(order)))return;
+    setWithdrawError("");
+    setWithdrawBusy(current=>({...current,[order.id]:true}));
+    try{
+      if(order.withdrawalId){
+        if(!order.withdrawalVersion)throw new Error("Yechish versiyasi topilmadi. Sahifani yangilang.");
+        const removal=await fetch("/api/admin/business-delete-withdrawal",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json","X-Admin-CSRF":session.csrfToken},body:JSON.stringify({withdrawalId:order.withdrawalId,baseVersion:order.withdrawalVersion,requestId:crypto.randomUUID()}),signal:AbortSignal.timeout(12000)});
+        if(removal.status===401){window.location.replace("/login");return;}
+        const removed=await removal.json();
+        if(!removal.ok)throw new Error(removed.error?.message??"Yechishni olib tashlab bo‘lmadi.");
+        setRevision(value=>value+1);
+        return;
+      }
+      const note=`Tranzaksiya ${order.id.slice(0,18)} · ${orderPersonName(order)}`.slice(0,255);
+      const response=await fetch("/api/admin/withdrawals",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json","X-Admin-CSRF":session.csrfToken},body:JSON.stringify({amount:Number(BigInt(order.amountTiyin)/BigInt(100)),note,sourceTransactionId:order.id,requestId:crypto.randomUUID()}),signal:AbortSignal.timeout(12000)});
+      if(response.status===401){window.location.replace("/login");return;}
+      const data=await response.json();
+      if(!response.ok)throw new Error(data.error?.message??"Yechishni yozib bo‘lmadi.");
+      setRevision(value=>value+1);
+    }catch(error){
+      setWithdrawError(error instanceof Error?error.message:"Yechishni yozib bo‘lmadi.");setRevision(value=>value+1);
+    }finally{
+      setWithdrawBusy(current=>{const nextState={...current};delete nextState[order.id];return nextState;});
+    }
+  }
   function contactMarked(person:Learner){return contactMarks[person.telegramUserId]??person.contacted===true;}
   async function toggleContactMark(person:Learner){
     const learnerId=person.telegramUserId;
@@ -789,11 +819,11 @@ export default function AdminApp({session}:{session:AdminSession}){
   }
 
   function ratingRows(){
-    if(ratings.loading&&!ratings.data)return <tr><td colSpan={8}><div className="pd-loading">Reyting yuklanmoqda…</div></td></tr>;
-    if(ratings.error&&!ratings.data)return <tr><td colSpan={8}><ErrorState message={ratings.error} onRetry={()=>setRevision(value=>value+1)}/></td></tr>;
+    if(ratings.loading&&!ratings.data)return <tr><td colSpan={9}><div className="pd-loading">Reyting yuklanmoqda…</div></td></tr>;
+    if(ratings.error&&!ratings.data)return <tr><td colSpan={9}><ErrorState message={ratings.error} onRetry={()=>setRevision(value=>value+1)}/></td></tr>;
     const top=ratings.data?.summary.topCompleted??0;
     const ratingItems=(ratings.data?.items??[]).filter(entry=>ratingMetric==="ratings-ranked"?entry.completedLessons>0:ratingMetric==="ratings-top"?top>0&&entry.completedLessons===top:ratingMetric==="ratings-progress"?entry.startedLessons>0:true);
-    if(!ratingItems.length)return <tr><td colSpan={8}><EmptyState title="PRO foydalanuvchi topilmadi" description="Qidiruvni o‘zgartirib qayta urinib ko‘ring." action={<button className="pd-button" onClick={clearSearch}>Qidiruvni tozalash</button>}/></td></tr>;
+    if(!ratingItems.length)return <tr><td colSpan={9}><EmptyState title="PRO foydalanuvchi topilmadi" description="Qidiruvni o‘zgartirib qayta urinib ko‘ring." action={<button className="pd-button" onClick={clearSearch}>Qidiruvni tozalash</button>}/></td></tr>;
     return ratingItems.map(entry=>{
       const progress=entry.completionRate===null?0:Math.round(entry.completionRate);
       return <tr key={entry.learner.telegramUserId} data-rating-learner-id={entry.learner.telegramUserId}>
@@ -846,19 +876,20 @@ export default function AdminApp({session}:{session:AdminSession}){
   }
 
   function transactionRows(){
-    if(orders.loading&&!orders.data)return <tr><td colSpan={8}><div className="pd-loading">Tranzaksiyalar yuklanmoqda…</div></td></tr>;
-    if(orders.error&&!orders.data)return <tr><td colSpan={8}><ErrorState message={orders.error} onRetry={()=>setRevision(value=>value+1)}/></td></tr>;
-    if(!ledgerRows.length)return <tr><td colSpan={8}><EmptyState title="Tranzaksiya topilmadi" description="Filtrlarni o‘zgartirib qayta urinib ko‘ring."/></td></tr>;
+    if(orders.loading&&!orders.data)return <tr><td colSpan={9}><div className="pd-loading">Tranzaksiyalar yuklanmoqda…</div></td></tr>;
+    if(orders.error&&!orders.data)return <tr><td colSpan={9}><ErrorState message={orders.error} onRetry={()=>setRevision(value=>value+1)}/></td></tr>;
+    if(!ledgerRows.length)return <tr><td colSpan={9}><EmptyState title="Tranzaksiya topilmadi" description="Filtrlarni o‘zgartirib qayta urinib ko‘ring."/></td></tr>;
     return ledgerRows.map(row=>{
       if(row.kind==="withdrawal"){
         const withdrawal=row.withdrawal;
         return <tr key={ledgerId(row)} data-withdrawal-id={withdrawal.id} className="pd-withdrawal-row">
           <td><span className="pd-id">Yechish</span></td>
-          <td><span className="pd-cell-stack"><strong>Yechish</strong><small>{withdrawal.note??withdrawal.actor}</small></span></td>
+          <td><span className="pd-cell-stack"><strong>Yechish</strong><small>{withdrawal.sourceTransactionId?`${withdrawal.sourceTransactionId.slice(0,18)} · ${ledgerSourceName(withdrawal.sourceTransactionId)}`:withdrawal.note??withdrawal.actor}</small></span></td>
           <td>{formatDateTime(withdrawal.createdAt)}</td>
           <td><span className="pd-muted">—</span></td>
           <td><strong className="pd-money-out">-{withdrawalMoney(withdrawal.amount)}</strong></td>
           <td><StatusPill tone="danger">Yechish</StatusPill></td>
+          <td><span className="pd-muted">—</span></td>
           <td><button className="pd-icon-button pd-edit-action" aria-label="Yechishni tahrirlash" title="Yechishni tahrirlash" onClick={event=>{event.stopPropagation();setEditWithdrawal(withdrawal);}}><Pencil size={15}/></button></td>
           <td><button className="pd-icon-button pd-delete-action" aria-label="Yechishni o‘chirish" title="Xato yechishni o‘chirish" onClick={event=>{event.stopPropagation();setDeleteWithdrawal(withdrawal);}}><Trash2 size={15}/></button></td>
         </tr>;
@@ -872,6 +903,7 @@ export default function AdminApp({session}:{session:AdminSession}){
       <td>{transactionMethodLabel(order)}</td>
       <td><strong>{money(order)}</strong>{(()=>{const fee=feeSummary(order);return fee?<small className="pd-fee-note" title={`Summa ${fee.gross} · komissiya ${fee.pct}% (−${fee.fee})`}>−{fee.fee} ({fee.pct}%)</small>:null;})()}</td>
       <td><StatusPill tone={order.status==="paid"?"success":order.status==="cancelled"?"danger":"warning"}>{order.status}</StatusPill></td>
+      <td>{canWithdrawOrder(order)||order.withdrawalId?<button type="button" className={`pd-contact-check pd-withdraw-check${order.withdrawalId?" on":""}`} aria-pressed={Boolean(order.withdrawalId)} disabled={Boolean(withdrawBusy[order.id])} title={order.withdrawalId?"Yechilgan. Qaytarish uchun bosing":"Yechish"} aria-label={`${order.id} tranzaksiyasini yechish`} onClick={event=>{event.stopPropagation();void withdrawTransaction(order);}}><Check size={13}/></button>:<span className="pd-muted">—</span>}</td>
       <td>{order.canEdit?<button className="pd-icon-button pd-edit-action" aria-label={`${order.id} tranzaksiyasini tahrirlash`} title="Tranzaksiyani tahrirlash" onClick={event=>{event.stopPropagation();setEditTransaction(order);}}><Pencil size={15}/></button>:<span className="pd-muted">—</span>}</td>
       <td>{order.canDelete?<button className="pd-icon-button pd-delete-action" aria-label={`${order.id} tranzaksiyasini o‘chirish`} title="Xato tranzaksiyani o‘chirish" onClick={event=>{event.stopPropagation();setDeleteTransaction(order);}}><Trash2 size={15}/></button>:<span className="pd-muted">—</span>}</td>
     </tr>;});
@@ -932,6 +964,7 @@ export default function AdminApp({session}:{session:AdminSession}){
         <Panel title="Tranzaksiyalar tarixi" subtitle={`${orders.data?.total.toLocaleString("en-US")??"—"} ta buyurtma${withdrawals.data?.total?` · ${withdrawals.data.total.toLocaleString("en-US")} ta yechish`:""}`} className="pd-transaction-history" action={<><button className="pd-button" onClick={()=>setCommerceTab("learners")}>O‘quvchilar &amp; access</button><button className="pd-button" onClick={openPaymentFilter}><Filter size={14}/>Filtr</button></>}>
           {withdrawals.error&&<ErrorState message={withdrawals.error} onRetry={()=>setRevision(value=>value+1)}/>}
           {withdrawals.loading&&!withdrawals.data&&<div className="pd-loading">Yechishlar tarixi yuklanmoqda…</div>}
+          {withdrawError&&<p className="pd-feedback" role="alert">{withdrawError}</p>}
           <DataTable columns={paymentColumns} sortKey={orderSort.key} sortDirection={orderSort.direction} onSort={toggleOrderSort}>{transactionRows()}</DataTable>
           <Pager offset={orderOffset} limit={25} total={orders.data?.total??0} hasMore={orders.data?.hasMore??false} loading={orders.loading} onPrevious={()=>setOrderOffset(Math.max(0,orderOffset-25))} onNext={()=>setOrderOffset(orderOffset+25)}/>
         </Panel>
@@ -990,7 +1023,7 @@ export default function AdminApp({session}:{session:AdminSession}){
     {editTransaction&&<TransactionEditDialog transaction={editTransaction} csrf={session.csrfToken} onClose={()=>setEditTransaction(null)} onSaved={()=>{setOrderId(null);setRevision(value=>value+1);}}/>}
     {deleteTransaction&&<TransactionDeleteDialog transaction={deleteTransaction} csrf={session.csrfToken} onClose={()=>setDeleteTransaction(null)} onDeleted={()=>{setOrderId(null);setRevision(value=>value+1);}}/>}
     {reporting&&<ReportingDialog mode={reporting} resource={reportResource} query={reportQuery.toString()} onClose={()=>setReporting(null)} onApply={values=>{if(reporting==="Date range")setDateRange(Object.fromEntries(Object.entries(values).filter(([,value])=>value)));else setReportFilters(previous=>({...previous,[reportResource]:values}));setOffset(0);setOrderOffset(0);setNotificationOffset(0);setSelected(null);setOrderId(null);}}/>}
-    {paymentFilter&&<Dialog open onOpenChange={setPaymentFilter}><DialogBody title="To‘lov filtrlari" description="Buyurtmalarni holat va to‘lov usuli bo‘yicha filtrlang."><label className="pd-field"><span>Holat</span><select value={statusDraft} onChange={event=>setStatusDraft(event.target.value)}><option value="">Barcha holatlar</option><option value="paid">Paid</option><option value="cancelled">Cancelled</option></select></label><label className="pd-field"><span>Usul</span><select value={methodDraft} onChange={event=>setMethodDraft(event.target.value)}><option value="">Barcha usullar</option>{["unknown","payme","card_transfer","hamkorbank_transfer","click","uzum","paylov","tribute"].map(method=><option key={method} value={method}>{providerLabel(method)}</option>)}</select></label><div className="pd-dialog-actions"><button className="pd-button" onClick={()=>setPaymentFilter(false)}>Bekor qilish</button><button className="pd-button primary" onClick={()=>{setCommerceMetric(null);setPaymentStatus(statusDraft);setPaymentMethod(methodDraft);setOrderOffset(0);setOrderId(null);setPaymentFilter(false);}}>Qo‘llash</button></div></DialogBody></Dialog>}
+    {paymentFilter&&<Dialog open onOpenChange={setPaymentFilter}><DialogBody title="To‘lov filtrlari" description="Buyurtmalarni holat va to‘lov usuli bo‘yicha filtrlang."><label className="pd-field"><span>Holat</span><select value={statusDraft} onChange={event=>setStatusDraft(event.target.value)}><option value="">Barcha holatlar</option><option value="paid">Paid</option><option value="cancelled">Cancelled</option></select></label><label className="pd-field"><span>Usul</span><select value={methodDraft} onChange={event=>setMethodDraft(event.target.value)}><option value="">Barcha usullar</option>{["unknown","payme","card_transfer","hamkorbank_transfer","click","uzum","paylov","paylater","other","tribute"].map(method=><option key={method} value={method}>{providerLabel(method)}</option>)}</select></label><div className="pd-dialog-actions"><button className="pd-button" onClick={()=>setPaymentFilter(false)}>Bekor qilish</button><button className="pd-button primary" onClick={()=>{setCommerceMetric(null);setPaymentStatus(statusDraft);setPaymentMethod(methodDraft);setOrderOffset(0);setOrderId(null);setPaymentFilter(false);}}>Qo‘llash</button></div></DialogBody></Dialog>}
     {notificationId&&<Dialog open onOpenChange={value=>{if(!value)setNotificationId(null);}}><DialogBody title={notification.data?.title??"Xabar tafsiloti"} description="Mini App inbox yozuvi. Bu oynada o‘qilgan holat o‘zgartirilmaydi.">{notification.loading?<div className="pd-loading">Yuklanmoqda…</div>:notification.data?<><p className="pd-message-body">{notification.data.body}</p><dl className="pd-facts"><div><dt>Foydalanuvchi</dt><dd>{notification.data.learnerId}</dd></div><div><dt>Yaratilgan</dt><dd>{formatDateTime(notification.data.createdAt)}</dd></div><div><dt>O‘qilgan</dt><dd>{formatDateTime(notification.data.readAt)}</dd></div></dl></>:<ErrorState message={notification.error??"Xabar topilmadi"} onRetry={()=>setRevision(value=>value+1)}/>}<div className="pd-dialog-actions"><button className="pd-button primary" onClick={()=>setNotificationId(null)}>Yopish</button></div></DialogBody></Dialog>}
     {noteTarget&&<NoteDialog key={noteTarget.telegramUserId} learnerId={noteTarget.telegramUserId} learnerName={learnerName(noteTarget)} csrf={session.csrfToken} onViewRecord={()=>{setSelected(noteTarget.telegramUserId);openLearnerById(noteTarget.telegramUserId);setNoteTarget(null);setRevision(value=>value+1);}} onClose={()=>{setNoteTarget(null);setRevision(value=>value+1);}}/>}
     <Dialog open={workflow!==null} onOpenChange={value=>{if(!value)setWorkflow(null);}}><DialogBody title={workflow??"Workflow"} description={workflow?workflowCards[workflow].description:"Bu amal hozircha mavjud emas."}><p className="pd-feedback">Bu workflow hozircha read-only rejimda. Backend API ulanmaguncha o‘zgartirish yaratilmaydi.</p><div className="pd-dialog-actions"><button className="pd-button" onClick={()=>setWorkflow(null)}>Bekor qilish</button><button className="pd-button primary" disabled>Mavjud emas</button></div></DialogBody></Dialog>

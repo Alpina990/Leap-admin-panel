@@ -4,22 +4,25 @@ import {Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle} from '@
 import {formatTashkentDateTimeInput,parseTashkentDateTimeInput} from '@/lib/admin-date-time.mjs';
 import type {Order} from './payments';
 
-const providers:[string,string][]=[['card_transfer','Karta orqali'],['hamkorbank_transfer','Hamkorbank o‘tkazmasi'],['payme','Payme'],['click','Click'],['uzum','Uzum'],['paylov','Paylov'],['other','Boshqa provayder…']];
+const baseProviders:[string,string][]=[['card_transfer','Karta orqali'],['uzum','Uzum'],['paylater','Paylater'],['other','Boshqa usul']];
+const legacyProviders:[string,string][]=[['hamkorbank_transfer','Hamkorbank o‘tkazmasi'],['payme','Payme'],['click','Click'],['paylov','Paylov']];
+const feeProviders=['uzum','paylater','other'];
 
 export function TransactionEditDialog({transaction,csrf,onClose,onSaved}:{transaction:Order;csrf:string;onClose:()=>void;onSaved:()=>void}){
- const known=providers.some(([value])=>value===transaction.method&&value!=='other');
+ const providers=[...baseProviders,...legacyProviders.filter(([value])=>value===transaction.method)];
+ const known=providers.some(([value])=>value===transaction.method);
  const gross=BigInt(transaction.grossTiyin??transaction.amountTiyin);
- const [init]=useState(()=>({amount:(gross/BigInt(100)).toString(),provider:known?transaction.method:'other',providerName:known?'':(transaction.providerName??''),feePercent:transaction.feeBps?String(transaction.feeBps/100):'',paidAt:formatTashkentDateTimeInput(Date.parse(transaction.paidAt??transaction.createdAt))}));
+ const [init]=useState(()=>({amount:(gross/BigInt(100)).toString(),provider:known?transaction.method:'other',providerName:transaction.providerName??'',feePercent:transaction.feeBps?String(transaction.feeBps/100):'',paidAt:formatTashkentDateTimeInput(Date.parse(transaction.paidAt??transaction.createdAt))}));
  const [amount,setAmount]=useState(init.amount),[provider,setProvider]=useState(init.provider),[providerName,setProviderName]=useState(init.providerName),[feePercent,setFeePercent]=useState(init.feePercent),[paidAt,setPaidAt]=useState(init.paidAt);
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[conflict,setConflict]=useState(false);
  const request=useRef<{fingerprint:string;id:string}|null>(null);
  const cleanAmount=amount.replace(/[\s,_]/g,'');
  const amountValid=/^[1-9]\d{0,13}$/.test(cleanAmount);
- const feeValid=feePercent===''||(/^\d{1,2}(\.\d{1,2})?$/.test(feePercent)&&Number(feePercent)<100);
- const customProvider=provider==='other';
- const nameValid=!customProvider||(providerName.trim().length>=1&&providerName.trim().length<=64);
+ const feeAllowed=feeProviders.includes(provider);
+ const feeValid=!feeAllowed||feePercent===''||(/^\d{1,2}(\.\d{1,2})?$/.test(feePercent)&&Number(feePercent)<100);
+ const nameValid=providerName.trim().length<=64;
  const paidAtIso=parseTashkentDateTimeInput(paidAt);
- const feeBps=feePercent&&feeValid?Math.round(Number(feePercent)*100):0;
+ const feeBps=feeAllowed&&feePercent&&feeValid?Math.round(Number(feePercent)*100):0;
  const grossTiyin=amountValid?BigInt(cleanAmount)*BigInt(100):BigInt(0);
  const feeTiyin=(grossTiyin*BigInt(feeBps)+BigInt(5000))/BigInt(10000);
  const netSom=Number(grossTiyin-feeTiyin)/100;
@@ -30,7 +33,7 @@ export function TransactionEditDialog({transaction,csrf,onClose,onSaved}:{transa
   if(!valid||busy||!paidAtIso)return;
   if(Date.parse(paidAtIso)>Date.now()){setError('To‘lov sanasi kelajakda bo‘lishi mumkin emas.');return;}
   setBusy(true);setError('');setConflict(false);
-  const stable={transactionId:transaction.id,baseVersion:isManual?baseVersion:null,amountTiyin:String(grossTiyin),provider,providerName:customProvider?providerName.trim():null,feePercent:feePercent||null,paidAt:paidAtIso};
+  const stable={transactionId:transaction.id,baseVersion:isManual?baseVersion:null,amountTiyin:String(grossTiyin),provider,providerName:providerName.trim()||null,feePercent:feeAllowed&&feePercent?feePercent:null,paidAt:paidAtIso};
   const fingerprint=JSON.stringify(stable);
   if(request.current?.fingerprint!==fingerprint)request.current={fingerprint,id:crypto.randomUUID()};
   const payload=JSON.stringify({...stable,requestId:request.current.id});
@@ -47,10 +50,10 @@ export function TransactionEditDialog({transaction,csrf,onClose,onSaved}:{transa
   <DialogContent className="pd-dialog pd-pro-dialog" showCloseButton={false}>
    <DialogHeader><DialogTitle>Tranzaksiyani tahrirlash</DialogTitle><DialogDescription>{transaction.id}</DialogDescription></DialogHeader>
    {conflict?<p role="alert">Tranzaksiya boshqa administrator tomonidan o‘zgartirilgan. Jadvalni yangilang va qayta urinib ko‘ring.</p>:<>
-    <label className="pd-field">To‘lov provayderi<select aria-label="To‘lov provayderi" value={provider} disabled={busy} onChange={event=>setProvider(event.target.value)}>{providers.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
-    {customProvider&&<label className="pd-field">Provayder nomi<input aria-label="Provayder nomi" maxLength={64} value={providerName} disabled={busy} onChange={event=>setProviderName(event.target.value)}/></label>}
+    <label className="pd-field">To‘lov turi<select aria-label="To‘lov turi" value={provider} disabled={busy} onChange={event=>{setProvider(event.target.value);if(!feeProviders.includes(event.target.value))setFeePercent('');}}>{providers.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+    <label className="pd-field">Provayder nomi (ixtiyoriy)<input aria-label="Provayder nomi" maxLength={64} value={providerName} disabled={busy} onChange={event=>setProviderName(event.target.value)}/></label>
     <label className="pd-field">Pul o‘tkazmasi miqdori<input aria-label="Pul o‘tkazmasi miqdori" inputMode="numeric" value={amount} disabled={busy} onChange={event=>setAmount(event.target.value.replace(/[^\d\s,_]/g,''))}/></label>
-    <label className="pd-field">Provayder foizi (ixtiyoriy)<input aria-label="Provayder foizi" inputMode="decimal" placeholder="masalan, 5" value={feePercent} disabled={busy} onChange={event=>setFeePercent(event.target.value.replace(/[^\d.]/g,''))}/>{feePercent&&!feeValid&&<small role="alert">Foiz 0–99.99 oralig‘ida bo‘lishi kerak.</small>}</label>
+    {feeAllowed&&<label className="pd-field">Provayder foizi (ixtiyoriy)<input aria-label="Provayder foizi" inputMode="decimal" placeholder="masalan, 5" value={feePercent} disabled={busy} onChange={event=>setFeePercent(event.target.value.replace(/[^\d.]/g,''))}/>{feePercent&&!feeValid&&<small role="alert">Foiz 0–99.99 oralig‘ida bo‘lishi kerak.</small>}</label>}
     {amountValid&&feeBps>0&&feeValid&&<p className="pd-feedback">Komissiya {feeBps/100}% (−{(Number(feeTiyin)/100).toLocaleString('en-US')}) · tushumga qo‘shiladi: {netSom.toLocaleString('en-US')} so‘m</p>}
     <label className="pd-field">To‘lov sanasi va vaqti<input aria-label="To‘lov sanasi va vaqti" type="datetime-local" value={paidAt} max={formatTashkentDateTimeInput()} disabled={busy} onChange={event=>setPaidAt(event.target.value)}/></label>
    </>}

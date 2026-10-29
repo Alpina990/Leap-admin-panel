@@ -93,3 +93,14 @@ test('withdrawals validate money-out writes and paginate the ledger',async()=>{
  for(const query of ['method=payme','limit=101','limit=1&limit=2','offset=-1','start=2026-02-30'])assert.equal((await proxyAdmin(get('withdrawals?'+query),'withdrawals',config)).status,422);
  for(const payload of [{...body,amount:0},{...body,amount:1.5},{...body,amount:1000000000001},{...body,note:'x'.repeat(256)},{...body,requestId:'nope'},{amount:100}])assert.equal((await proxyAdmin(new Request(config.origin+'/api/admin/withdrawals',{method:'POST',headers:{cookie:'__Host-leap_admin='+'a'.repeat(43),Origin:config.origin,'X-Admin-CSRF':'b'.repeat(64),'Content-Type':'application/json'},body:JSON.stringify(payload)}),'withdrawals',config)).status,422);
 });
+
+test('withdrawing one sale forwards its transaction id and rejects a mismatched echo',async()=>{
+ const id='12345678-1234-1234-1234-123456789012';
+ const body={amount:792000,note:'Tranzaksiya manual:60b41b46-d3 · Diyorbek',requestId:id,sourceTransactionId:'manual:60b41b46-d3f6-481d-912b-c07803f80fd3'};
+ const created={id,entryType:'withdrawal',amount:792000,signedAmount:-792000,note:body.note,actor:'operator',version:1,createdAt:'2026-10-29T09:00:00+00:00',sourceTransactionId:body.sourceTransactionId};
+ const post=()=>new Request(config.origin+'/api/admin/withdrawals',{method:'POST',headers:{cookie:'__Host-leap_admin='+'a'.repeat(43),Origin:config.origin,'X-Admin-CSRF':'b'.repeat(64),'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const ok=await proxyAdmin(post(),'withdrawals',config,async(url,init)=>{assert.deepEqual(JSON.parse(init.body),body);return Response.json(created);});
+ assert.equal(ok.status,200);assert.equal((await ok.json()).sourceTransactionId,body.sourceTransactionId);
+ const wrong=await proxyAdmin(post(),'withdrawals',config,async()=>Response.json({...created,sourceTransactionId:'manual:other'}));
+ assert.equal(wrong.status,502);
+});

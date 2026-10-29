@@ -179,9 +179,10 @@ test('PRO access dialog mirrors the PushDay single-select confirmation flow', ()
 test('PRO grant captures CRM payment amount, provider, paid time, reference and optional receipt', () => {
   const dialog = read('app/business-dialog.tsx');
   assert.match(dialog, /Pul o‘tkazmasi miqdori/);
-  assert.match(dialog, /To‘lov provayderi/);
+  assert.match(dialog, /To‘lov turi/);
+  assert.match(dialog, /Provayder nomi \(ixtiyoriy\)/);
   assert.match(dialog, /To‘lov sanasi va vaqti/);
-  assert.match(dialog, /CRM to‘lov ID \(ixtiyoriy\)/);
+  assert.doesNotMatch(dialog, /CRM to‘lov ID/);
   assert.match(dialog, /To‘lov cheki \(ixtiyoriy\)/);
   assert.match(dialog, /parseTashkentDateTimeInput/);
   assert.match(dialog, /accept="application\/pdf,image\/jpeg,image\/png"/);
@@ -200,7 +201,8 @@ test('PRO grant offers a transactionless provider and hides every transaction fi
   const dialog = read('app/business-dialog.tsx');
   assert.match(dialog, /<option value="no_transaction">Tranzaksiyasiz<\/option>/);
   assert.match(dialog, /const noTransaction=provider==='no_transaction'/);
-  assert.match(dialog, /\{!noTransaction&&<><label className="pd-field">Pul o‘tkazmasi miqdori/);
+  assert.match(dialog, /\{!noTransaction&&<><label className="pd-field">Provayder nomi/);
+  assert.match(dialog, /\{feeAllowed&&<label className="pd-field">Provayder foizi/);
   assert.match(dialog, /revoking\|\|noTransaction\?\{learnerId,baseVersion:state!\.accessVersion\}/);
 });
 

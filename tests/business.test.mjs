@@ -161,7 +161,7 @@ test('ledger edit forwards fee fields and validates the audited result',async()=
  assert.equal(ok.status,200);
  const wrong=await proxyAdmin(request('business-edit-ledger',body),'business-edit-ledger',config,async()=>Response.json({...result,feeTiyin:'1'}));
  assert.equal(wrong.status,502);
- for(const bad of [{providerName:null},{provider:'payme'},{feePercent:'2.555'},{baseVersion:null}]){
+ for(const bad of [{provider:'card_transfer'},{provider:'payme'},{feePercent:'2.555'},{baseVersion:null}]){
   let called=0;const response=await proxyAdmin(request('business-edit-ledger',{...body,...bad}),'business-edit-ledger',config,async()=>{called++;return Response.json(result);});
   assert.equal(response.status,422);assert.equal(called,0);
  }

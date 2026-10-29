@@ -80,7 +80,7 @@ test('commerce connects source facts and unknown-learner guards inside existing 
  assert.match(ui,/filter\(\(id\):id is string=>id!==null\)/);
  assert.match(ui,/disabled=\{!order.learnerId\}/);
  assert.match(ui,/summary.error/);
- assert.ok(ui.includes('["unknown","payme","card_transfer","hamkorbank_transfer","click","uzum","paylov","tribute"]'),'method selector offers unknown and actual providers, never CRM');
+ assert.ok(ui.includes('["unknown","payme","card_transfer","hamkorbank_transfer","click","uzum","paylov","paylater","other","tribute"]'),'method selector offers unknown and actual providers, never CRM');
  assert.match(ui,/summary.data\?\.revenueTiyin/);
  assert.doesNotMatch(ui,/BigInt\(summary.data.sales.crmRevenueTiyin\)/);
 });

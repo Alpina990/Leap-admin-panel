@@ -60,7 +60,7 @@ try {
   await page.getByRole('button', {name: 'PRO qilish', exact: true}).first().click();
   const proDialog = page.getByRole('dialog', {name: 'PRO qilish', exact: true});
   await expect(proDialog.getByLabel('Pul o‘tkazmasi miqdori', {exact: true})).toBeVisible();
-  await expect(proDialog.getByLabel('To‘lov provayderi', {exact: true})).toBeVisible();
+  await expect(proDialog.getByLabel('To‘lov turi', {exact: true})).toBeVisible();
   await expect(proDialog.getByLabel('To‘lov sanasi va vaqti', {exact: true})).toBeVisible();
   await expect(proDialog.getByLabel('To‘lov cheki (ixtiyoriy)', {exact: true})).toBeVisible();
   await proDialog.getByRole('button', {name: 'Bekor qilish', exact: true}).click();
