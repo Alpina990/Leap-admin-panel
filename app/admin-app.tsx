@@ -132,7 +132,7 @@ function formatUzs(tiyin?:string|null){
 }
 
 function providerLabel(value:string){
-  const labels:Record<string,string>={unknown:"Noma’lum",crm:"Noma’lum",payme:"Payme",card_transfer:"Karta orqali",hamkorbank_transfer:"Hamkorbank transfer",click:"Click",uzum:"Uzum",paylov:"Paylov"};
+  const labels:Record<string,string>={unknown:"Noma’lum",crm:"Noma’lum",payme:"Payme",card_transfer:"Karta orqali",hamkorbank_transfer:"Hamkorbank transfer",click:"Click",uzum:"Uzum",paylov:"Paylov",paylater:"Paylater",other:"Boshqa usul"};
   return labels[value.toLowerCase()]??value;
 }
 

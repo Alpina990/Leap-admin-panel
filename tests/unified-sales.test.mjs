@@ -55,7 +55,7 @@ test('BFF allows delete metadata only on complete identity-bound CRM manual rows
  assert.equal((await proxy('payments',{items:[{...crmOrder,canDelete:true}],total:1,limit:25,offset:0,hasMore:false})).status,200);
 });
 test('sales presentation uses combined totals without adding CRM twice and distinguishes missing sync',async()=>{
- const {salesDetails,transactionIdentity,transactionMethodLabel}=await import('../lib/admin-sales.mjs');
+ const {salesDetails,transactionIdentity,transactionMethodLabel,transactionProviderLabel}=await import('../lib/admin-sales.mjs');
  const facts=salesDetails(summary);
  assert.deepEqual(facts.slice(0,2),[['App sotuvlari','2 · 200.00 UZS'],['CRM sotuvlari','1 · 300.00 UZS']]);
  assert.ok(facts.some(([label,value])=>label==='CRM oxirgi sync'&&value==='2026-10-09 06:00'));
@@ -65,6 +65,10 @@ test('sales presentation uses combined totals without adding CRM twice and disti
  assert.deepEqual(transactionIdentity({...crmOrder,customerName:null}),{learnerId:null,label:'CRM · profil ulanmagan',detail:'CRM'});
  assert.equal(transactionIdentity({...crmOrder,learnerId:'42'}).label,'ID 42');
  assert.equal(transactionMethodLabel({...crmOrder,source:'crm',gateway:'CRM',method:'unknown'}),'Karta orqali');
+ assert.equal(transactionMethodLabel({...crmOrder,source:'crm',gateway:'CRM',method:'uzum'}),'Uzum');
+ assert.equal(transactionMethodLabel({...crmOrder,source:'crm',gateway:'CRM',method:'other',providerName:'Anor'}),'Boshqa usul');
+ assert.equal(transactionProviderLabel({...crmOrder,source:'crm',gateway:'CRM',method:'other',providerName:'Anor'}),'Anor');
+ assert.equal(transactionMethodLabel({...crmOrder,source:'crm',gateway:'CRM',method:'paylater'}),'Paylater');
  assert.equal(transactionMethodLabel({...crmOrder,source:'app',gateway:'WLCM',method:'payme'}),'Avto to‘lov');
  assert.equal(transactionMethodLabel({...crmOrder,source:'app',gateway:'WLCM',method:'uzum'}),'Avto to‘lov');
  assert.equal(transactionMethodLabel({...crmOrder,source:'app',gateway:'WLCM',method:'payme',recordedInCrm:true}),'Avto to‘lov');
