@@ -180,7 +180,7 @@ test('PRO grant captures CRM payment amount, provider, paid time, reference and 
   const dialog = read('app/business-dialog.tsx');
   assert.match(dialog, /Pul o‘tkazmasi miqdori/);
   assert.match(dialog, /To‘lov turi/);
-  assert.match(dialog, /Provayder nomi \(ixtiyoriy\)/);
+  assert.match(dialog, /Provayder nomi<input aria-label="Provayder nomi" required/);
   assert.match(dialog, /To‘lov sanasi va vaqti/);
   assert.doesNotMatch(dialog, /CRM to‘lov ID/);
   assert.match(dialog, /To‘lov cheki \(ixtiyoriy\)/);
