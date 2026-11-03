@@ -4,15 +4,15 @@ import {Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle} from '@
 import {formatTashkentDateTimeInput,parseTashkentDateTimeInput} from '@/lib/admin-date-time.mjs';
 import type {Order} from './payments';
 
-const baseProviders:[string,string][]=[['card_transfer','Karta orqali'],['uzum','Uzum'],['paylater','Paylater'],['other','Boshqa usul']];
+const baseProviders:[string,string][]=[['card_transfer','Karta orqali'],['uzum','Uzum'],['paylater','Paylater']];
 const legacyProviders:[string,string][]=[['hamkorbank_transfer','Hamkorbank o‘tkazmasi'],['payme','Payme'],['click','Click'],['paylov','Paylov']];
-const feeProviders=['uzum','paylater','other'];
+const feeProviders=['uzum','paylater'];
 
 export function TransactionEditDialog({transaction,csrf,onClose,onSaved}:{transaction:Order;csrf:string;onClose:()=>void;onSaved:()=>void}){
  const providers=[...baseProviders,...legacyProviders.filter(([value])=>value===transaction.method)];
  const known=providers.some(([value])=>value===transaction.method);
  const gross=BigInt(transaction.grossTiyin??transaction.amountTiyin);
- const [init]=useState(()=>({amount:(gross/BigInt(100)).toString(),provider:known?transaction.method:'other',providerName:transaction.providerName??'',feePercent:transaction.feeBps?String(transaction.feeBps/100):'',paidAt:formatTashkentDateTimeInput(Date.parse(transaction.paidAt??transaction.createdAt))}));
+ const [init]=useState(()=>({amount:(gross/BigInt(100)).toString(),provider:known?transaction.method:'card_transfer',providerName:transaction.providerName??'',feePercent:transaction.feeBps?String(transaction.feeBps/100):'',paidAt:formatTashkentDateTimeInput(Date.parse(transaction.paidAt??transaction.createdAt))}));
  const [amount,setAmount]=useState(init.amount),[provider,setProvider]=useState(init.provider),[providerName,setProviderName]=useState(init.providerName),[feePercent,setFeePercent]=useState(init.feePercent),[paidAt,setPaidAt]=useState(init.paidAt);
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[conflict,setConflict]=useState(false);
  const request=useRef<{fingerprint:string;id:string}|null>(null);
