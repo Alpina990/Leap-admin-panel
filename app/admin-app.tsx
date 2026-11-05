@@ -104,7 +104,6 @@ const ratingColumns:TableColumn[]=[
   {key:"actions",label:"Batafsil",right:true}
 ];
 const paymentColumns:TableColumn[]=[
-  {key:"id",label:"Buyurtma",sortable:true},
   {key:"user",label:"Foydalanuvchi",sortable:true},
   {key:"date",label:"Sana",sortable:true},
   {key:"method",label:"Usul",sortable:true},
@@ -305,7 +304,7 @@ function LearnerDetailDrawer({open,learnerId,learner,analytics,payments,loading,
             <div><dt>Ro‘yxatdan o‘tgan</dt><dd><RegisteredStamp value={learner.botStartedAt??learner.createdAt}/></dd></div>
           </dl>
           {order?<div className="pd-drawer-summary pd-drawer-order">
-            <article><span><CircleDollarSign size={16}/></span><div><small>To‘lov summasi</small><strong>{money(order)}</strong>{(()=>{const fee=feeSummary(order);return fee?<small>Jami {fee.gross} · komissiya {fee.pct}%</small>:null;})()}</div></article>
+            <article><span><CircleDollarSign size={16}/></span><div><small>To‘lov summasi</small><strong>{money(order)}</strong>{(()=>{const fee=feeSummary(order);return fee?<small>Jami {fee.gross} · komissiya {fee.pct}%</small>:null;})()}<small className="pd-id">Buyurtma: {order.id.slice(0,18)}</small></div></article>
             <article><span><WalletCards size={16}/></span><div><small>Provayder</small><strong>{transactionProviderLabel(order)}</strong><small>{formatDateTime(order.paidAt??order.createdAt)}</small></div></article>
           </div>:null}
           <div className="pd-drawer-summary">
@@ -569,8 +568,9 @@ export default function AdminApp({session}:{session:AdminSession}){
   const ledgerAmount=(row:LedgerRow)=>(row.kind==="order"?BigInt(row.order.amountTiyin):-BigInt(row.withdrawal.amount)*BigInt(100)).toString();
   const ledgerStatus=(row:LedgerRow)=>row.kind==="order"?row.order.status:"withdrawal";
   // Metric cards narrow the ledger: withdrawals only, or orders only for order-status cards.
-  const showLedgerOrders=commerceMetric!=="commerce-withdrawn";
-  const showLedgerWithdrawals=!commerceMetric||commerceMetric==="commerce-withdrawn"||commerceMetric==="commerce-balance";
+  const showLedgerOrders=true;
+  // Withdrawals no longer appear as separate history rows; the sale row shows "Yechildi" instead.
+  const showLedgerWithdrawals=false;
   const ledgerRows:LedgerRow[]=[...(showLedgerOrders?orders.data?.items??[]:[]).map(order=>({kind:"order" as const,order})),...(showLedgerWithdrawals?withdrawals.data?.items??[]:[]).map(withdrawal=>({kind:"withdrawal" as const,withdrawal}))].sort((left,right)=>{
     let result=0;
     switch(orderSort.key){
@@ -819,11 +819,11 @@ export default function AdminApp({session}:{session:AdminSession}){
   }
 
   function ratingRows(){
-    if(ratings.loading&&!ratings.data)return <tr><td colSpan={9}><div className="pd-loading">Reyting yuklanmoqda…</div></td></tr>;
-    if(ratings.error&&!ratings.data)return <tr><td colSpan={9}><ErrorState message={ratings.error} onRetry={()=>setRevision(value=>value+1)}/></td></tr>;
+    if(ratings.loading&&!ratings.data)return <tr><td colSpan={8}><div className="pd-loading">Reyting yuklanmoqda…</div></td></tr>;
+    if(ratings.error&&!ratings.data)return <tr><td colSpan={8}><ErrorState message={ratings.error} onRetry={()=>setRevision(value=>value+1)}/></td></tr>;
     const top=ratings.data?.summary.topCompleted??0;
     const ratingItems=(ratings.data?.items??[]).filter(entry=>ratingMetric==="ratings-ranked"?entry.completedLessons>0:ratingMetric==="ratings-top"?top>0&&entry.completedLessons===top:ratingMetric==="ratings-progress"?entry.startedLessons>0:true);
-    if(!ratingItems.length)return <tr><td colSpan={9}><EmptyState title="PRO foydalanuvchi topilmadi" description="Qidiruvni o‘zgartirib qayta urinib ko‘ring." action={<button className="pd-button" onClick={clearSearch}>Qidiruvni tozalash</button>}/></td></tr>;
+    if(!ratingItems.length)return <tr><td colSpan={8}><EmptyState title="PRO foydalanuvchi topilmadi" description="Qidiruvni o‘zgartirib qayta urinib ko‘ring." action={<button className="pd-button" onClick={clearSearch}>Qidiruvni tozalash</button>}/></td></tr>;
     return ratingItems.map(entry=>{
       const progress=entry.completionRate===null?0:Math.round(entry.completionRate);
       return <tr key={entry.learner.telegramUserId} data-rating-learner-id={entry.learner.telegramUserId}>
@@ -876,9 +876,9 @@ export default function AdminApp({session}:{session:AdminSession}){
   }
 
   function transactionRows(){
-    if(orders.loading&&!orders.data)return <tr><td colSpan={9}><div className="pd-loading">Tranzaksiyalar yuklanmoqda…</div></td></tr>;
-    if(orders.error&&!orders.data)return <tr><td colSpan={9}><ErrorState message={orders.error} onRetry={()=>setRevision(value=>value+1)}/></td></tr>;
-    if(!ledgerRows.length)return <tr><td colSpan={9}><EmptyState title="Tranzaksiya topilmadi" description="Filtrlarni o‘zgartirib qayta urinib ko‘ring."/></td></tr>;
+    if(orders.loading&&!orders.data)return <tr><td colSpan={8}><div className="pd-loading">Tranzaksiyalar yuklanmoqda…</div></td></tr>;
+    if(orders.error&&!orders.data)return <tr><td colSpan={8}><ErrorState message={orders.error} onRetry={()=>setRevision(value=>value+1)}/></td></tr>;
+    if(!ledgerRows.length)return <tr><td colSpan={8}><EmptyState title="Tranzaksiya topilmadi" description="Filtrlarni o‘zgartirib qayta urinib ko‘ring."/></td></tr>;
     return ledgerRows.map(row=>{
       if(row.kind==="withdrawal"){
         const withdrawal=row.withdrawal;
@@ -897,12 +897,11 @@ export default function AdminApp({session}:{session:AdminSession}){
       const order=row.order;
       const personValue=order.learnerId?learnerByTelegramId.get(order.learnerId):undefined;
       return <tr key={order.id} data-order-id={order.id} className={order.id===activeOrder?"selected":""} onClick={()=>{setOrderId(order.id);if(order.learnerId)openLearnerById(order.learnerId,order);}}>
-      <td><span className="pd-id">{order.id.slice(0,18)}</span></td>
       <td><button className="pd-person-link" disabled={!order.learnerId} onClick={event=>{event.stopPropagation();if(order.learnerId)openLearnerById(order.learnerId,order);}}><strong>{personValue?learnerName(personValue):transactionIdentity(order).label}</strong><small>{personValue?.username?`@${personValue.username}`:transactionIdentity(order).detail}</small></button></td>
       <td>{formatDateTime(order.createdAt)}</td>
       <td>{transactionMethodLabel(order)}</td>
       <td><strong>{money(order)}</strong>{(()=>{const fee=feeSummary(order);return fee?<small className="pd-fee-note" title={`Summa ${fee.gross} · komissiya ${fee.pct}% (−${fee.fee})`}>−{fee.fee} ({fee.pct}%)</small>:null;})()}</td>
-      <td><StatusPill tone={order.status==="paid"?"success":order.status==="cancelled"?"danger":"warning"}>{order.status}</StatusPill></td>
+      <td><StatusPill tone={order.withdrawalId?"danger":order.status==="paid"?"success":order.status==="cancelled"?"danger":"warning"}>{order.withdrawalId?"Yechildi":order.status==="paid"?"Tushdi":order.status}</StatusPill></td>
       <td>{canWithdrawOrder(order)||order.withdrawalId?<button type="button" className={`pd-contact-check pd-withdraw-check${order.withdrawalId?" on":""}`} aria-pressed={Boolean(order.withdrawalId)} disabled={Boolean(withdrawBusy[order.id])} title={order.withdrawalId?"Yechilgan. Qaytarish uchun bosing":"Yechish"} aria-label={`${order.id} tranzaksiyasini yechish`} onClick={event=>{event.stopPropagation();void withdrawTransaction(order);}}><Check size={13}/></button>:<span className="pd-muted">—</span>}</td>
       <td>{order.canEdit?<button className="pd-icon-button pd-edit-action" aria-label={`${order.id} tranzaksiyasini tahrirlash`} title="Tranzaksiyani tahrirlash" onClick={event=>{event.stopPropagation();setEditTransaction(order);}}><Pencil size={15}/></button>:<span className="pd-muted">—</span>}</td>
       <td>{order.canDelete?<button className="pd-icon-button pd-delete-action" aria-label={`${order.id} tranzaksiyasini o‘chirish`} title="Xato tranzaksiyani o‘chirish" onClick={event=>{event.stopPropagation();setDeleteTransaction(order);}}><Trash2 size={15}/></button>:<span className="pd-muted">—</span>}</td>
