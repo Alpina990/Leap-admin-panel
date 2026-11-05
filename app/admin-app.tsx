@@ -304,11 +304,11 @@ function LearnerDetailDrawer({open,learnerId,learner,analytics,payments,loading,
             <div><dt>Ro‘yxatdan o‘tgan</dt><dd><RegisteredStamp value={learner.botStartedAt??learner.createdAt}/></dd></div>
           </dl>
           {order?<div className="pd-drawer-summary pd-drawer-order">
-            <article><span><CircleDollarSign size={16}/></span><div><small>To‘lov summasi</small><strong>{money(order)}</strong>{(()=>{const fee=feeSummary(order);return fee?<small>Jami {fee.gross} · komissiya {fee.pct}%</small>:null;})()}<small className="pd-id">Buyurtma: {order.id.slice(0,18)}</small></div></article>
+            <article><span><CircleDollarSign size={16}/></span><div><small>To‘lov summasi</small><strong>{money(order)}</strong>{(()=>{const fee=feeSummary(order);return fee?<small>Jami {fee.gross} · komissiya {fee.pct}%</small>:null;})()}</div></article>
             <article><span><WalletCards size={16}/></span><div><small>Provayder</small><strong>{transactionProviderLabel(order)}</strong><small>{formatDateTime(order.paidAt??order.createdAt)}</small></div></article>
           </div>:null}
           <div className="pd-drawer-summary">
-            <article><span><CalendarDays size={16}/></span><div><small>Oxirgi to‘lov</small><strong>{payments?.lastPaidAt?formatDateTime(payments.lastPaidAt):loading?"…":"—"}</strong></div></article>
+            <article><span><CalendarDays size={16}/></span><div><small>Oxirgi to‘lov</small><strong>{payments?.lastPaidAt?formatDateTime(payments.lastPaidAt):loading?"…":"—"}</strong>{order?<small className="pd-id">{order.id.slice(0,18)}</small>:null}</div></article>
             <article><span><BadgeCheck size={16}/></span><div><small>Obuna</small><strong>{subscription}</strong></div></article>
             <article><span><WalletCards size={16}/></span><div><small>To‘lovlar soni</small><strong>{payments?payments.paymentsCount.toLocaleString("en-US"):loading?"…":"—"}</strong></div></article>
             <article><span><Target size={16}/></span><div><small>O‘zlashtirish</small><strong>{mastery===null?loading?"…":"—":`${mastery}%`}</strong></div></article>
