@@ -694,7 +694,7 @@ export default function AdminApp({session}:{session:AdminSession}){
     try{
       if(order.withdrawalId){
         if(!order.withdrawalVersion)throw new Error("Yechish versiyasi topilmadi. Sahifani yangilang.");
-        const removal=await fetch("/api/admin/business-delete-withdrawal",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json","X-Admin-CSRF":session.csrfToken},body:JSON.stringify({withdrawalId:order.withdrawalId,baseVersion:order.withdrawalVersion,requestId:crypto.randomUUID()}),signal:AbortSignal.timeout(12000)});
+        const removal=await fetch("/api/admin/business-delete-withdrawal",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json","X-Admin-CSRF":session.csrfToken},body:JSON.stringify({withdrawalId:order.withdrawalId,baseVersion:order.withdrawalVersion,reason:"Ptichka olib tashlandi",requestId:crypto.randomUUID()}),signal:AbortSignal.timeout(12000)});
         if(removal.status===401){window.location.replace("/login");return;}
         const removed=await removal.json();
         if(!removal.ok)throw new Error(removed.error?.message??"Yechishni olib tashlab bo‘lmadi.");
