@@ -5,7 +5,9 @@ import {formatAdminDateTime} from '@/lib/admin-date-time.mjs';
 import {money,withdrawalMoney,type Order,type Withdrawal} from './payments';
 
 export function TransactionDeleteDialog({transaction,withdrawal,csrf,onClose,onDeleted}:{transaction?:Order;withdrawal?:Withdrawal;csrf:string;onClose:()=>void;onDeleted:()=>void}){
- const [busy,setBusy]=useState(false),[error,setError]=useState(''),[conflict,setConflict]=useState(false);
+ const [busy,setBusy]=useState(false),[error,setError]=useState(''),[conflict,setConflict]=useState(false),[reason,setReason]=useState('');
+ const reasonText=reason.trim();
+ const reasonValid=reasonText.length>=3;
  const request=useRef<{fingerprint:string;id:string}|null>(null);
  const isWithdrawal=!!withdrawal;
  const isLedger=!!transaction&&!transaction.manualTransactionId;
@@ -13,9 +15,9 @@ export function TransactionDeleteDialog({transaction,withdrawal,csrf,onClose,onD
  const baseVersion=withdrawal?.version??transaction?.manualTransactionVersion;
  const valid=!!transactionId&&(isLedger||!!baseVersion);
  async function remove(){
-  if(!valid||busy||!transactionId||(!isLedger&&!baseVersion))return;
+  if(!valid||!reasonValid||busy||!transactionId||(!isLedger&&!baseVersion))return;
   setBusy(true);setError('');setConflict(false);
-  const stable=isLedger?{transactionId}:isWithdrawal?{withdrawalId:transactionId,baseVersion}:{transactionId,baseVersion};
+  const stable=isLedger?{transactionId,reason:reasonText}:isWithdrawal?{withdrawalId:transactionId,baseVersion,reason:reasonText}:{transactionId,baseVersion,reason:reasonText};
   const fingerprint=JSON.stringify(stable);
   if(request.current?.fingerprint!==fingerprint)request.current={fingerprint,id:crypto.randomUUID()};
   try{
@@ -32,9 +34,10 @@ export function TransactionDeleteDialog({transaction,withdrawal,csrf,onClose,onD
    <DialogHeader><DialogTitle>{isWithdrawal?'Yechishni o‘chirish':'Tranzaksiyani o‘chirish'}</DialogTitle><DialogDescription>{isWithdrawal?'Bu amal xato kiritilgan yechish yozuviga tegishli.':isLedger?'Bu amal ilova buyurtmasi yoki CRM sotuviga tegishli.':'Bu amal faqat administrator qo‘lda kiritgan CRM tranzaksiyasiga tegishli.'}</DialogDescription></DialogHeader>
    <div className="pd-delete-summary">{withdrawal?<><span>Yechish</span><strong>-{withdrawalMoney(withdrawal.amount)}</strong><small>{formatAdminDateTime(withdrawal.createdAt)}</small></>:transaction&&<><span>{transaction.id}</span><strong>{money(transaction)}</strong><small>{formatAdminDateTime(transaction.paidAt??transaction.createdAt)}</small></>}</div>
    <p className="pd-feedback pd-delete-warning">{isWithdrawal?<><strong>Balans qayta hisoblanadi.</strong> Yechish tarixdan yashiriladi va balansga qaytariladi; audit yozuvi saqlanadi.</>:<><strong>PRO access o‘zgarmaydi.</strong> Faqat xato tranzaksiya to‘lov tarixidan yashiriladi; audit yozuvi va chek saqlanadi.</>}</p>
+   <label className="pd-field">O‘chirish sababi<textarea rows={3} maxLength={500} required value={reason} disabled={busy} placeholder="Nima uchun o‘chirilyapti? (kamida 3 belgi)" onChange={event=>setReason(event.target.value)}/></label>
    {conflict&&<p role="alert">Tranzaksiya boshqa administrator tomonidan o‘zgartirilgan. Jadvalni yangilang va qayta tekshiring.</p>}
    {error&&<p role="alert">{error}</p>}
-   <div className="pd-dialog-actions"><button className="pd-button" disabled={busy} onClick={onClose}>Bekor qilish</button><button className="pd-button pd-delete-confirm" disabled={!valid||busy||conflict} onClick={()=>void remove()}>{busy?'O‘chirilmoqda…':isWithdrawal?'Yechishni o‘chirish':'Tranzaksiyani o‘chirish'}</button></div>
+   <div className="pd-dialog-actions"><button className="pd-button" disabled={busy} onClick={onClose}>Bekor qilish</button><button className="pd-button pd-delete-confirm" disabled={!valid||!reasonValid||busy||conflict} onClick={()=>void remove()}>{busy?'O‘chirilmoqda…':isWithdrawal?'Yechishni o‘chirish':'Tranzaksiyani o‘chirish'}</button></div>
   </DialogContent>
  </Dialog>;
 }

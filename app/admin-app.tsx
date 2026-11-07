@@ -514,9 +514,9 @@ export default function AdminApp({session}:{session:AdminSession}){
   const [preferenceError,setPreferenceError]=useState("");
 
   const overview=useRead<AdminOverview>("/api/admin/overview",revision);
-  const summary=useRead<Summary>("/api/admin/analytics-summary?"+new URLSearchParams(dateRange),revision);
   const hasDateFilter=Object.keys(dateRange).length>0;
-  const allTimeFinanceSummary=useRead<Summary>(section==="Commerce"&&hasDateFilter?"/api/admin/analytics-summary":null,revision);
+  const summary=useRead<Summary>("/api/admin/analytics-summary?"+new URLSearchParams(section==="Commerce"&&!hasDateFilter?{allTime:"1"}:dateRange),revision);
+  const allTimeFinanceSummary=useRead<Summary>(section==="Commerce"&&hasDateFilter?"/api/admin/analytics-summary?allTime=1":null,revision);
   const learnerServerSort={sort:learnerServerSortKeys[learnerSort.key]??defaultLearnerSort.sort,direction:learnerSort.direction===1?"asc":"desc"};
   const query=new URLSearchParams({limit:"25",offset:String(offset),audience,...dateRange,...learnerServerSort,...reportFilters.learners});
   if(username)query.set("username",username);
@@ -775,9 +775,9 @@ export default function AdminApp({session}:{session:AdminSession}){
       {icon:Check,label:"Published",value:contentTree.data?treeUnits.flatMap(item=>item.lessons).filter(item=>item.status==="published").length.toLocaleString("en-US"):"—",detail:"Ko‘rinayotgan darslarda",tone:"success" as const,filter:"content-published"},
     ];
     if(sectionValue==="Commerce")return [
-      {icon:CircleDollarSign,label:"Jami tushum",value:formatMoneyCompact(summary.data?.revenueTiyin),detail:"Tanlangan davr",tone:"success" as const,filter:"commerce-revenue"},
-      {icon:ArrowDown,label:"Yechib olingan",value:withdrawals.data?withdrawalMoneyCompact(Number(withdrawals.data.withdrawnTotal)||0):"—",detail:"Tanlangan davrda",tone:"danger" as const,filter:"commerce-withdrawn"},
-      {icon:WalletCards,label:"Balance",value:currentBalanceSummary.data&&currentBalanceWithdrawals.data?formatMoneyCompact(availableBalanceTiyin(currentBalanceSummary.data.revenueTiyin,currentBalanceWithdrawals.data.withdrawnTotal)):"—",detail:"Hozir mavjud mablag‘",tone:"success" as const,filter:"commerce-balance"},
+      {icon:CircleDollarSign,label:"Jami tushum",value:formatMoneyCompact(summary.data?.revenueTiyin),detail:hasDateFilter?"Tanlangan davr":"Barcha vaqt",tone:"success" as const,filter:"commerce-revenue"},
+      {icon:ArrowDown,label:"Yechib olingan",value:withdrawals.data?withdrawalMoneyCompact(Number(withdrawals.data.withdrawnTotal)||0):"—",detail:hasDateFilter?"Tanlangan davrda":"Barcha vaqt",tone:"danger" as const,filter:"commerce-withdrawn"},
+      {icon:WalletCards,label:"Balans",value:currentBalanceSummary.data&&currentBalanceWithdrawals.data?formatMoneyCompact(availableBalanceTiyin(currentBalanceSummary.data.revenueTiyin,currentBalanceWithdrawals.data.withdrawnTotal)):"—",detail:"Hozir mavjud mablag‘",tone:"success" as const,filter:"commerce-balance"},
       {icon:WalletCards,label:"To‘langan buyurtmalar",value:summary.data?.paidOrders.toLocaleString("en-US")??"—",detail:"Muvaffaqiyatli to‘lovlar",tone:"success" as const,filter:"commerce-paid"},
       {icon:Clock3,label:"Kutilayotgan",value:summary.data?.health?.paymentsPending.toLocaleString("en-US")??"—",detail:"Pending buyurtmalar",tone:"warning" as const,filter:"commerce-pending"},
     ];

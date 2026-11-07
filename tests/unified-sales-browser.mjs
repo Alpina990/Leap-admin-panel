@@ -65,10 +65,10 @@ export async function checkUnifiedSales(page, out){
   assert(collapseBox.y>=financeContentBox.y+financeContentBox.height,'collapse control must sit below the expanded finance box');
   await expect(page.locator('.pd-metric-card')).toHaveCount(5);
   await expect(page.locator('.pd-metric-card').filter({hasText:'Jami tushum'})).toContainText('500 UZS');
-  await expect(page.locator('.pd-metric-card').filter({hasText:'Balance'})).toContainText('400 UZS');
+  await expect(page.locator('.pd-metric-card').filter({hasText:'Balans'})).toContainText('400 UZS');
   if(width===1440){
    await page.getByRole('button',{name:'O‘quvchilar & access',exact:true}).click();
-   await expect(page.locator('.pd-metric-card').filter({hasText:'Balance'})).toContainText('400 UZS');
+   await expect(page.locator('.pd-metric-card').filter({hasText:'Balans'})).toContainText('400 UZS');
    await page.getByRole('button',{name:'Tranzaksiyalarga qaytish',exact:true}).click();
   }
   await expect(page.locator('[data-provider="unknown"]')).toContainText('Noma’lum');
@@ -79,7 +79,7 @@ export async function checkUnifiedSales(page, out){
   if(width===1440){
    await page.getByLabel('Tezkor davr',{exact:true}).selectOption('30');
    await expect(page.locator('.pd-metric-card').filter({hasText:'Jami tushum'})).toContainText('200 UZS');
-   await expect(page.locator('.pd-metric-card').filter({hasText:'Balance'})).toContainText('400 UZS');
+   await expect(page.locator('.pd-metric-card').filter({hasText:'Balans'})).toContainText('400 UZS');
    await page.getByLabel('Tezkor davr',{exact:true}).selectOption('all');
   }
   await expect(page.locator('.pd-detail-hero span').first()).toHaveText('Noma’lum');

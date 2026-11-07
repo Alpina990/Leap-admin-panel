@@ -148,7 +148,7 @@ test('commerce finance disclosure expands above a full-width transaction history
   assert.match(ui, /aria-controls="pd-commerce-finance"/);
   assert.match(ui, /id="pd-commerce-finance"/);
   assert.match(ui, /availableBalanceTiyin/);
-  assert.match(ui, /label:"Balance"/);
+  assert.match(ui, /label:"Balans"/);
   assert.match(ui, /ChevronUp/);
   assert.match(ui, /\{revenueDistribution\(\)\}\s*<button type="button" className="pd-finance-collapse"/);
   assert.match(ui, /withdrawals\.error&&<ErrorState/);

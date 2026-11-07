@@ -62,7 +62,7 @@ test('business grant rejects a future paid instant before contacting upstream',a
  assert.equal(response.status,422);assert.equal(called,0);
 });
 test('manual transaction deletion uses a fixed UUID path and validates the audited result',async()=>{
- const body={requestId,transactionId:'20000000-0000-4000-8000-000000000001',baseVersion:1};
+ const body={requestId,transactionId:'20000000-0000-4000-8000-000000000001',baseVersion:1,reason:'Xato kiritilgan'};
  const result={transactionId:body.transactionId,deletedAt:'2026-10-15T10:00:00Z',version:2,accessUnchanged:true};
  const response=await proxyAdmin(request('business-delete-transaction',body),'business-delete-transaction',config,async(url,options)=>{assert.equal(url,config.api+'/api/v1/admin/business/manual-transactions/'+body.transactionId+'/delete');const expected={...body};delete expected.transactionId;assert.deepEqual(JSON.parse(options.body),expected);return Response.json(result);});
  assert.equal(response.status,200);assert.deepEqual(await response.json(),result);
@@ -70,17 +70,17 @@ test('manual transaction deletion uses a fixed UUID path and validates the audit
 test('ledger deletion forwards the order or CRM id and validates the audited result',async()=>{
  const uuid='30000000-0000-4000-8000-000000000001';
  for(const [id,fact] of [[uuid,'app:'+uuid],['crm:'+uuid,'crm:'+uuid]]){
-  const body={requestId,transactionId:id};
+  const body={requestId,transactionId:id,reason:'Xato kiritilgan'};
   const result={transactionId:fact,deletedAt:'2026-10-15T10:00:00Z',accessUnchanged:true};
   const response=await proxyAdmin(request('business-delete-ledger',body),'business-delete-ledger',config,async(url,options)=>{assert.equal(url,config.api+'/api/v1/admin/business/ledger-transactions/delete');assert.deepEqual(JSON.parse(options.body),body);return Response.json(result);});
   assert.equal(response.status,200);assert.deepEqual(await response.json(),result);
  }
- const body={requestId,transactionId:uuid};
+ const body={requestId,transactionId:uuid,reason:'Xato kiritilgan'};
  const mismatch=await proxyAdmin(request('business-delete-ledger',body),'business-delete-ledger',config,async()=>Response.json({transactionId:'app:30000000-0000-4000-8000-000000000002',deletedAt:'2026-10-15T10:00:00Z',accessUnchanged:true}));
  assert.equal(mismatch.status,502);
 });
 test('manual transaction deletion fails closed on mismatched audited result identity or version',async()=>{
- const body={requestId,transactionId:'20000000-0000-4000-8000-000000000001',baseVersion:1};
+ const body={requestId,transactionId:'20000000-0000-4000-8000-000000000001',baseVersion:1,reason:'Xato kiritilgan'};
  for(const result of [
   {transactionId:'30000000-0000-4000-8000-000000000001',deletedAt:'2026-10-15T10:00:00Z',version:2,accessUnchanged:true},
   {transactionId:body.transactionId,deletedAt:'2026-10-15T10:00:00Z',version:3,accessUnchanged:true},
@@ -126,7 +126,7 @@ test('revocation errors are sanitized without turning it into session loss',asyn
  assert.equal(response.status,status===500?502:status);const data=await response.json();if(status!==500)assert.equal(data.error.code,code);assert.ok(!JSON.stringify(data).includes('fixture-secret-only'));}
 });
 test('business actions reject password and reason keys (strict DTO)',async()=>{
- for(const [action,body] of [['business-revoke',{requestId,learnerId:'123',baseVersion:0}],['business-delete-transaction',{requestId,transactionId:'20000000-0000-4000-8000-000000000001',baseVersion:1}]])for(const extra of [{password:'fixture-secret-only'},{reason:'A documented decision.'}])assert.equal((await proxyAdmin(request(action,{...body,...extra}),action,config,()=>{throw Error('must not fetch');})).status,422);
+ for(const [action,body] of [['business-revoke',{requestId,learnerId:'123',baseVersion:0}]])for(const extra of [{password:'fixture-secret-only'},{reason:'A documented decision.'}])assert.equal((await proxyAdmin(request(action,{...body,...extra}),action,config,()=>{throw Error('must not fetch');})).status,422);
 });
 test('revocation forwards only its strict secret-bearing DTO and verifies denial identity',async()=>{
  const body={requestId,learnerId:'123',baseVersion:0};
@@ -146,7 +146,7 @@ test('withdrawal edit uses a fixed UUID path and fails closed on mismatched iden
  assert.notEqual(bad.status,200);
 });
 test('withdrawal deletion uses a fixed UUID path and fails closed on mismatched identity',async()=>{
- const body={requestId,withdrawalId:'20000000-0000-4000-8000-000000000002',baseVersion:1};
+ const body={requestId,withdrawalId:'20000000-0000-4000-8000-000000000002',baseVersion:1,reason:'Xato kiritilgan'};
  const result={withdrawalId:body.withdrawalId,deletedAt:'2026-10-15T10:00:00Z',version:2};
  const response=await proxyAdmin(request('business-delete-withdrawal',body),'business-delete-withdrawal',config,async(url,options)=>{assert.equal(url,config.api+'/api/v1/admin/withdrawals/'+body.withdrawalId+'/delete');const expected={...body};delete expected.withdrawalId;assert.deepEqual(JSON.parse(options.body),expected);return Response.json(result);});
  assert.equal(response.status,200);assert.deepEqual(await response.json(),result);
