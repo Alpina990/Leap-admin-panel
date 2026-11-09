@@ -70,7 +70,7 @@ type ContentTreeCourse={id:string;title:string;slug:string;version:string;units:
 type ContentTree={items:ContentTreeCourse[];total:number;limit:number;offset:number;hasMore:boolean;canWrite:boolean};
 type AudienceFilter="all"|"active"|"access"|"attention"|"watched";
 type MetricFilter=AudienceFilter|"content-courses"|"content-units"|"content-lessons"|"content-published"|"commerce-revenue"|"commerce-paid"|"commerce-average"|"commerce-pending"|"commerce-withdrawn"|"commerce-balance"|"ratings-all"|"ratings-ranked"|"ratings-top"|"ratings-progress"|"messages-sent"|"messages-read"|"messages-unread"|"messages-total";
-type Metric={icon:LucideIcon;label:string;value:string;detail:string;tone?:"success"|"warning"|"danger";filter?:MetricFilter};
+type Metric={icon:LucideIcon;label:string;value:string;detail?:string;tone?:"success"|"warning"|"danger";filter?:MetricFilter};
 type SortDirection=1|-1;
 type SortState={key:string;direction:SortDirection};
 type TableColumn={key:string;label:string;icon?:LucideIcon;sortable?:boolean;right?:boolean};
@@ -228,13 +228,13 @@ function PageHeader({title,subtitle,actions}:{title:string;subtitle:string;actio
   </header>;
 }
 
-function MetricCard({icon:Icon,label,value,detail,tone="success",onClick,active=false}:{icon:LucideIcon;label:string;value:string;detail:string;tone?:"success"|"warning"|"danger";onClick?:()=>void;active?:boolean}){
+function MetricCard({icon:Icon,label,value,detail,tone="success",onClick,active=false}:{icon:LucideIcon;label:string;value:string;detail?:string;tone?:"success"|"warning"|"danger";onClick?:()=>void;active?:boolean}){
   const body=<>
     <span className={`pd-metric-icon ${tone}`}><Icon size={19}/></span>
     <div>
       <p>{label}</p>
       <strong>{value}</strong>
-      <small>{detail}</small>
+      {detail&&<small>{detail}</small>}
     </div>
   </>;
   const className=`pd-metric-card${active?" active":""}`;
@@ -776,12 +776,12 @@ export default function AdminApp({session}:{session:AdminSession}){
       {icon:Check,label:"Published",value:contentTree.data?treeUnits.flatMap(item=>item.lessons).filter(item=>item.status==="published").length.toLocaleString("en-US"):"—",detail:"Ko‘rinayotgan darslarda",tone:"success" as const,filter:"content-published"},
     ];
     if(sectionValue==="Commerce")return [
-      {icon:CircleDollarSign,label:"Jami tushum",value:formatMoneyCompact(summary.data?.revenueTiyin),detail:hasDateFilter?"Tanlangan davr":"Barcha vaqt",tone:"success" as const,filter:"commerce-revenue"},
-      {icon:Percent,label:"Sof daromad",value:formatMoneyCompact(summary.data?.netRevenueTiyin),detail:`Komissiyalar: ${formatMoneyCompact(summary.data?.providerFeesTiyin)}`,tone:"success" as const},
-      {icon:ArrowDown,label:"Yechib olingan",value:withdrawals.data?withdrawalMoneyCompact(Number(withdrawals.data.withdrawnTotal)||0):"—",detail:hasDateFilter?"Tanlangan davrda":"Barcha vaqt",tone:"danger" as const,filter:"commerce-withdrawn"},
-      {icon:WalletCards,label:"Balans",value:currentBalanceSummary.data&&currentBalanceWithdrawals.data?formatMoneyCompact(availableBalanceTiyin(currentBalanceSummary.data.revenueTiyin,currentBalanceWithdrawals.data.withdrawnTotal)):"—",detail:"Hozir mavjud mablag‘",tone:"success" as const,filter:"commerce-balance"},
-      {icon:WalletCards,label:"To‘langan buyurtmalar",value:summary.data?.paidOrders.toLocaleString("en-US")??"—",detail:"Muvaffaqiyatli to‘lovlar",tone:"success" as const,filter:"commerce-paid"},
-      {icon:Clock3,label:"Kutilayotgan",value:summary.data?.health?.paymentsPending.toLocaleString("en-US")??"—",detail:"Pending buyurtmalar",tone:"warning" as const,filter:"commerce-pending"},
+      {icon:CircleDollarSign,label:"Jami tushum",value:formatMoneyCompact(summary.data?.revenueTiyin),tone:"success" as const,filter:"commerce-revenue"},
+      {icon:Percent,label:"Sof daromad",value:formatMoneyCompact(summary.data?.netRevenueTiyin),tone:"success" as const},
+      {icon:ArrowDown,label:"Yechib olingan",value:withdrawals.data?withdrawalMoneyCompact(Number(withdrawals.data.withdrawnTotal)||0):"—",tone:"danger" as const,filter:"commerce-withdrawn"},
+      {icon:WalletCards,label:"Balans",value:currentBalanceSummary.data&&currentBalanceWithdrawals.data?formatMoneyCompact(availableBalanceTiyin(currentBalanceSummary.data.revenueTiyin,currentBalanceWithdrawals.data.withdrawnTotal)):"—",tone:"success" as const,filter:"commerce-balance"},
+      {icon:WalletCards,label:"To‘langan buyurtmalar",value:summary.data?.paidOrders.toLocaleString("en-US")??"—",tone:"success" as const,filter:"commerce-paid"},
+      {icon:Clock3,label:"Kutilayotgan",value:summary.data?.health?.paymentsPending.toLocaleString("en-US")??"—",tone:"warning" as const,filter:"commerce-pending"},
     ];
     return [
       {icon:Send,label:"Yuborilgan",value:summary.data?.notificationCreated.toLocaleString("en-US")??"—",detail:"Tanlangan davrda",tone:"success" as const,filter:"messages-sent"},
