@@ -16,6 +16,7 @@ import {
   ChevronRight,
   ChevronUp,
   CircleDollarSign,
+  Percent,
   Clock3,
   Download,
   FileText,
@@ -776,6 +777,7 @@ export default function AdminApp({session}:{session:AdminSession}){
     ];
     if(sectionValue==="Commerce")return [
       {icon:CircleDollarSign,label:"Jami tushum",value:formatMoneyCompact(summary.data?.revenueTiyin),detail:hasDateFilter?"Tanlangan davr":"Barcha vaqt",tone:"success" as const,filter:"commerce-revenue"},
+      {icon:Percent,label:"Sof daromad",value:formatMoneyCompact(summary.data?.netRevenueTiyin),detail:`Komissiyalar: ${formatMoneyCompact(summary.data?.providerFeesTiyin)}`,tone:"success" as const},
       {icon:ArrowDown,label:"Yechib olingan",value:withdrawals.data?withdrawalMoneyCompact(Number(withdrawals.data.withdrawnTotal)||0):"—",detail:hasDateFilter?"Tanlangan davrda":"Barcha vaqt",tone:"danger" as const,filter:"commerce-withdrawn"},
       {icon:WalletCards,label:"Balans",value:currentBalanceSummary.data&&currentBalanceWithdrawals.data?formatMoneyCompact(availableBalanceTiyin(currentBalanceSummary.data.revenueTiyin,currentBalanceWithdrawals.data.withdrawnTotal)):"—",detail:"Hozir mavjud mablag‘",tone:"success" as const,filter:"commerce-balance"},
       {icon:WalletCards,label:"To‘langan buyurtmalar",value:summary.data?.paidOrders.toLocaleString("en-US")??"—",detail:"Muvaffaqiyatli to‘lovlar",tone:"success" as const,filter:"commerce-paid"},
