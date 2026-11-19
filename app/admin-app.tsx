@@ -516,7 +516,7 @@ export default function AdminApp({session}:{session:AdminSession}){
 
   const overview=useRead<AdminOverview>("/api/admin/overview",revision);
   const hasDateFilter=Object.keys(dateRange).length>0;
-  const summary=useRead<Summary>("/api/admin/analytics-summary?"+new URLSearchParams(section==="Commerce"&&!hasDateFilter?{allTime:"1"}:dateRange),revision);
+  const summary=useRead<Summary>("/api/admin/analytics-summary?"+new URLSearchParams(!hasDateFilter?{allTime:"1"}:dateRange),revision);
   const allTimeFinanceSummary=useRead<Summary>(section==="Commerce"&&hasDateFilter?"/api/admin/analytics-summary?allTime=1":null,revision);
   const learnerServerSort={sort:learnerServerSortKeys[learnerSort.key]??defaultLearnerSort.sort,direction:learnerSort.direction===1?"asc":"desc"};
   const query=new URLSearchParams({limit:"25",offset:String(offset),audience,...dateRange,...learnerServerSort,...reportFilters.learners});
